@@ -1,7 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { auth } from "../lib/auth";
 import { db } from "../db";
-import { teamMembers, teams } from "../db/schema";
+import { teamMembers } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import type { TeamRole } from "../db/schema";
 
@@ -69,10 +69,7 @@ export const teamMiddleware = createMiddleware<{
   }
 
   const membership = await db.query.teamMembers.findFirst({
-    where: and(
-      eq(teamMembers.userId, user.id),
-      eq(teamMembers.teamId, teamId)
-    ),
+    where: and(eq(teamMembers.userId, user.id), eq(teamMembers.teamId, teamId)),
   });
 
   if (!membership) {
