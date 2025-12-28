@@ -110,6 +110,23 @@ export const teamMembers = sqliteTable("team_members", {
     .$defaultFn(() => new Date()),
 });
 
+export const teamInvites = sqliteTable("team_invites", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id")
+    .notNull()
+    .references(() => teams.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  role: text("role").$type<TeamRole>().notNull().default("student"),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  usedAt: integer("used_at", { mode: "timestamp" }),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 // ============================================================================
 // Vendors
 // ============================================================================
@@ -262,6 +279,7 @@ export const teamsRelations = relations(teams, ({ many }) => ({
   bomItems: many(bomItems),
   orders: many(orders),
   vendors: many(vendors),
+  invites: many(teamInvites),
 }));
 
 export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
@@ -338,5 +356,16 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   part: one(parts, {
     fields: [orderItems.partId],
     references: [parts.id],
+  }),
+}));
+
+export const teamInvitesRelations = relations(teamInvites, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamInvites.teamId],
+    references: [teams.id],
+  }),
+  creator: one(users, {
+    fields: [teamInvites.createdBy],
+    references: [users.id],
   }),
 }));

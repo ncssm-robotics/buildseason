@@ -253,3 +253,91 @@ These epic areas are designed to be worked on independently:
 - **BOM** - Depends on parts, but separate pages
 - **Dashboard** - Aggregates data, minimal write conflicts
 - **Deployment** - Infrastructure, no code conflicts
+
+## Parallel Bead Execution (Async Subagents)
+
+This project supports parallel bead processing using Claude Code's async Task tool with `run_in_background`.
+
+### Quick Start - Parallel Dispatch
+
+To work on multiple beads simultaneously:
+
+```
+User: Work on the top 3 ready beads in parallel
+
+Agent: [Runs `bd ready --limit 5 --json` to find independent work]
+Agent: [Dispatches 3 bead-worker Tasks with run_in_background=true]
+Agent: [Continues with other work or monitors progress]
+```
+
+Or explicitly:
+
+```
+User: Run bead-worker on buildseason-abc, buildseason-def, and buildseason-ghi in the background
+
+Agent: [Launches 3 parallel Task agents, each handling one bead]
+Agent: [Uses TaskOutput to check progress or wait for completion]
+```
+
+### Available Subagent Patterns
+
+| Pattern            | Model  | Purpose                                 | When to Use                        |
+| ------------------ | ------ | --------------------------------------- | ---------------------------------- |
+| `bead-worker`      | sonnet | Completes a single bead task            | Parallel task execution            |
+| `bead-reviewer`    | sonnet | Reviews completed bead work (read-only) | After bead-worker completes        |
+| `bead-coordinator` | haiku  | Monitors progress, suggests dispatches  | Long-running background monitoring |
+
+### Bead-Worker Prompt Template
+
+When dispatching a bead-worker, use this prompt structure:
+
+```
+You are a bead-worker agent. Complete the bead [ID] autonomously.
+
+1. Query bead details: `bd show [ID]`
+2. Update status: `bd update [ID] --status in_progress`
+3. Write tests FIRST in src/__tests__/ for the feature
+4. Implement the feature to make tests pass
+5. Verify: `bun test && bun run typecheck && bun run lint`
+6. Close with summary: `bd close [ID] -r "Brief summary of what was done"`
+
+If you discover additional work needed, create new beads with:
+`bd create "Description" -t task`
+
+WAKE CONDITIONS (signal completion immediately):
+- Task completed successfully
+- Blocked by missing dependency or unclear requirements
+- Critical cross-bead issue discovered
+- Test failures that need human decision
+
+IMPORTANT: You MUST call `bd close [ID]` when done - do not skip this step.
+```
+
+### Orchestration Pattern
+
+1. **Start session**: Run `bd ready --json` to see available work
+2. **Identify independent beads**: Check that beads don't modify the same files
+3. **Dispatch workers**: Send bead-workers to independent beads using Task with `run_in_background: true`
+4. **Monitor or continue**: Use TaskOutput to check progress, or continue with other work
+5. **Handle wake-ups**: Workers signal on completion or blockers
+6. **Review cycle**: Optionally dispatch bead-reviewer on completed work
+7. **Sync before ending**: Run `bd sync && git push` to ensure all updates are committed
+
+### Rules for Parallel Dispatch
+
+- **File independence**: Only dispatch beads that don't modify the same files
+- **Dependency check**: Run `bd dep tree <id>` to avoid dispatching blocked beads
+- **Max concurrency**: Limit to 3-4 concurrent workers (context/resource limits)
+- **Hash-based IDs**: bd uses hash IDs that handle concurrent updates safely
+- **Flat delegation**: Keep main -> workers only (no workers spawning sub-workers)
+- **Discovered work**: New beads filed by workers appear in `bd ready` automatically
+
+### Ending a Parallel Session
+
+Before ending any session with parallel workers:
+
+1. Ensure all background workers have completed (use `TaskOutput` with `block: true`)
+2. Run `bd sync` to flush all bead updates
+3. Run `bd list --status in_progress` to verify no orphaned work
+4. Commit and push any pending changes
+5. Verify: `git status` should show clean working tree

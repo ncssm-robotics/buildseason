@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth";
 import teamRoutes from "./routes/teams";
 import partsRoutes from "./routes/parts";
 import ordersRoutes from "./routes/orders";
+import vendorsRoutes from "./routes/vendors";
 
 const app = new Hono();
 
@@ -28,6 +29,7 @@ app.route("/", authRoutes);
 app.route("/", teamRoutes);
 app.route("/", partsRoutes);
 app.route("/", ordersRoutes);
+app.route("/", vendorsRoutes);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));

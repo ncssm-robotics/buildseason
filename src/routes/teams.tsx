@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { Layout } from "../components/Layout";
 import { requireAuth, type AuthVariables } from "../middleware/auth";
 import { db } from "../db";
-import { teams, teamMembers } from "../db/schema";
+import { teams, teamMembers, teamInvites } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const app = new Hono<{ Variables: AuthVariables }>();
@@ -401,6 +401,28 @@ app.get("/teams/:teamId", async (c) => {
             </p>
           </div>
 
+          {membership.role === "admin" || membership.role === "mentor" ? (
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                Invite Team Members
+              </h2>
+              <div id="invite-section">
+                <p class="text-sm text-gray-600 mb-4">
+                  Generate an invite link to allow new members to join your
+                  team.
+                </p>
+                <button
+                  hx-get={`/teams/${team.id}/invite`}
+                  hx-target="#invite-section"
+                  hx-swap="innerHTML"
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Generate Invite Link
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <a
               href={`/teams/${team.id}/parts`}
@@ -498,6 +520,425 @@ app.get("/teams/:teamId", async (c) => {
       </div>
     </Layout>
   );
+});
+
+// Generate invite link
+app.get("/teams/:teamId/invite", async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.req.param("teamId");
+
+  // Check membership and permissions
+  const membership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, teamId)),
+  });
+
+  if (
+    !membership ||
+    (membership.role !== "admin" && membership.role !== "mentor")
+  ) {
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">
+          You do not have permission to generate invite links.
+        </p>
+      </div>
+    );
+  }
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+  });
+
+  if (!team) {
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">Team not found.</p>
+      </div>
+    );
+  }
+
+  // Generate a unique token
+  const token = crypto.randomUUID();
+  const inviteId = crypto.randomUUID();
+
+  // Set expiration to 7 days from now
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  try {
+    await db.insert(teamInvites).values({
+      id: inviteId,
+      teamId,
+      token,
+      role: "student", // Default role for invites
+      expiresAt,
+      createdBy: user.id,
+    });
+
+    const inviteUrl = `${c.req.url.split("/teams/")[0]}/invite/${token}`;
+
+    return c.html(
+      <div>
+        <p class="text-sm text-gray-600 mb-4">
+          Share this link with new team members. It will expire in 7 days and
+          can only be used once.
+        </p>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            readonly
+            value={inviteUrl}
+            id="invite-url"
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+          />
+          <button
+            onclick="navigator.clipboard.writeText(document.getElementById('invite-url').value); this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 2000);"
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+          >
+            Copy
+          </button>
+        </div>
+        <button
+          hx-get={`/teams/${teamId}/invite`}
+          hx-target="#invite-section"
+          hx-swap="innerHTML"
+          class="mt-4 text-sm text-blue-600 hover:text-blue-700"
+        >
+          Generate New Link
+        </button>
+      </div>
+    );
+  } catch (error) {
+    console.error("Failed to create invite:", error);
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">
+          Failed to generate invite link. Please try again.
+        </p>
+      </div>
+    );
+  }
+});
+
+// Join page - show invite details
+app.get("/invite/:token", async (c) => {
+  const token = c.req.param("token");
+  const user = c.get("user");
+
+  const invite = await db.query.teamInvites.findFirst({
+    where: eq(teamInvites.token, token),
+    with: { team: true },
+  });
+
+  if (!invite) {
+    return c.html(
+      <Layout title="Invalid Invite - BuildSeason">
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+          <div class="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+            <div class="text-red-600 mb-4">
+              <svg
+                class="w-16 h-16 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              Invalid Invite Link
+            </h1>
+            <p class="text-gray-600 mb-6">
+              This invite link is not valid or has expired.
+            </p>
+            <a
+              href="/dashboard"
+              class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Check if invite has expired
+  if (new Date() > invite.expiresAt) {
+    return c.html(
+      <Layout title="Expired Invite - BuildSeason">
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+          <div class="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+            <div class="text-yellow-600 mb-4">
+              <svg
+                class="w-16 h-16 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              Invite Link Expired
+            </h1>
+            <p class="text-gray-600 mb-6">
+              This invite link has expired. Please request a new invite from
+              your team admin.
+            </p>
+            <a
+              href="/dashboard"
+              class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Check if invite has already been used
+  if (invite.usedAt) {
+    return c.html(
+      <Layout title="Used Invite - BuildSeason">
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+          <div class="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+            <div class="text-yellow-600 mb-4">
+              <svg
+                class="w-16 h-16 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              Invite Already Used
+            </h1>
+            <p class="text-gray-600 mb-6">
+              This invite link has already been used. Please request a new
+              invite from your team admin.
+            </p>
+            <a
+              href="/dashboard"
+              class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Go to Dashboard
+            </a>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // If user is not logged in, redirect to login with return URL
+  if (!user) {
+    return c.redirect(`/login?redirect=/invite/${token}`);
+  }
+
+  // Check if user is already a member
+  const existingMembership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, invite.teamId)),
+  });
+
+  if (existingMembership) {
+    return c.html(
+      <Layout title="Already a Member - BuildSeason">
+        <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+          <div class="bg-white rounded-lg shadow p-8 max-w-md w-full text-center">
+            <div class="text-green-600 mb-4">
+              <svg
+                class="w-16 h-16 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">
+              Already a Member
+            </h1>
+            <p class="text-gray-600 mb-6">
+              You are already a member of {invite.team.name}.
+            </p>
+            <a
+              href={`/teams/${invite.teamId}`}
+              class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Go to Team
+            </a>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show join confirmation page
+  return c.html(
+    <Layout title={`Join ${invite.team.name} - BuildSeason`}>
+      <div class="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-lg shadow p-8 max-w-md w-full">
+          <div class="text-center mb-6">
+            <div class="text-blue-600 mb-4">
+              <svg
+                class="w-16 h-16 mx-auto"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Join Team</h1>
+            <p class="text-gray-600">You've been invited to join</p>
+          </div>
+
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h2 class="font-semibold text-gray-900 mb-1">{invite.team.name}</h2>
+            <p class="text-sm text-gray-600">
+              Team #{invite.team.number} &middot; {invite.team.season}
+            </p>
+            <p class="text-sm text-gray-600 mt-2">
+              Role: <span class="font-medium capitalize">{invite.role}</span>
+            </p>
+          </div>
+
+          <div id="join-result"></div>
+
+          <form
+            hx-post={`/invite/${token}`}
+            hx-target="#join-result"
+            hx-swap="innerHTML"
+          >
+            <button
+              type="submit"
+              class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              Accept Invitation
+            </button>
+          </form>
+
+          <a
+            href="/dashboard"
+            class="block text-center mt-4 text-sm text-gray-500 hover:text-gray-700"
+          >
+            Cancel
+          </a>
+        </div>
+      </div>
+    </Layout>
+  );
+});
+
+// Accept invite
+app.post("/invite/:token", async (c) => {
+  const user = c.get("user")!;
+  const token = c.req.param("token");
+
+  const invite = await db.query.teamInvites.findFirst({
+    where: eq(teamInvites.token, token),
+    with: { team: true },
+  });
+
+  if (!invite) {
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">Invalid invite link.</p>
+      </div>
+    );
+  }
+
+  // Check if invite has expired
+  if (new Date() > invite.expiresAt) {
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">This invite link has expired.</p>
+      </div>
+    );
+  }
+
+  // Check if invite has already been used
+  if (invite.usedAt) {
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">
+          This invite link has already been used.
+        </p>
+      </div>
+    );
+  }
+
+  // Check if user is already a member
+  const existingMembership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, invite.teamId)),
+  });
+
+  if (existingMembership) {
+    c.header("HX-Redirect", `/teams/${invite.teamId}`);
+    return c.html(<div>Redirecting...</div>);
+  }
+
+  try {
+    const memberId = crypto.randomUUID();
+
+    // Add user to team
+    await db.insert(teamMembers).values({
+      id: memberId,
+      userId: user.id,
+      teamId: invite.teamId,
+      role: invite.role,
+    });
+
+    // Mark invite as used
+    await db
+      .update(teamInvites)
+      .set({ usedAt: new Date() })
+      .where(eq(teamInvites.id, invite.id));
+
+    // Redirect to team page
+    c.header("HX-Redirect", `/teams/${invite.teamId}`);
+    return c.html(<div>Redirecting...</div>);
+  } catch (error) {
+    console.error("Failed to accept invite:", error);
+    return c.html(
+      <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+        <p class="text-sm text-red-600">
+          Failed to join team. Please try again.
+        </p>
+      </div>
+    );
+  }
 });
 
 export default app;
