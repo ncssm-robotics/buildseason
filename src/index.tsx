@@ -8,6 +8,7 @@ import { sessionMiddleware } from "./middleware/auth";
 import authRoutes from "./routes/auth";
 import teamRoutes from "./routes/teams";
 import partsRoutes from "./routes/parts";
+import ordersRoutes from "./routes/orders";
 
 const app = new Hono();
 
@@ -26,6 +27,7 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 app.route("/", authRoutes);
 app.route("/", teamRoutes);
 app.route("/", partsRoutes);
+app.route("/", ordersRoutes);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
