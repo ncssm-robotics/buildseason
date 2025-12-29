@@ -8,10 +8,16 @@ import {
   type TeamVariables,
 } from "../middleware/auth";
 import { db } from "../db";
-import { parts, teams } from "../db/schema";
+import {
+  parts,
+  teams,
+  orderItems,
+  orders,
+  vendors,
+  bomItems,
+} from "../db/schema";
 import { eq, asc, desc, sql, like, or, and } from "drizzle-orm";
 import { requireMentor } from "../middleware/auth";
-import { vendors } from "../db/schema";
 
 const app = new Hono<{ Variables: AuthVariables & TeamVariables }>();
 
@@ -1194,5 +1200,309 @@ app.put(
     }
   }
 );
+
+// Part detail page
+app.get("/teams/:teamId/parts/:partId", teamMiddleware, async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.get("teamId");
+  const teamRole = c.get("teamRole");
+  const partId = c.req.param("partId");
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+  });
+
+  if (!team) {
+    return c.redirect("/dashboard?error=team_not_found");
+  }
+
+  const part = await db.query.parts.findFirst({
+    where: and(eq(parts.id, partId), eq(parts.teamId, teamId)),
+    with: { vendor: true },
+  });
+
+  if (!part) {
+    return c.redirect(`/teams/${teamId}/parts?error=part_not_found`);
+  }
+
+  // Get order history for this part
+  const orderHistory = await db
+    .select({
+      orderId: orders.id,
+      orderStatus: orders.status,
+      quantity: orderItems.quantity,
+      unitPriceCents: orderItems.unitPriceCents,
+      orderedAt: orders.orderedAt,
+      receivedAt: orders.receivedAt,
+      createdAt: orders.createdAt,
+      vendorName: vendors.name,
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .leftJoin(vendors, eq(orders.vendorId, vendors.id))
+    .where(and(eq(orderItems.partId, partId), eq(orders.teamId, teamId)))
+    .orderBy(desc(orders.createdAt));
+
+  // Get BOM usage for this part
+  const bomUsage = await db.query.bomItems.findMany({
+    where: and(eq(bomItems.partId, partId), eq(bomItems.teamId, teamId)),
+  });
+
+  const totalNeeded = bomUsage.reduce((sum, b) => sum + b.quantityNeeded, 0);
+  const canEdit = teamRole === "admin" || teamRole === "mentor";
+  const isLowStock = part.reorderPoint && part.quantity <= part.reorderPoint;
+
+  return c.html(
+    <Layout title={`${part.name} - ${team.name}`}>
+      <div class="min-h-screen bg-gray-50">
+        <nav class="bg-white shadow-sm">
+          <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <a href="/dashboard" class="text-xl font-bold text-gray-900">
+                BuildSeason
+              </a>
+              <span class="text-gray-300">/</span>
+              <a
+                href={`/teams/${team.id}`}
+                class="text-gray-600 hover:text-gray-900"
+              >
+                {team.name}
+              </a>
+              <span class="text-gray-300">/</span>
+              <a
+                href={`/teams/${team.id}/parts`}
+                class="text-gray-600 hover:text-gray-900"
+              >
+                Parts
+              </a>
+              <span class="text-gray-300">/</span>
+              <span class="text-gray-600">{part.name}</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-600">{user.name}</span>
+              <SignOutButton class="text-sm text-gray-500 hover:text-gray-700" />
+            </div>
+          </div>
+        </nav>
+
+        <div class="max-w-4xl mx-auto py-8 px-4">
+          {/* Part Header */}
+          <div class="bg-white rounded-lg shadow mb-6">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-start">
+              <div>
+                <h1 class="text-2xl font-bold text-gray-900">{part.name}</h1>
+                {part.sku && <p class="text-gray-500">SKU: {part.sku}</p>}
+              </div>
+              <div class="flex gap-2">
+                {canEdit && (
+                  <a
+                    href={`/teams/${teamId}/parts/${partId}/edit`}
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                  >
+                    Edit Part
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div class="p-6">
+              {/* Stats Row */}
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div
+                  class={`p-4 rounded-lg ${isLowStock ? "bg-orange-50 border border-orange-200" : "bg-gray-50"}`}
+                >
+                  <div
+                    class={`text-2xl font-bold ${isLowStock ? "text-orange-600" : "text-gray-900"}`}
+                  >
+                    {part.quantity}
+                  </div>
+                  <div class="text-sm text-gray-500">In Stock</div>
+                  {isLowStock && (
+                    <div class="text-xs text-orange-600 mt-1">Low stock!</div>
+                  )}
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-gray-900">
+                    {totalNeeded}
+                  </div>
+                  <div class="text-sm text-gray-500">Needed (BOM)</div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-gray-900">
+                    {part.reorderPoint || 0}
+                  </div>
+                  <div class="text-sm text-gray-500">Reorder Point</div>
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-lg">
+                  <div class="text-2xl font-bold text-gray-900">
+                    {part.unitPriceCents
+                      ? `$${(part.unitPriceCents / 100).toFixed(2)}`
+                      : "-"}
+                  </div>
+                  <div class="text-sm text-gray-500">Unit Price</div>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 class="text-sm font-medium text-gray-500 mb-2">
+                    Description
+                  </h3>
+                  <p class="text-gray-900">
+                    {part.description || "No description"}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 class="text-sm font-medium text-gray-500 mb-2">
+                    Location
+                  </h3>
+                  <p class="text-gray-900">
+                    {part.location || "Not specified"}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 class="text-sm font-medium text-gray-500 mb-2">Vendor</h3>
+                  <p class="text-gray-900">
+                    {part.vendor ? (
+                      <a
+                        href={`/vendors/${part.vendor.id}`}
+                        class="text-blue-600 hover:text-blue-800"
+                      >
+                        {part.vendor.name}
+                      </a>
+                    ) : (
+                      "Not specified"
+                    )}
+                  </p>
+                </div>
+
+                <div>
+                  <h3 class="text-sm font-medium text-gray-500 mb-2">
+                    Last Updated
+                  </h3>
+                  <p class="text-gray-900">
+                    {part.updatedAt.toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BOM Usage */}
+          {bomUsage.length > 0 && (
+            <div class="bg-white rounded-lg shadow mb-6">
+              <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">BOM Usage</h2>
+              </div>
+              <div class="p-6">
+                <div class="space-y-2">
+                  {bomUsage.map((bom) => (
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                      <span class="text-gray-900 capitalize">
+                        {bom.subsystem}
+                      </span>
+                      <span class="text-gray-600">
+                        {bom.quantityNeeded} needed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between font-medium">
+                  <span>Total Needed</span>
+                  <span>{totalNeeded}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Order History */}
+          <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h2 class="text-lg font-semibold text-gray-900">Order History</h2>
+            </div>
+            {orderHistory.length === 0 ? (
+              <div class="p-6 text-center text-gray-500">
+                No order history for this part
+              </div>
+            ) : (
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Date
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Vendor
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      Qty
+                    </th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                      Price
+                    </th>
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  {orderHistory.map((order) => {
+                    const statusColors: Record<string, string> = {
+                      draft: "bg-gray-100 text-gray-800",
+                      pending: "bg-yellow-100 text-yellow-800",
+                      approved: "bg-blue-100 text-blue-800",
+                      rejected: "bg-red-100 text-red-800",
+                      ordered: "bg-purple-100 text-purple-800",
+                      received: "bg-green-100 text-green-800",
+                    };
+
+                    return (
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                          <a
+                            href={`/teams/${teamId}/orders/${order.orderId}`}
+                            class="text-blue-600 hover:text-blue-800"
+                          >
+                            {order.createdAt?.toLocaleDateString() || "-"}
+                          </a>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500">
+                          {order.vendorName || "-"}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-center">
+                          {order.quantity}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 text-right">
+                          $
+                          {(
+                            (order.quantity * order.unitPriceCents) /
+                            100
+                          ).toFixed(2)}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                          <span
+                            class={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[order.orderStatus] || "bg-gray-100 text-gray-800"}`}
+                          >
+                            {order.orderStatus}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+});
 
 export default app;

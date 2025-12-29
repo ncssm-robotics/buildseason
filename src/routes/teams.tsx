@@ -3,15 +3,22 @@ import { Layout } from "../components/Layout";
 import { SignOutButton } from "../components/SocialAuth";
 import { requireAuth, type AuthVariables } from "../middleware/auth";
 import { db } from "../db";
-import { teams, teamMembers, teamInvites, type TeamRole } from "../db/schema";
-import { eq } from "drizzle-orm";
+import {
+  teams,
+  teamMembers,
+  teamInvites,
+  parts,
+  orders,
+  type TeamRole,
+} from "../db/schema";
+import { eq, and, sql } from "drizzle-orm";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
 // Apply auth to all team routes
 app.use("*", requireAuth);
 
-// Dashboard - show user's teams or prompt to create
+// Dashboard - show user's teams with stats
 app.get("/dashboard", async (c) => {
   const user = c.get("user")!;
 
@@ -19,6 +26,48 @@ app.get("/dashboard", async (c) => {
     where: eq(teamMembers.userId, user.id),
     with: { team: true },
   });
+
+  // Get stats for each team
+  const teamsWithStats = await Promise.all(
+    memberships.map(async ({ team, role }) => {
+      // Get parts count and low stock count
+      const partsData = await db
+        .select({
+          total: sql<number>`count(*)`,
+          lowStock: sql<number>`sum(case when ${parts.quantity} <= ${parts.reorderPoint} and ${parts.reorderPoint} > 0 then 1 else 0 end)`,
+        })
+        .from(parts)
+        .where(eq(parts.teamId, team.id));
+
+      // Get pending orders count
+      const pendingOrders = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(and(eq(orders.teamId, team.id), eq(orders.status, "pending")));
+
+      // Get active orders count (approved or ordered)
+      const activeOrders = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.teamId, team.id),
+            sql`${orders.status} IN ('approved', 'ordered')`
+          )
+        );
+
+      return {
+        team,
+        role,
+        stats: {
+          partsCount: partsData[0]?.total || 0,
+          lowStockCount: partsData[0]?.lowStock || 0,
+          pendingOrdersCount: pendingOrders[0]?.count || 0,
+          activeOrdersCount: activeOrders[0]?.count || 0,
+        },
+      };
+    })
+  );
 
   const error = c.req.query("error");
 
@@ -37,19 +86,22 @@ app.get("/dashboard", async (c) => {
           </div>
         </nav>
 
-        <div class="max-w-4xl mx-auto py-8 px-4">
+        <div class="max-w-6xl mx-auto py-8 px-4">
           {error && (
             <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p class="text-sm text-red-600">
                 {error === "not_a_member"
                   ? "You are not a member of that team."
-                  : decodeURIComponent(error)}
+                  : error}
               </p>
             </div>
           )}
 
           <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Your Teams</h1>
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <p class="text-gray-600">Welcome back, {user.name}</p>
+            </div>
             <a
               href="/teams/new"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -90,39 +142,109 @@ app.get("/dashboard", async (c) => {
               </a>
             </div>
           ) : (
-            <div class="grid gap-4">
-              {memberships.map(({ team, role }) => (
-                <a
-                  href={`/teams/${team.id}`}
-                  class="bg-white rounded-lg shadow p-6 hover:shadow-md transition flex justify-between items-center"
-                >
-                  <div>
-                    <h2 class="text-lg font-semibold text-gray-900">
-                      {team.name}
-                    </h2>
-                    <p class="text-sm text-gray-500">
-                      Team #{team.number} &middot; {team.season}
-                    </p>
+            <div class="space-y-6">
+              {teamsWithStats.map(({ team, role, stats }) => (
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                  {/* Team Header */}
+                  <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                      <h2 class="text-lg font-semibold text-gray-900">
+                        {team.name}
+                      </h2>
+                      <p class="text-sm text-gray-500">
+                        Team #{team.number} &middot; {team.season}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600 capitalize">
+                        {role}
+                      </span>
+                      <a
+                        href={`/teams/${team.id}`}
+                        class="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        View Team →
+                      </a>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-3">
-                    <span class="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-600 capitalize">
-                      {role}
-                    </span>
-                    <svg
-                      class="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+
+                  {/* Stats Grid */}
+                  <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-gray-200">
+                    <a
+                      href={`/teams/${team.id}/parts`}
+                      class="p-4 hover:bg-gray-50 transition"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                      <div class="text-2xl font-bold text-gray-900">
+                        {stats.partsCount}
+                      </div>
+                      <div class="text-sm text-gray-500">
+                        Parts in Inventory
+                      </div>
+                    </a>
+
+                    <a
+                      href={`/teams/${team.id}/parts?lowStock=true`}
+                      class={`p-4 hover:bg-gray-50 transition ${stats.lowStockCount > 0 ? "bg-orange-50" : ""}`}
+                    >
+                      <div
+                        class={`text-2xl font-bold ${stats.lowStockCount > 0 ? "text-orange-600" : "text-gray-900"}`}
+                      >
+                        {stats.lowStockCount}
+                      </div>
+                      <div class="text-sm text-gray-500">Low Stock Alerts</div>
+                    </a>
+
+                    <a
+                      href={`/teams/${team.id}/orders?status=pending`}
+                      class={`p-4 hover:bg-gray-50 transition ${stats.pendingOrdersCount > 0 ? "bg-yellow-50" : ""}`}
+                    >
+                      <div
+                        class={`text-2xl font-bold ${stats.pendingOrdersCount > 0 ? "text-yellow-600" : "text-gray-900"}`}
+                      >
+                        {stats.pendingOrdersCount}
+                      </div>
+                      <div class="text-sm text-gray-500">Pending Approval</div>
+                    </a>
+
+                    <a
+                      href={`/teams/${team.id}/orders`}
+                      class="p-4 hover:bg-gray-50 transition"
+                    >
+                      <div class="text-2xl font-bold text-gray-900">
+                        {stats.activeOrdersCount}
+                      </div>
+                      <div class="text-sm text-gray-500">Active Orders</div>
+                    </a>
                   </div>
-                </a>
+
+                  {/* Quick Actions */}
+                  <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex gap-4">
+                    <a
+                      href={`/teams/${team.id}/parts`}
+                      class="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Parts
+                    </a>
+                    <a
+                      href={`/teams/${team.id}/orders`}
+                      class="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Orders
+                    </a>
+                    <a
+                      href={`/teams/${team.id}/bom`}
+                      class="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      BOM
+                    </a>
+                    <a
+                      href={`/teams/${team.id}/members`}
+                      class="text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      Members
+                    </a>
+                  </div>
+                </div>
               ))}
             </div>
           )}

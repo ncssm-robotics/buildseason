@@ -10,6 +10,7 @@ import teamRoutes from "./routes/teams";
 import partsRoutes from "./routes/parts";
 import ordersRoutes from "./routes/orders";
 import vendorsRoutes from "./routes/vendors";
+import bomRoutes from "./routes/bom";
 
 const app = new Hono();
 
@@ -68,6 +69,7 @@ app.route("/", teamRoutes);
 app.route("/", partsRoutes);
 app.route("/", ordersRoutes);
 app.route("/", vendorsRoutes);
+app.route("/", bomRoutes);
 
 const port = process.env.PORT || 3000;
 console.log(`🚀 BuildSeason running at http://localhost:${port}`);
