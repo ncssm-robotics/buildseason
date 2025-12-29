@@ -50,20 +50,12 @@ app.get("/", (c) => {
             Team management for FTC robotics teams. Track parts, manage orders,
             and build better robots.
           </p>
-          <div class="flex gap-4">
-            <a
-              href="/login"
-              class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Sign In
-            </a>
-            <a
-              href="/register"
-              class="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 transition"
-            >
-              Create Account
-            </a>
-          </div>
+          <a
+            href="/login"
+            class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            Get Started
+          </a>
         </div>
       </div>
     </Layout>
