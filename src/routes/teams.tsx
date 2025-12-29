@@ -3,7 +3,7 @@ import { Layout } from "../components/Layout";
 import { SignOutButton } from "../components/SocialAuth";
 import { requireAuth, type AuthVariables } from "../middleware/auth";
 import { db } from "../db";
-import { teams, teamMembers, teamInvites } from "../db/schema";
+import { teams, teamMembers, teamInvites, type TeamRole } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const app = new Hono<{ Variables: AuthVariables }>();
@@ -845,6 +845,376 @@ app.get("/invite/:token", async (c) => {
       </div>
     </Layout>
   );
+});
+
+// Team members page
+app.get("/teams/:teamId/members", async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.req.param("teamId");
+
+  // Check membership
+  const membership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, teamId)),
+  });
+
+  if (!membership) {
+    return c.redirect("/dashboard?error=not_a_member");
+  }
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+  });
+
+  if (!team) {
+    return c.redirect("/dashboard?error=team_not_found");
+  }
+
+  // Get all team members with user info
+  const members = await db.query.teamMembers.findMany({
+    where: eq(teamMembers.teamId, teamId),
+    with: { user: true },
+  });
+
+  const isAdmin = membership.role === "admin";
+
+  return c.html(
+    <Layout title={`Team Members - ${team.name}`}>
+      <div class="min-h-screen bg-gray-50">
+        <nav class="bg-white shadow-sm">
+          <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <a href="/dashboard" class="text-xl font-bold text-gray-900">
+                BuildSeason
+              </a>
+              <span class="text-gray-300">/</span>
+              <a
+                href={`/teams/${team.id}`}
+                class="text-gray-600 hover:text-gray-900"
+              >
+                {team.name}
+              </a>
+              <span class="text-gray-300">/</span>
+              <span class="text-gray-600">Members</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-600">{user.name}</span>
+              <SignOutButton class="text-sm text-gray-500 hover:text-gray-700" />
+            </div>
+          </div>
+        </nav>
+
+        <div class="max-w-4xl mx-auto py-8 px-4">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Team Members</h1>
+              <p class="text-gray-600">
+                {members.length} member{members.length !== 1 ? "s" : ""} on{" "}
+                {team.name}
+              </p>
+            </div>
+            <a
+              href={`/teams/${team.id}`}
+              class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back to Team
+            </a>
+          </div>
+
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Member
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                  </th>
+                  {isAdmin && (
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                {members.map((member) => (
+                  <tr id={`member-${member.id}`}>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        {member.user.image ? (
+                          <img
+                            class="h-10 w-10 rounded-full"
+                            src={member.user.image}
+                            alt=""
+                          />
+                        ) : (
+                          <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-500 font-medium">
+                              {member.user.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900">
+                            {member.user.name}
+                            {member.userId === user.id && (
+                              <span class="ml-2 text-xs text-gray-400">
+                                (you)
+                              </span>
+                            )}
+                          </div>
+                          <div class="text-sm text-gray-500">
+                            {member.user.email}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      {isAdmin && member.userId !== user.id ? (
+                        <select
+                          hx-post={`/teams/${teamId}/members/${member.id}/role`}
+                          hx-trigger="change"
+                          hx-target={`#member-${member.id}`}
+                          hx-swap="outerHTML"
+                          name="role"
+                          class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option
+                            value="admin"
+                            selected={member.role === "admin"}
+                          >
+                            Admin
+                          </option>
+                          <option
+                            value="mentor"
+                            selected={member.role === "mentor"}
+                          >
+                            Mentor
+                          </option>
+                          <option
+                            value="student"
+                            selected={member.role === "student"}
+                          >
+                            Student
+                          </option>
+                        </select>
+                      ) : (
+                        <span
+                          class={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                            member.role === "admin"
+                              ? "bg-purple-100 text-purple-800"
+                              : member.role === "mentor"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {member.role.charAt(0).toUpperCase() +
+                            member.role.slice(1)}
+                        </span>
+                      )}
+                    </td>
+                    {isAdmin && (
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        {member.userId !== user.id ? (
+                          <button
+                            hx-delete={`/teams/${teamId}/members/${member.id}`}
+                            hx-target={`#member-${member.id}`}
+                            hx-swap="outerHTML"
+                            hx-confirm={`Remove ${member.user.name} from the team?`}
+                            class="text-red-600 hover:text-red-900"
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <span class="text-gray-400">-</span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {isAdmin && (
+            <div class="mt-6 text-sm text-gray-500">
+              <p>
+                <strong>Roles:</strong>
+              </p>
+              <ul class="list-disc list-inside mt-2 space-y-1">
+                <li>
+                  <strong>Admin</strong> - Full access, can manage members and
+                  settings
+                </li>
+                <li>
+                  <strong>Mentor</strong> - Can create and approve orders,
+                  manage inventory
+                </li>
+                <li>
+                  <strong>Student</strong> - Can view and request parts
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </Layout>
+  );
+});
+
+// Update member role (admin only)
+app.post("/teams/:teamId/members/:memberId/role", async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.req.param("teamId");
+  const memberId = c.req.param("memberId");
+
+  // Check that current user is admin
+  const currentMembership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, teamId)),
+  });
+
+  if (!currentMembership || currentMembership.role !== "admin") {
+    return c.text("Forbidden", 403);
+  }
+
+  // Get the member being updated
+  const targetMember = await db.query.teamMembers.findFirst({
+    where: eq(teamMembers.id, memberId),
+    with: { user: true },
+  });
+
+  if (!targetMember || targetMember.teamId !== teamId) {
+    return c.text("Member not found", 404);
+  }
+
+  // Can't change own role
+  if (targetMember.userId === user.id) {
+    return c.text("Cannot change your own role", 400);
+  }
+
+  const body = await c.req.parseBody();
+  const newRole = body.role as TeamRole;
+
+  if (!["admin", "mentor", "student"].includes(newRole)) {
+    return c.text("Invalid role", 400);
+  }
+
+  await db
+    .update(teamMembers)
+    .set({ role: newRole })
+    .where(eq(teamMembers.id, memberId));
+
+  // Return updated row
+  return c.html(
+    <tr id={`member-${targetMember.id}`}>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+          {targetMember.user.image ? (
+            <img
+              class="h-10 w-10 rounded-full"
+              src={targetMember.user.image}
+              alt=""
+            />
+          ) : (
+            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+              <span class="text-gray-500 font-medium">
+                {targetMember.user.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div class="ml-4">
+            <div class="text-sm font-medium text-gray-900">
+              {targetMember.user.name}
+            </div>
+            <div class="text-sm text-gray-500">{targetMember.user.email}</div>
+          </div>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <select
+          hx-post={`/teams/${teamId}/members/${targetMember.id}/role`}
+          hx-trigger="change"
+          hx-target={`#member-${targetMember.id}`}
+          hx-swap="outerHTML"
+          name="role"
+          class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="admin" selected={newRole === "admin"}>
+            Admin
+          </option>
+          <option value="mentor" selected={newRole === "mentor"}>
+            Mentor
+          </option>
+          <option value="student" selected={newRole === "student"}>
+            Student
+          </option>
+        </select>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+        <button
+          hx-delete={`/teams/${teamId}/members/${targetMember.id}`}
+          hx-target={`#member-${targetMember.id}`}
+          hx-swap="outerHTML"
+          hx-confirm={`Remove ${targetMember.user.name} from the team?`}
+          class="text-red-600 hover:text-red-900"
+        >
+          Remove
+        </button>
+      </td>
+    </tr>
+  );
+});
+
+// Remove member (admin only)
+app.delete("/teams/:teamId/members/:memberId", async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.req.param("teamId");
+  const memberId = c.req.param("memberId");
+
+  // Check that current user is admin
+  const currentMembership = await db.query.teamMembers.findFirst({
+    where: (tm, { and, eq }) =>
+      and(eq(tm.userId, user.id), eq(tm.teamId, teamId)),
+  });
+
+  if (!currentMembership || currentMembership.role !== "admin") {
+    return c.text("Forbidden", 403);
+  }
+
+  // Get the member being removed
+  const targetMember = await db.query.teamMembers.findFirst({
+    where: eq(teamMembers.id, memberId),
+  });
+
+  if (!targetMember || targetMember.teamId !== teamId) {
+    return c.text("Member not found", 404);
+  }
+
+  // Can't remove yourself
+  if (targetMember.userId === user.id) {
+    return c.text("Cannot remove yourself", 400);
+  }
+
+  await db.delete(teamMembers).where(eq(teamMembers.id, memberId));
+
+  // Return empty string to remove the row
+  return c.html(<></>);
 });
 
 // Accept invite

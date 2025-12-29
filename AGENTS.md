@@ -202,6 +202,187 @@ describe("GET /api/parts", () => {
 - Drizzle ORM internals
 - Third-party API behavior
 
+## Model Recommendations (Labels)
+
+Use labels to specify which model should handle a bead. This helps route simple work to faster/cheaper models and complex work to more capable ones.
+
+### Model Labels
+
+| Label          | Model         | Use For                                                      |
+| -------------- | ------------- | ------------------------------------------------------------ |
+| `model:haiku`  | Claude Haiku  | Simple, mechanical tasks (rename, add comment, minor fix)    |
+| `model:sonnet` | Claude Sonnet | Standard feature work, bug fixes, most development           |
+| `model:opus`   | Claude Opus   | Architecture planning, security reviews, complex refactoring |
+
+### Examples
+
+```bash
+# Simple mechanical task
+bd create "Rename getUserById to findUserById" -t task -p 3 --labels model:haiku
+
+# Standard feature work (default, label optional)
+bd create "Add pagination to parts list" -t task -p 2 --labels model:sonnet
+
+# Complex review requiring deep analysis
+bd create "Security review: auth flows" -t task -p 2 --labels model:opus,review:security
+```
+
+When dispatching bead-workers, check for model labels and pass the appropriate model to the Task tool.
+
+## Scheduled Reviews (Security & Code Quality)
+
+**Always keep review beads "on the horizon."** These are scheduled checkpoints that ensure security and code quality don't drift as features accumulate.
+
+### Review Philosophy
+
+**Reviews are discovery tasks, not fix-everything tasks.**
+
+- Audit the codebase against a checklist
+- Create new beads for each finding with appropriate priority
+- Use `discovered-from` relationship to link findings to the review
+- Close the review with a **full audit report** in the close reason
+
+This keeps reviews focused and fast, while ensuring findings are properly tracked and prioritized.
+
+### Review Labels
+
+Always label review beads for easy querying later:
+
+- `review:security` - Security audits
+- `review:code` - Code quality reviews
+
+Query past reviews:
+
+```bash
+bd list --label review:security --status closed
+bd list --label review:code --status closed
+bd show <review-id>  # See full audit report in close reason
+```
+
+### When to Schedule Reviews
+
+Create or refresh review beads after:
+
+- **Security review** - After auth changes, new API endpoints, input handling, or every ~10-15 feature beads
+- **Code review** - After major refactoring, new patterns, or every ~15-20 beads
+
+### Review Bead Templates
+
+**Security Review:**
+
+```bash
+bd create "Security review: [area]" -t task -p 2 --labels model:opus,review:security -d "Security audit - DO NOT FIX directly, create beads for findings.
+
+Checklist:
+- OWASP Top 10 check
+- Auth flow (OAuth state, CSRF, session cookies)
+- RBAC enforcement on all endpoints
+- Input validation (forms, query params)
+- SQL injection (parameterized queries)
+- XSS prevention in templates
+- HTMX endpoint authorization
+- Rate limiting status
+
+For each finding:
+  bd create \"Fix: [issue]\" -t bug -p [priority]
+  bd dep add [new-bead] [this-review] -t discovered-from"
+```
+
+**Code Quality Review:**
+
+```bash
+bd create "Code review: [area]" -t task -p 2 --labels model:opus,review:code -d "Code audit - DO NOT FIX directly, create beads for findings.
+
+Checklist:
+- Pattern consistency across routes
+- Dead code and unused imports
+- Error handling completeness
+- Type safety (no any, missing types)
+- Component reusability
+- Query efficiency (N+1 detection)
+- Code duplication
+- Test coverage gaps
+
+For each finding:
+  bd create \"Refactor: [issue]\" -t task -p [priority]
+  bd dep add [new-bead] [this-review] -t discovered-from"
+```
+
+### Audit Report Format
+
+When closing a review bead, include a **full audit report** in the close reason. This is the audit trail - no separate markdown files needed.
+
+**Report structure:**
+
+```
+## Files Reviewed
+- src/routes/auth.tsx
+- src/routes/orders.tsx
+- src/middleware/auth.ts
+- [list all files checked]
+
+## Checklist Results
+
+### [Category 1: e.g., SQL Injection]
+- Reviewed: [files]
+- Result: PASS (all queries use Drizzle ORM parameterized queries)
+
+### [Category 2: e.g., XSS Prevention]
+- Reviewed: [files]
+- Result: 2 ISSUES FOUND
+- Created: buildseason-abc (P1), buildseason-def (P2)
+
+### [Category 3: e.g., RBAC Enforcement]
+- Reviewed: [files]
+- Result: PASS (all protected routes use requireAuth/teamMiddleware)
+
+[...continue for each checklist item...]
+
+## Summary
+- Total checks: 8
+- Passed: 5
+- Issues found: 3 (created 9 beads)
+- P1: 3, P2: 4, P3: 2
+
+## Created Beads
+- buildseason-abc: Fix: [issue] (P1)
+- buildseason-def: Fix: [issue] (P1)
+[...list all created beads...]
+```
+
+This format provides:
+
+- **Positive proof** - "we checked X and found nothing" is documented
+- **Full audit trail** - every check, every result
+- **Queryable history** - `bd list --label review:security` finds all past security reviews
+- **No file sprawl** - everything lives in the bead
+
+### Dependency Chains
+
+Reviews should depend on the work they're reviewing:
+
+```bash
+# Security review depends on auth/security changes
+bd dep add security-review-bead auth-change-bead
+
+# Code review depends on security review (security first)
+bd dep add code-review-bead security-review-bead
+```
+
+### Tracking Discovered Issues
+
+When a review finds issues, link them back:
+
+```bash
+# Create finding with priority based on severity
+bd create "Fix: XSS in order notes field" -t bug -p 1
+
+# Link it to the review that discovered it
+bd dep add new-finding-bead review-bead -t discovered-from
+```
+
+This creates an audit trail: you can see what issues came from which review, and the review bead documents the scope of what was checked.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

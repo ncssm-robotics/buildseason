@@ -547,11 +547,29 @@ app.get("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
 
   const canEdit =
     (teamRole === "admin" || teamRole === "mentor") && order.status === "draft";
-  const _canApprove = teamRole === "admin" && order.status === "pending";
+  const canApprove = teamRole === "admin" && order.status === "pending";
   const canSubmit =
     (teamRole === "admin" || teamRole === "mentor") && order.status === "draft";
+  const canMarkOrdered =
+    (teamRole === "admin" || teamRole === "mentor") &&
+    order.status === "approved";
+  const canMarkReceived =
+    (teamRole === "admin" || teamRole === "mentor") &&
+    order.status === "ordered";
+  const canDelete = teamRole === "admin" && order.status === "draft";
 
   const colors = statusColors[order.status];
+
+  // Status timeline data
+  const statusFlow: OrderStatus[] = [
+    "draft",
+    "pending",
+    "approved",
+    "ordered",
+    "received",
+  ];
+  const currentStatusIndex = statusFlow.indexOf(order.status);
+  const isRejected = order.status === "rejected";
 
   return c.html(
     <Layout title={`Order #${order.id.substring(0, 8)} - ${team.name}`}>
@@ -639,6 +657,159 @@ app.get("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
                     </button>
                   </form>
                 )}
+                {canApprove && (
+                  <>
+                    <form
+                      hx-post={`/teams/${team.id}/orders/${order.id}/approve`}
+                      hx-swap="none"
+                    >
+                      <button
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                      >
+                        Approve
+                      </button>
+                    </form>
+                    <button
+                      type="button"
+                      onclick="document.getElementById('reject-modal').classList.remove('hidden')"
+                      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
+                {canMarkOrdered && (
+                  <form
+                    hx-post={`/teams/${team.id}/orders/${order.id}/mark-ordered`}
+                    hx-swap="none"
+                  >
+                    <button
+                      type="submit"
+                      class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm"
+                    >
+                      Mark as Ordered
+                    </button>
+                  </form>
+                )}
+                {canMarkReceived && (
+                  <form
+                    hx-post={`/teams/${team.id}/orders/${order.id}/mark-received`}
+                    hx-swap="none"
+                  >
+                    <button
+                      type="submit"
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                    >
+                      Mark as Received
+                    </button>
+                  </form>
+                )}
+                {canDelete && (
+                  <form
+                    hx-delete={`/teams/${team.id}/orders/${order.id}`}
+                    hx-swap="none"
+                    hx-confirm="Delete this order? This cannot be undone."
+                  >
+                    <button
+                      type="submit"
+                      class="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition text-sm"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+
+            {/* Status Timeline */}
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div class="flex items-center justify-between max-w-xl">
+                {isRejected ? (
+                  <div class="flex items-center gap-2 text-red-600">
+                    <svg
+                      class="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span class="font-medium">Order Rejected</span>
+                  </div>
+                ) : (
+                  statusFlow.map((status, index) => {
+                    const isCompleted = index < currentStatusIndex;
+                    const isCurrent = index === currentStatusIndex;
+                    const statusDate =
+                      status === "draft"
+                        ? order.createdAt
+                        : status === "pending"
+                          ? order.submittedAt
+                          : status === "approved"
+                            ? order.approvedAt
+                            : status === "ordered"
+                              ? order.orderedAt
+                              : status === "received"
+                                ? order.receivedAt
+                                : null;
+                    return (
+                      <>
+                        <div class="flex flex-col items-center">
+                          <div
+                            class={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              isCompleted
+                                ? "bg-green-500 text-white"
+                                : isCurrent
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-200 text-gray-500"
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <svg
+                                class="w-5 h-5"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fill-rule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clip-rule="evenodd"
+                                />
+                              </svg>
+                            ) : (
+                              <span class="text-xs font-medium">
+                                {index + 1}
+                              </span>
+                            )}
+                          </div>
+                          <span
+                            class={`mt-1 text-xs ${isCurrent ? "font-medium text-blue-600" : "text-gray-500"}`}
+                          >
+                            {statusLabels[status].split(" ")[0]}
+                          </span>
+                          {statusDate && (
+                            <span class="text-xs text-gray-400">
+                              {statusDate.toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        {index < statusFlow.length - 1 && (
+                          <div
+                            class={`flex-1 h-0.5 mx-2 ${
+                              index < currentStatusIndex
+                                ? "bg-green-500"
+                                : "bg-gray-200"
+                            }`}
+                          />
+                        )}
+                      </>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -689,11 +860,16 @@ app.get("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                           Subtotal
                         </th>
+                        {canEdit && (
+                          <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                            Actions
+                          </th>
+                        )}
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-200" id="order-items">
                       {items.map(({ item, part }) => (
-                        <tr>
+                        <tr id={`item-${item.id}`}>
                           <td class="px-4 py-3">
                             <div class="text-sm font-medium text-gray-900">
                               {part?.name || "Unknown Part"}
@@ -717,13 +893,26 @@ app.get("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
                               100
                             ).toFixed(2)}
                           </td>
+                          {canEdit && (
+                            <td class="px-4 py-3 text-right">
+                              <button
+                                hx-delete={`/teams/${team.id}/orders/${order.id}/items/${item.id}`}
+                                hx-target={`#item-${item.id}`}
+                                hx-swap="outerHTML"
+                                hx-confirm="Remove this item from the order?"
+                                class="text-red-600 hover:text-red-900 text-sm"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
                     <tfoot class="bg-gray-50">
                       <tr>
                         <td
-                          colspan={3}
+                          colspan={canEdit ? 4 : 3}
                           class="px-4 py-3 text-right text-sm font-semibold text-gray-900"
                         >
                           Total
@@ -758,6 +947,57 @@ app.get("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
           </div>
         </div>
       </div>
+
+      {/* Reject Modal */}
+      {canApprove && (
+        <div
+          id="reject-modal"
+          class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onclick="if (event.target === this) this.classList.add('hidden')"
+        >
+          <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-semibold text-gray-900">Reject Order</h3>
+            </div>
+            <form
+              hx-post={`/teams/${team.id}/orders/${order.id}/reject`}
+              hx-swap="none"
+            >
+              <div class="px-6 py-4">
+                <label
+                  for="rejectionReason"
+                  class="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Reason for rejection
+                </label>
+                <textarea
+                  id="rejectionReason"
+                  name="rejectionReason"
+                  rows={3}
+                  required
+                  placeholder="Please explain why this order is being rejected..."
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+              </div>
+              <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onclick="document.getElementById('reject-modal').classList.add('hidden')"
+                  class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Reject Order
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 });
@@ -1071,6 +1311,255 @@ app.post(
       .where(eq(orders.id, orderId));
 
     return c.redirect(`/teams/${teamId}/orders/${orderId}`);
+  }
+);
+
+// Approve order (admin only)
+app.post(
+  "/teams/:teamId/orders/:orderId/approve",
+  teamMiddleware,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const teamRole = c.get("teamRole");
+    const orderId = c.req.param("orderId");
+
+    if (teamRole !== "admin") {
+      return c.text("Forbidden", 403);
+    }
+
+    const order = await db.query.orders.findFirst({
+      where: and(
+        eq(orders.id, orderId),
+        eq(orders.teamId, teamId),
+        eq(orders.status, "pending")
+      ),
+    });
+
+    if (!order) {
+      return c.redirect(`/teams/${teamId}/orders?error=not_found`);
+    }
+
+    await db
+      .update(orders)
+      .set({
+        status: "approved",
+        approvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    return c.redirect(`/teams/${teamId}/orders/${orderId}`);
+  }
+);
+
+// Reject order (admin only)
+app.post("/teams/:teamId/orders/:orderId/reject", teamMiddleware, async (c) => {
+  const teamId = c.get("teamId");
+  const teamRole = c.get("teamRole");
+  const orderId = c.req.param("orderId");
+
+  if (teamRole !== "admin") {
+    return c.text("Forbidden", 403);
+  }
+
+  const body = await c.req.parseBody();
+  const rejectionReason = (body.rejectionReason as string)?.trim();
+
+  if (!rejectionReason) {
+    return c.redirect(
+      `/teams/${teamId}/orders/${orderId}?error=rejection_reason_required`
+    );
+  }
+
+  const order = await db.query.orders.findFirst({
+    where: and(
+      eq(orders.id, orderId),
+      eq(orders.teamId, teamId),
+      eq(orders.status, "pending")
+    ),
+  });
+
+  if (!order) {
+    return c.redirect(`/teams/${teamId}/orders?error=not_found`);
+  }
+
+  await db
+    .update(orders)
+    .set({
+      status: "rejected",
+      rejectionReason,
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, orderId));
+
+  return c.redirect(`/teams/${teamId}/orders/${orderId}`);
+});
+
+// Mark order as ordered
+app.post(
+  "/teams/:teamId/orders/:orderId/mark-ordered",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const orderId = c.req.param("orderId");
+
+    const order = await db.query.orders.findFirst({
+      where: and(
+        eq(orders.id, orderId),
+        eq(orders.teamId, teamId),
+        eq(orders.status, "approved")
+      ),
+    });
+
+    if (!order) {
+      return c.redirect(`/teams/${teamId}/orders?error=not_found`);
+    }
+
+    await db
+      .update(orders)
+      .set({
+        status: "ordered",
+        orderedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    return c.redirect(`/teams/${teamId}/orders/${orderId}`);
+  }
+);
+
+// Mark order as received
+app.post(
+  "/teams/:teamId/orders/:orderId/mark-received",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const orderId = c.req.param("orderId");
+
+    const order = await db.query.orders.findFirst({
+      where: and(
+        eq(orders.id, orderId),
+        eq(orders.teamId, teamId),
+        eq(orders.status, "ordered")
+      ),
+    });
+
+    if (!order) {
+      return c.redirect(`/teams/${teamId}/orders?error=not_found`);
+    }
+
+    // Get order items to update inventory
+    const items = await db.query.orderItems.findMany({
+      where: eq(orderItems.orderId, orderId),
+    });
+
+    // Update order status
+    await db
+      .update(orders)
+      .set({
+        status: "received",
+        receivedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, orderId));
+
+    // Update parts inventory quantities
+    for (const item of items) {
+      const part = await db.query.parts.findFirst({
+        where: eq(parts.id, item.partId),
+      });
+      if (part) {
+        await db
+          .update(parts)
+          .set({
+            quantity: part.quantity + item.quantity,
+            updatedAt: new Date(),
+          })
+          .where(eq(parts.id, item.partId));
+      }
+    }
+
+    return c.redirect(`/teams/${teamId}/orders/${orderId}`);
+  }
+);
+
+// Delete order (admin only, draft only)
+app.delete("/teams/:teamId/orders/:orderId", teamMiddleware, async (c) => {
+  const teamId = c.get("teamId");
+  const teamRole = c.get("teamRole");
+  const orderId = c.req.param("orderId");
+
+  if (teamRole !== "admin") {
+    return c.text("Forbidden", 403);
+  }
+
+  const order = await db.query.orders.findFirst({
+    where: and(
+      eq(orders.id, orderId),
+      eq(orders.teamId, teamId),
+      eq(orders.status, "draft")
+    ),
+  });
+
+  if (!order) {
+    return c.redirect(`/teams/${teamId}/orders?error=not_found`);
+  }
+
+  // Delete order items first
+  await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+  // Then delete the order
+  await db.delete(orders).where(eq(orders.id, orderId));
+
+  return c.redirect(`/teams/${teamId}/orders`);
+});
+
+// Remove item from order
+app.delete(
+  "/teams/:teamId/orders/:orderId/items/:itemId",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const orderId = c.req.param("orderId");
+    const itemId = c.req.param("itemId");
+
+    // Verify order is draft
+    const order = await db.query.orders.findFirst({
+      where: and(
+        eq(orders.id, orderId),
+        eq(orders.teamId, teamId),
+        eq(orders.status, "draft")
+      ),
+    });
+
+    if (!order) {
+      return c.text("Order not found or not editable", 404);
+    }
+
+    // Get the item to calculate new total
+    const item = await db.query.orderItems.findFirst({
+      where: and(eq(orderItems.id, itemId), eq(orderItems.orderId, orderId)),
+    });
+
+    if (!item) {
+      return c.text("Item not found", 404);
+    }
+
+    // Delete the item
+    await db.delete(orderItems).where(eq(orderItems.id, itemId));
+
+    // Update order total
+    const itemTotal = item.quantity * item.unitPriceCents;
+    const newTotal = Math.max(0, order.totalCents - itemTotal);
+    await db
+      .update(orders)
+      .set({ totalCents: newTotal, updatedAt: new Date() })
+      .where(eq(orders.id, orderId));
+
+    // Return empty to remove the row
+    return c.html(<></>);
   }
 );
 
