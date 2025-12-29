@@ -8,8 +8,9 @@ import {
   type TeamVariables,
 } from "../middleware/auth";
 import { db } from "../db";
-import { bomItems, teams, type Subsystem } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { bomItems, teams, parts, type Subsystem } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+import { requireMentor } from "../middleware/auth";
 
 const app = new Hono<{ Variables: AuthVariables & TeamVariables }>();
 
@@ -268,6 +269,11 @@ app.get("/teams/:teamId/bom", teamMiddleware, async (c) => {
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Notes
                             </th>
+                            {canEdit && (
+                              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                              </th>
+                            )}
                           </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -333,6 +339,16 @@ app.get("/teams/:teamId/bom", teamMiddleware, async (c) => {
                                     {item.notes || "-"}
                                   </span>
                                 </td>
+                                {canEdit && (
+                                  <td class="px-6 py-4 text-right">
+                                    <a
+                                      href={`/teams/${teamId}/bom/${item.id}/edit`}
+                                      class="text-sm text-blue-600 hover:text-blue-800"
+                                    >
+                                      Edit
+                                    </a>
+                                  </td>
+                                )}
                               </tr>
                             );
                           })}
@@ -349,5 +365,432 @@ app.get("/teams/:teamId/bom", teamMiddleware, async (c) => {
     </Layout>
   );
 });
+
+// Add BOM item form
+app.get("/teams/:teamId/bom/new", teamMiddleware, requireMentor, async (c) => {
+  const user = c.get("user")!;
+  const teamId = c.get("teamId");
+
+  const team = await db.query.teams.findFirst({
+    where: eq(teams.id, teamId),
+  });
+
+  if (!team) {
+    return c.redirect("/dashboard?error=team_not_found");
+  }
+
+  // Get all parts for selection
+  const teamParts = await db.query.parts.findMany({
+    where: eq(parts.teamId, teamId),
+    with: { vendor: true },
+  });
+
+  const orderedSubsystems: Subsystem[] = [
+    "drivetrain",
+    "intake",
+    "lift",
+    "scoring",
+    "electronics",
+    "hardware",
+    "other",
+  ];
+
+  return c.html(
+    <Layout title={`Add BOM Item - ${team.name}`}>
+      <div class="min-h-screen bg-gray-50">
+        <nav class="bg-white shadow-sm">
+          <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+              <a href="/dashboard" class="text-xl font-bold text-gray-900">
+                BuildSeason
+              </a>
+              <span class="text-gray-300">/</span>
+              <a
+                href={`/teams/${team.id}`}
+                class="text-gray-600 hover:text-gray-900"
+              >
+                {team.name}
+              </a>
+              <span class="text-gray-300">/</span>
+              <a
+                href={`/teams/${team.id}/bom`}
+                class="text-gray-600 hover:text-gray-900"
+              >
+                BOM
+              </a>
+              <span class="text-gray-300">/</span>
+              <span class="text-gray-600">Add Item</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-gray-600">{user.name}</span>
+              <SignOutButton class="text-sm text-gray-500 hover:text-gray-700" />
+            </div>
+          </div>
+        </nav>
+
+        <div class="max-w-2xl mx-auto py-8 px-4">
+          <h1 class="text-2xl font-bold text-gray-900 mb-6">Add BOM Item</h1>
+
+          {teamParts.length === 0 ? (
+            <div class="bg-white rounded-lg shadow p-8 text-center">
+              <p class="text-gray-600 mb-4">
+                You need to add parts to your inventory before adding them to
+                the BOM.
+              </p>
+              <a
+                href={`/teams/${team.id}/parts/new`}
+                class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Add Part First
+              </a>
+            </div>
+          ) : (
+            <form
+              method="post"
+              action={`/teams/${team.id}/bom`}
+              class="bg-white rounded-lg shadow p-6 space-y-6"
+            >
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Part *
+                </label>
+                <select
+                  name="partId"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select a part...</option>
+                  {teamParts.map((part) => (
+                    <option value={part.id}>
+                      {part.name}
+                      {part.sku ? ` (${part.sku})` : ""}
+                      {part.vendor ? ` - ${part.vendor.name}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Subsystem *
+                </label>
+                <select
+                  name="subsystem"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {orderedSubsystems.map((sub) => (
+                    <option value={sub}>{subsystemConfig[sub].name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity Needed *
+                </label>
+                <input
+                  type="number"
+                  name="quantityNeeded"
+                  required
+                  min="1"
+                  value="1"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  rows={3}
+                  placeholder="Optional notes about this BOM item..."
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div class="flex gap-4">
+                <button
+                  type="submit"
+                  class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                >
+                  Add to BOM
+                </button>
+                <a
+                  href={`/teams/${team.id}/bom`}
+                  class="py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </a>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </Layout>
+  );
+});
+
+// Create BOM item
+app.post("/teams/:teamId/bom", teamMiddleware, requireMentor, async (c) => {
+  const teamId = c.get("teamId");
+
+  const formData = await c.req.formData();
+  const partId = formData.get("partId") as string;
+  const subsystem = formData.get("subsystem") as Subsystem;
+  const quantityNeeded =
+    parseInt(formData.get("quantityNeeded") as string) || 1;
+  const notes = (formData.get("notes") as string) || null;
+
+  if (!partId || !subsystem) {
+    return c.redirect(`/teams/${teamId}/bom/new?error=missing_fields`);
+  }
+
+  // Verify part belongs to team
+  const part = await db.query.parts.findFirst({
+    where: and(eq(parts.id, partId), eq(parts.teamId, teamId)),
+  });
+
+  if (!part) {
+    return c.redirect(`/teams/${teamId}/bom/new?error=invalid_part`);
+  }
+
+  // Check if already in BOM for this subsystem
+  const existing = await db.query.bomItems.findFirst({
+    where: and(
+      eq(bomItems.teamId, teamId),
+      eq(bomItems.partId, partId),
+      eq(bomItems.subsystem, subsystem)
+    ),
+  });
+
+  if (existing) {
+    // Update quantity instead of creating duplicate
+    await db
+      .update(bomItems)
+      .set({
+        quantityNeeded: existing.quantityNeeded + quantityNeeded,
+        notes: notes || existing.notes,
+        updatedAt: new Date(),
+      })
+      .where(eq(bomItems.id, existing.id));
+  } else {
+    // Create new BOM item
+    const id = crypto.randomUUID();
+    await db.insert(bomItems).values({
+      id,
+      teamId,
+      partId,
+      subsystem,
+      quantityNeeded,
+      notes,
+    });
+  }
+
+  return c.redirect(`/teams/${teamId}/bom`);
+});
+
+// Edit BOM item form
+app.get(
+  "/teams/:teamId/bom/:bomId/edit",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const user = c.get("user")!;
+    const teamId = c.get("teamId");
+    const bomId = c.req.param("bomId");
+
+    const team = await db.query.teams.findFirst({
+      where: eq(teams.id, teamId),
+    });
+
+    if (!team) {
+      return c.redirect("/dashboard?error=team_not_found");
+    }
+
+    const bomItem = await db.query.bomItems.findFirst({
+      where: and(eq(bomItems.id, bomId), eq(bomItems.teamId, teamId)),
+      with: { part: true },
+    });
+
+    if (!bomItem) {
+      return c.redirect(`/teams/${teamId}/bom?error=not_found`);
+    }
+
+    const orderedSubsystems: Subsystem[] = [
+      "drivetrain",
+      "intake",
+      "lift",
+      "scoring",
+      "electronics",
+      "hardware",
+      "other",
+    ];
+
+    return c.html(
+      <Layout title={`Edit BOM Item - ${team.name}`}>
+        <div class="min-h-screen bg-gray-50">
+          <nav class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+              <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-xl font-bold text-gray-900">
+                  BuildSeason
+                </a>
+                <span class="text-gray-300">/</span>
+                <a
+                  href={`/teams/${team.id}`}
+                  class="text-gray-600 hover:text-gray-900"
+                >
+                  {team.name}
+                </a>
+                <span class="text-gray-300">/</span>
+                <a
+                  href={`/teams/${team.id}/bom`}
+                  class="text-gray-600 hover:text-gray-900"
+                >
+                  BOM
+                </a>
+                <span class="text-gray-300">/</span>
+                <span class="text-gray-600">Edit</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-600">{user.name}</span>
+                <SignOutButton class="text-sm text-gray-500 hover:text-gray-700" />
+              </div>
+            </div>
+          </nav>
+
+          <div class="max-w-2xl mx-auto py-8 px-4">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit BOM Item</h1>
+            <p class="text-gray-600 mb-6">{bomItem.part?.name}</p>
+
+            <form
+              method="post"
+              action={`/teams/${team.id}/bom/${bomId}`}
+              class="bg-white rounded-lg shadow p-6 space-y-6"
+            >
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Subsystem
+                </label>
+                <select
+                  name="subsystem"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {orderedSubsystems.map((sub) => (
+                    <option value={sub} selected={bomItem.subsystem === sub}>
+                      {subsystemConfig[sub].name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity Needed
+                </label>
+                <input
+                  type="number"
+                  name="quantityNeeded"
+                  required
+                  min="1"
+                  value={bomItem.quantityNeeded.toString()}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Notes
+                </label>
+                <textarea
+                  name="notes"
+                  rows={3}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {bomItem.notes || ""}
+                </textarea>
+              </div>
+
+              <div class="flex gap-4">
+                <button
+                  type="submit"
+                  class="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                >
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  hx-delete={`/teams/${team.id}/bom/${bomId}`}
+                  hx-confirm="Remove this item from the BOM?"
+                  class="py-2 px-4 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition"
+                >
+                  Remove
+                </button>
+                <a
+                  href={`/teams/${team.id}/bom`}
+                  class="py-2 px-4 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+);
+
+// Update BOM item
+app.post(
+  "/teams/:teamId/bom/:bomId",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const bomId = c.req.param("bomId");
+
+    const formData = await c.req.formData();
+    const subsystem = formData.get("subsystem") as Subsystem;
+    const quantityNeeded =
+      parseInt(formData.get("quantityNeeded") as string) || 1;
+    const notes = (formData.get("notes") as string) || null;
+
+    await db
+      .update(bomItems)
+      .set({
+        subsystem,
+        quantityNeeded,
+        notes,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bomItems.id, bomId), eq(bomItems.teamId, teamId)));
+
+    return c.redirect(`/teams/${teamId}/bom`);
+  }
+);
+
+// Delete BOM item
+app.delete(
+  "/teams/:teamId/bom/:bomId",
+  teamMiddleware,
+  requireMentor,
+  async (c) => {
+    const teamId = c.get("teamId");
+    const bomId = c.req.param("bomId");
+
+    await db
+      .delete(bomItems)
+      .where(and(eq(bomItems.id, bomId), eq(bomItems.teamId, teamId)));
+
+    // Redirect via HX-Redirect header for HTMX
+    c.header("HX-Redirect", `/teams/${teamId}/bom`);
+    return c.text("Deleted");
+  }
+);
 
 export default app;
