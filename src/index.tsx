@@ -2,20 +2,22 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { serveStatic } from "hono/bun";
-import { Layout } from "./components/Layout";
 import { auth } from "./lib/auth";
 import { sessionMiddleware } from "./middleware/auth";
-import authRoutes from "./routes/auth";
-import teamRoutes from "./routes/teams";
-import partsRoutes from "./routes/parts";
-import ordersRoutes from "./routes/orders";
-import vendorsRoutes from "./routes/vendors";
-import bomRoutes from "./routes/bom";
+import apiRoutes from "./routes/api";
+import { existsSync, readFileSync } from "fs";
+import { join } from "path";
 
 const app = new Hono();
 
-// Static files
-app.use("/public/*", serveStatic({ root: "./src" }));
+// Check if we have a built frontend
+const frontendDistPath = join(process.cwd(), "dist/frontend");
+const hasFrontendBuild = existsSync(join(frontendDistPath, "index.html"));
+
+// Static files - serve built frontend assets in production
+if (hasFrontendBuild) {
+  app.use("/assets/*", serveStatic({ root: "./dist/frontend" }));
+}
 
 // Middleware
 app.use("*", logger());
@@ -38,41 +40,62 @@ app.use("*", sessionMiddleware);
 // Health check (public)
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-// Home page (public) - defined before protected route modules
-app.get("/", (c) => {
-  return c.html(
-    <Layout title="BuildSeason">
-      <div class="min-h-screen bg-gray-50">
-        <div class="max-w-4xl mx-auto py-16 px-4">
-          <h1 class="text-4xl font-bold text-gray-900 mb-4">
-            Welcome to BuildSeason
-          </h1>
-          <p class="text-xl text-gray-600 mb-8">
-            Team management for FTC robotics teams. Track parts, manage orders,
-            and build better robots.
-          </p>
-          <a
-            href="/login"
-            class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            Get Started
-          </a>
-        </div>
-      </div>
-    </Layout>
-  );
-});
+// JSON API routes for React frontend
+app.route("/", apiRoutes);
 
-// Mount route modules (auth routes have their own public pages)
-app.route("/", authRoutes);
-app.route("/", teamRoutes);
-app.route("/", partsRoutes);
-app.route("/", ordersRoutes);
-app.route("/", vendorsRoutes);
-app.route("/", bomRoutes);
+// Serve React frontend for all non-API routes (SPA client-side routing)
+if (hasFrontendBuild) {
+  const indexHtml = readFileSync(join(frontendDistPath, "index.html"), "utf-8");
+
+  // Catch-all route - serve index.html for client-side routing
+  app.get("*", (c) => {
+    // Don't serve index.html for API routes
+    if (c.req.path.startsWith("/api/")) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.html(indexHtml);
+  });
+} else {
+  // Development mode - show helpful message
+  app.get("*", (c) => {
+    if (c.req.path.startsWith("/api/")) {
+      return c.json({ error: "Not found" }, 404);
+    }
+    return c.html(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>BuildSeason - Development</title>
+          <style>
+            body { font-family: system-ui, sans-serif; max-width: 600px; margin: 100px auto; padding: 20px; }
+            code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+            pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
+          </style>
+        </head>
+        <body>
+          <h1>BuildSeason</h1>
+          <p>The React frontend is not built. To run in development:</p>
+          <ol>
+            <li>Start the backend: <code>bun run dev</code></li>
+            <li>In another terminal, start the frontend: <code>cd frontend && bun run dev</code></li>
+            <li>Open <a href="http://localhost:5173">http://localhost:5173</a></li>
+          </ol>
+          <p>To build for production:</p>
+          <pre>cd frontend && bun run build</pre>
+          <p>Then restart this server and visit <a href="http://localhost:3000">http://localhost:3000</a>.</p>
+        </body>
+      </html>
+    `);
+  });
+}
 
 const port = process.env.PORT || 3000;
 console.log(`🚀 BuildSeason running at http://localhost:${port}`);
+if (hasFrontendBuild) {
+  console.log("📦 Serving production React frontend");
+} else {
+  console.log("🔧 Development mode - run frontend separately");
+}
 
 export default {
   port,

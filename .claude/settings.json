@@ -3,6 +3,19 @@
     "beads@beads-marketplace": true
   },
   "permissions": {
-    "allow": ["mcp__playwright__*"]
+    "allow": [
+      "mcp__playwright__*",
+      "mcp__context7__*",
+      "Bash(bd:*)",
+      "Bash(bun:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rm -rf:*)",
+      "Bash(git:*)",
+      "Bash(npx:*)",
+      "Bash(bunx:*)",
+      "Bash(cp:*)",
+      "Bash(ls:*)"
+    ]
   }
 }
