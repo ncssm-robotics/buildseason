@@ -131,9 +131,11 @@ buildseason.org/
 │   ├── Competition history (via FTC Stats)
 │   └── Contact (filtered)
 │
-├── /login
-└── /signup
+└── /login (OAuth only: GitHub, Google - no separate signup page)
 ```
+
+**Authentication:** OAuth only via GitHub and Google. No email/password, no signup page.
+OAuth handles both login and registration - new users are created on first OAuth login.
 
 ### 2.2 Site Map: Authenticated (Dashboard)
 
@@ -449,7 +451,7 @@ DISCOVERY
 └───┬───┘         │
     │             ▼
     │     ┌───────────────┐
-    │     │ Signup Page   │  OAuth (Google, Discord) or email
+    │     │ Login Page    │  OAuth only: GitHub, Google (no email/password)
     │     └───────┬───────┘
     │             │
     │             ▼

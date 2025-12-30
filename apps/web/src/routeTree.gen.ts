@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VendorsRouteImport } from './routes/vendors'
-import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,11 +31,6 @@ import { Route as TeamsTeamIdRobotsRobotIdBomIndexRouteImport } from './routes/t
 const VendorsRoute = VendorsRouteImport.update({
   id: '/vendors',
   path: '/vendors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -133,7 +127,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
   '/teams/$teamId': typeof TeamsTeamIdRouteWithChildren
   '/teams/join': typeof TeamsJoinRoute
@@ -154,7 +147,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
   '/teams/join': typeof TeamsJoinRoute
   '/teams/new': typeof TeamsNewRoute
@@ -175,7 +167,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
-  '/signup': typeof SignupRoute
   '/vendors': typeof VendorsRoute
   '/teams/$teamId': typeof TeamsTeamIdRouteWithChildren
   '/teams/join': typeof TeamsJoinRoute
@@ -198,7 +189,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/signup'
     | '/vendors'
     | '/teams/$teamId'
     | '/teams/join'
@@ -219,7 +209,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/signup'
     | '/vendors'
     | '/teams/join'
     | '/teams/new'
@@ -239,7 +228,6 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
-    | '/signup'
     | '/vendors'
     | '/teams/$teamId'
     | '/teams/join'
@@ -261,7 +249,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
-  SignupRoute: typeof SignupRoute
   VendorsRoute: typeof VendorsRoute
   TeamsTeamIdRoute: typeof TeamsTeamIdRouteWithChildren
   TeamsJoinRoute: typeof TeamsJoinRoute
@@ -276,13 +263,6 @@ declare module '@tanstack/react-router' {
       path: '/vendors'
       fullPath: '/vendors'
       preLoaderRoute: typeof VendorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -441,7 +421,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
-  SignupRoute: SignupRoute,
   VendorsRoute: VendorsRoute,
   TeamsTeamIdRoute: TeamsTeamIdRouteWithChildren,
   TeamsJoinRoute: TeamsJoinRoute,

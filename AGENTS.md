@@ -145,6 +145,24 @@ This creates recovery points. If something goes wrong later, you can revert to t
    bd close <id> -r "Implemented X. Verified: bun test shows 5/5 tests passing for order routes"
    ```
 
+### Spec Ambiguity Rule (MANDATORY)
+
+**If the spec is ambiguous or contradictory, STOP and ask the user before writing code.**
+
+This includes:
+- Multiple valid approaches mentioned without a clear decision
+- Contradictory requirements in different sections
+- Missing details that affect implementation choices
+- Any uncertainty about what "correct" means
+
+**DO NOT:**
+- Pick an approach and hope it's right
+- "Validate" against an inconsistent spec
+- Add features not explicitly specified
+- Make design decisions without confirmation
+
+**Example:** If the spec mentions "OAuth (Google, Discord) or email" in one place but only "GitHub and Google OAuth" in another, STOP and ask: "The spec has contradictory auth requirements. Which should I implement?"
+
 #### When You Cannot Verify
 
 If you cannot provide clear verification evidence:
