@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/teams/$teamId/robots/")({
+export const Route = createFileRoute("/team/$program/$number/robots/")({
   component: RobotsPage,
 });
 
@@ -9,7 +9,7 @@ function RobotsPage() {
     <div>
       <h1 className="text-3xl font-bold font-display mb-6">Robots</h1>
       <p className="text-muted-foreground">
-        Robots list will be implemented in buildseason-nz1
+        Robots list will be implemented in a future iteration
       </p>
     </div>
   );

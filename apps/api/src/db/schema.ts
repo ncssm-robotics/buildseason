@@ -82,10 +82,13 @@ export const verifications = sqliteTable("verifications", {
 // Teams
 // ============================================================================
 
+export type Program = "ftc" | "frc" | "mate" | "vex" | "tarc" | "other";
+
 export const teams = sqliteTable("teams", {
   id: text("id").primaryKey(),
+  program: text("program").$type<Program>().notNull().default("ftc"),
   name: text("name").notNull(),
-  number: text("number").notNull(), // FTC team number like "16626"
+  number: text("number").notNull(), // Team number like "5064"
   season: text("season").notNull(), // e.g., "2024-2025"
   inviteCode: text("invite_code").unique(),
   createdAt: integer("created_at", { mode: "timestamp" })

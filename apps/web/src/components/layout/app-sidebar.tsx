@@ -1,4 +1,4 @@
-import { Link, useParams, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Package,
@@ -51,17 +51,18 @@ interface AppSidebarProps {
     email: string;
     image: string | null;
   };
+  program?: string;
+  teamNumber?: string;
 }
 
-export function AppSidebar({ user }: AppSidebarProps) {
-  const params = useParams({ strict: false });
-  const teamId = params.teamId as string | undefined;
+export function AppSidebar({ user, program, teamNumber }: AppSidebarProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
 
+  // Build team path using program/number format (no UUIDs)
   const getTeamPath = (path: string) => {
-    if (!teamId) return "/dashboard";
-    return `/teams/${teamId}${path}`;
+    if (!program || !teamNumber) return "/dashboard";
+    return `/team/${program}/${teamNumber}${path}`;
   };
 
   const isActive = (path: string) => {
@@ -69,8 +70,8 @@ export function AppSidebar({ user }: AppSidebarProps) {
     if (path === "") {
       // Dashboard - exact match for team root
       return (
-        currentPath === `/teams/${teamId}` ||
-        currentPath === `/teams/${teamId}/`
+        currentPath === `/team/${program}/${teamNumber}` ||
+        currentPath === `/team/${program}/${teamNumber}/`
       );
     }
     return currentPath.startsWith(fullPath);
@@ -110,10 +111,10 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                   >
-                    <a href={getTeamPath(item.path)}>
+                    <Link to={getTeamPath(item.path)}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -134,10 +135,10 @@ export function AppSidebar({ user }: AppSidebarProps) {
                     isActive={isActive(item.path)}
                     tooltip={item.title}
                   >
-                    <a href={getTeamPath(item.path)}>
+                    <Link to={getTeamPath(item.path)}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -188,11 +189,18 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <a href="/api/auth/sign-out">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </a>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    await fetch("/api/auth/sign-out", {
+                      method: "POST",
+                      credentials: "include",
+                    });
+                    window.location.href = "/login";
+                  }}
+                  className="cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

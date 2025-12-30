@@ -17,6 +17,7 @@ import {
   bomItems,
   type TeamRole,
   type OrderStatus,
+  type Program,
 } from "../db/schema";
 import { eq, and, sql, like, or, asc, desc } from "drizzle-orm";
 
@@ -76,6 +77,7 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
 
         return {
           id: team.id,
+          program: team.program,
           name: team.name,
           number: team.number,
           season: team.season,
@@ -96,7 +98,7 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
     const user = c.get("user")!;
     const body = await c.req.json();
 
-    const { name, number, season } = body;
+    const { name, number, season, program = "ftc" } = body;
 
     if (!name || !number || !season) {
       return c.json({ error: "All fields are required" }, 400);
@@ -106,12 +108,18 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
       return c.json({ error: "Team number must be numeric" }, 400);
     }
 
+    const validPrograms = ["ftc", "frc", "mate", "vex", "tarc", "other"];
+    if (!validPrograms.includes(program)) {
+      return c.json({ error: "Invalid program type" }, 400);
+    }
+
     try {
       const teamId = crypto.randomUUID();
       const memberId = crypto.randomUUID();
 
       await db.insert(teams).values({
         id: teamId,
+        program,
         name: name.trim(),
         number: number.trim(),
         season,
@@ -124,11 +132,48 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
         role: "admin",
       });
 
-      return c.json({ id: teamId, name: name.trim(), number, season });
+      return c.json({ id: teamId, program, name: name.trim(), number, season });
     } catch (error) {
       console.error("Failed to create team:", error);
       return c.json({ error: "Failed to create team" }, 500);
     }
+  })
+  // Lookup team by program and number
+  .get("/lookup/:program/:number", async (c) => {
+    const user = c.get("user")!;
+    const program = c.req.param("program");
+    const number = c.req.param("number");
+
+    const team = await db.query.teams.findFirst({
+      where: and(
+        eq(teams.program, program as Program),
+        eq(teams.number, number)
+      ),
+    });
+
+    if (!team) {
+      return c.json({ error: "Team not found", code: "team_not_found" }, 404);
+    }
+
+    const membership = await db.query.teamMembers.findFirst({
+      where: and(
+        eq(teamMembers.userId, user.id),
+        eq(teamMembers.teamId, team.id)
+      ),
+    });
+
+    if (!membership) {
+      return c.json({ error: "Not a team member", code: "not_a_member" }, 403);
+    }
+
+    return c.json({
+      id: team.id,
+      program: team.program,
+      name: team.name,
+      number: team.number,
+      season: team.season,
+      role: membership.role,
+    });
   })
   .get("/:teamId", async (c) => {
     const user = c.get("user")!;
@@ -293,7 +338,9 @@ const teamPartsRoutes = new Hono<{ Variables: AuthVariables & TeamVariables }>()
             ? parts.sku
             : parts.name;
 
-    query = query.orderBy(order === "desc" ? desc(sortColumn) : asc(sortColumn));
+    query = query.orderBy(
+      order === "desc" ? desc(sortColumn) : asc(sortColumn)
+    );
 
     const partsList = await query;
 
