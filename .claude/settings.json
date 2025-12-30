@@ -12,7 +12,12 @@
       "Bash(npx:*)",
       "Bash(bunx:*)",
       "Bash(cp:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "KillShell:*"
     ]
   },
   "enabledPlugins": {

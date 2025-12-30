@@ -49,6 +49,34 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Bash Command Rules (MANDATORY)
+
+**NEVER chain bd commands or other commands with `&&` or `;`.**
+
+The allowlist uses patterns like `Bash(bd:*)` which only matches single commands. Chained commands trigger approval prompts and block autonomous operation.
+
+**BAD:**
+
+```bash
+bd update foo --status in_progress && bd close foo
+git add -A && git commit -m "message"
+```
+
+**GOOD:**
+
+```bash
+# Make separate Bash calls for each command
+bd update foo --status in_progress
+# (separate call)
+bd close foo
+
+git add -A
+# (separate call)
+git commit -m "message"
+```
+
+This applies to ALL command-line tools, not just bd. One command per Bash call.
+
 ## Environment Setup
 
 Before starting work, ensure your environment is ready:
@@ -103,12 +131,14 @@ Tell the user: "Bead complete and committed. Requesting compaction before next t
 **If you get into a bad state, DO NOT thrash. Stop and recover:**
 
 1. **Assess the damage:**
+
    ```bash
    git diff                    # See what changed
    git status                  # See untracked/modified files
    ```
 
 2. **Revert to last checkpoint:**
+
    ```bash
    git checkout -- .           # Discard all uncommitted changes
    git clean -fd               # Remove untracked files/directories
@@ -131,15 +161,16 @@ Tell the user: "Bead complete and committed. Requesting compaction before next t
 
 #### Acceptable Verification Methods
 
-| Method | When to Use | Evidence Required |
-|--------|-------------|-------------------|
-| **Unit tests passing** | API routes, utilities, business logic | `bun test` output showing relevant tests pass |
-| **Playwright verification** | UI components, pages, forms | `browser_snapshot` or screenshot proving functionality |
-| **Both** | Full-stack features | Tests + Playwright |
+| Method                      | When to Use                           | Evidence Required                                      |
+| --------------------------- | ------------------------------------- | ------------------------------------------------------ |
+| **Unit tests passing**      | API routes, utilities, business logic | `bun test` output showing relevant tests pass          |
+| **Playwright verification** | UI components, pages, forms           | `browser_snapshot` or screenshot proving functionality |
+| **Both**                    | Full-stack features                   | Tests + Playwright                                     |
 
 #### Verification Process
 
 1. **Before starting**: Check if bead has verification criteria. If missing, add them:
+
    ```bash
    bd update <id> -d "Added verification: [describe how to verify]"
    ```
@@ -158,12 +189,14 @@ Tell the user: "Bead complete and committed. Requesting compaction before next t
 **If the spec is ambiguous or contradictory, STOP and ask the user before writing code.**
 
 This includes:
+
 - Multiple valid approaches mentioned without a clear decision
 - Contradictory requirements in different sections
 - Missing details that affect implementation choices
 - Any uncertainty about what "correct" means
 
 **DO NOT:**
+
 - Pick an approach and hope it's right
 - "Validate" against an inconsistent spec
 - Add features not explicitly specified
@@ -221,8 +254,7 @@ const exampleRoutes = new Hono<{ Variables: AuthVariables }>()
   });
 
 // Compose into main apiRoutes
-const apiRoutes = new Hono()
-  .route("/api/example", exampleRoutes);
+const apiRoutes = new Hono().route("/api/example", exampleRoutes);
 
 export type ApiRoutes = typeof apiRoutes;
 ```
