@@ -7,9 +7,20 @@ const app = new Hono();
 // Redirect /register to /login (social auth handles both)
 app.get("/register", (c) => c.redirect("/login"));
 
+// Error code to user-friendly message mapping (prevents XSS)
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  oauth_failed: "Authentication failed. Please try again.",
+  oauth_cancelled: "Authentication was cancelled.",
+  session_expired: "Your session has expired. Please sign in again.",
+  invalid_state: "Invalid authentication state. Please try again.",
+  access_denied: "Access was denied. Please try again.",
+};
+
 // Login page - social auth only
 app.get("/login", (c) => {
-  const error = c.req.query("error");
+  const errorCode = c.req.query("error");
+  // Only display known error messages - prevents XSS from arbitrary input
+  const errorMessage = errorCode ? AUTH_ERROR_MESSAGES[errorCode] : null;
 
   return c.html(
     <Layout title="Sign In - BuildSeason">
@@ -25,9 +36,9 @@ app.get("/login", (c) => {
 
         <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            {error && (
+            {errorMessage && (
               <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p class="text-sm text-red-600">{decodeURIComponent(error)}</p>
+                <p class="text-sm text-red-600">{errorMessage}</p>
               </div>
             )}
 

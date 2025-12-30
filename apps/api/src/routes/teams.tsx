@@ -15,6 +15,13 @@ import { eq, and, sql } from "drizzle-orm";
 
 const app = new Hono<{ Variables: AuthVariables }>();
 
+// Error code to user-friendly message mapping (prevents XSS)
+const DASHBOARD_ERROR_MESSAGES: Record<string, string> = {
+  not_a_member: "You are not a member of that team.",
+  team_not_found: "Team not found.",
+  access_denied: "You do not have access to that resource.",
+};
+
 // Apply auth to team routes only (not globally to avoid catching /api/auth/*)
 app.use("/dashboard", requireAuth);
 app.use("/teams/*", requireAuth);
@@ -71,7 +78,9 @@ app.get("/dashboard", async (c) => {
     })
   );
 
-  const error = c.req.query("error");
+  const errorCode = c.req.query("error");
+  // Only display known error messages - prevents XSS from arbitrary input
+  const errorMessage = errorCode ? DASHBOARD_ERROR_MESSAGES[errorCode] : null;
 
   return c.html(
     <Layout title="Dashboard - BuildSeason">
@@ -89,13 +98,9 @@ app.get("/dashboard", async (c) => {
         </nav>
 
         <div class="max-w-6xl mx-auto py-8 px-4">
-          {error && (
+          {errorMessage && (
             <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p class="text-sm text-red-600">
-                {error === "not_a_member"
-                  ? "You are not a member of that team."
-                  : error}
-              </p>
+              <p class="text-sm text-red-600">{errorMessage}</p>
             </div>
           )}
 
