@@ -49,20 +49,21 @@ cp .env.example .env
 # Generate a secret for BETTER_AUTH_SECRET and add to .env:
 openssl rand -base64 32
 
-# Start local database server (in a separate terminal)
-turso dev --db-file local.db
-
 # Push database schema
 bun run db:push
 
 # Seed with sample data (optional)
 bun run db:seed
 
-# Start development server
-bun run dev
+# Start development servers (in separate terminals)
+bun run dev:api   # Terminal 1: API server + embedded Turso DB
+bun run dev:web   # Terminal 2: React frontend with HMR
 ```
 
-The app runs at http://localhost:3000
+- **Frontend:** http://localhost:5173 (proxies `/api` calls to the API)
+- **API directly:** http://localhost:3000
+
+> **Note:** The `dev:api` script starts both the Turso dev database and the Hono server automatically.
 
 ### Why `turso dev`?
 
@@ -81,7 +82,7 @@ For local OAuth testing, see the instructions in `.env.example` for:
 - GitHub OAuth: https://github.com/settings/developers
 - Google OAuth: https://console.cloud.google.com/apis/credentials
 
-Use callback URLs with `localhost:3000`.
+Use callback URLs with `localhost:3000` (the API handles auth callbacks directly).
 
 ---
 

@@ -8,14 +8,36 @@ BuildSeason is an open-source team management platform for FTC robotics teams.
 
 **Stack:**
 
-- Runtime: Bun
-- Server: Hono with JSX templates (NO React)
+- Runtime: Bun with Workspaces
+- API: Hono with Hono RPC for type-safe endpoints
+- Frontend: React with TanStack Router & TanStack Query
+- UI: shadcn/ui + Tailwind CSS
 - Database: Turso (libSQL) + Drizzle ORM
-- Interactivity: HTMX + Alpine.js (via CDN)
-- Styling: Tailwind CSS (via CDN)
-- Auth: Better-Auth
+- Auth: Better-Auth (GitHub, Google OAuth)
 
-**Key principle:** Server-side rendering only. No client-side build step. HTMX swaps HTML fragments for interactivity.
+**Architecture:** Monorepo with Bun workspaces. API and frontend are separate apps with end-to-end type safety via Hono RPC.
+
+## Project Structure
+
+```
+buildseason/
+├── apps/
+│   ├── api/              # Hono backend API
+│   │   └── src/
+│   │       ├── routes/   # API route handlers
+│   │       ├── db/       # Drizzle schema and queries
+│   │       ├── lib/      # Auth, utilities
+│   │       ├── middleware/
+│   │       └── client.ts # Type exports for RPC
+│   └── web/              # React frontend
+│       └── src/
+│           ├── routes/   # TanStack Router pages
+│           ├── components/
+│           └── lib/      # API client, utilities
+├── packages/             # Shared packages (future)
+├── drizzle/              # Database migrations
+└── docs/
+```
 
 ## Quick Reference
 
@@ -54,6 +76,39 @@ bun run dev
 3. **Do the work:** Write code, following existing patterns
 4. **Verify:** `bun run typecheck && bun run lint && bun test` (all must pass)
 5. **Complete:** `bd close <id> -r "Brief summary"`
+6. **CHECKPOINT:** Commit immediately after closing each bead (see below)
+
+### Git Checkpoint Rule (MANDATORY)
+
+**After each bead is verified and closed, immediately commit to git as a checkpoint.**
+
+```bash
+# After closing a bead
+git add -A
+git commit -m "Complete <bead-id>: <brief description>"
+```
+
+This creates recovery points. If something goes wrong later, you can revert to the last known-good state.
+
+### Recovery from Mistakes
+
+**If you get into a bad state, DO NOT thrash. Stop and recover:**
+
+1. **Assess the damage:**
+   ```bash
+   git diff                    # See what changed
+   git status                  # See untracked/modified files
+   ```
+
+2. **Revert to last checkpoint:**
+   ```bash
+   git checkout -- .           # Discard all uncommitted changes
+   git clean -fd               # Remove untracked files/directories
+   ```
+
+3. **Start fresh from the last working state**
+
+**NEVER** try to fix a mess by making more changes. Revert first, then proceed carefully.
 
 ### Beads-First Rule
 
@@ -62,45 +117,113 @@ bun run dev
 - This ensures all work is tracked, discoverable, and can be parallelized
 - Even small fixes should have beads - it takes 5 seconds to create one
 
-## Code Patterns
+### Verification-Required Rule (MANDATORY)
 
-### Adding a new page
+**You CANNOT close a bead without clear, unquestionable evidence of completion.**
 
-```typescript
-// src/routes/example.tsx
-import { Hono } from "hono";
-import { Layout } from "../components/Layout";
-import { requireAuth } from "../middleware/auth";
+#### Acceptable Verification Methods
 
-const app = new Hono();
+| Method | When to Use | Evidence Required |
+|--------|-------------|-------------------|
+| **Unit tests passing** | API routes, utilities, business logic | `bun test` output showing relevant tests pass |
+| **Playwright verification** | UI components, pages, forms | `browser_snapshot` or screenshot proving functionality |
+| **Both** | Full-stack features | Tests + Playwright |
 
-app.use("*", requireAuth);
+#### Verification Process
 
-app.get("/", (c) => {
-  const user = c.get("user");
-  return c.html(
-    <Layout title="Example">
-      <div>Hello {user?.name}</div>
-    </Layout>
-  );
-});
+1. **Before starting**: Check if bead has verification criteria. If missing, add them:
+   ```bash
+   bd update <id> -d "Added verification: [describe how to verify]"
+   ```
 
-export default app;
+2. **After implementing**: Run verification and capture evidence:
+   - For tests: Include test output in close reason
+   - For UI: Take Playwright snapshot/screenshot
+
+3. **When closing**: Include verification evidence in close reason:
+   ```bash
+   bd close <id> -r "Implemented X. Verified: bun test shows 5/5 tests passing for order routes"
+   ```
+
+#### When You Cannot Verify
+
+If you cannot provide clear verification evidence:
+
+1. **DO NOT close the bead**
+2. Assign to human for verification:
+   ```bash
+   bd update <id> --labels human-verify -d "Implementation complete. Needs human verification because: [reason]"
+   ```
+3. Common reasons requiring human verification:
+   - OAuth flows (need real credentials)
+   - Visual design review
+   - Performance/load testing
+   - External service integrations
+
+#### Well-Formed Beads
+
+Every bead SHOULD include verification criteria in its description. When creating beads:
+
+```bash
+bd create "Add pagination to parts list" -t task -d "Add pagination controls to /teams/:id/parts.
+
+Verification:
+- Unit test: GET /api/teams/:id/parts?page=2&limit=10 returns correct slice
+- Playwright: Navigate to parts page, verify pagination controls visible and functional"
 ```
 
-### HTMX patterns
+If you encounter a bead without verification criteria, add them before starting work.
 
-```tsx
-// Trigger partial reload
-<button hx-get="/api/items" hx-target="#item-list" hx-swap="innerHTML">
-  Refresh
-</button>
+## Code Patterns
 
-// Form submission
-<form hx-post="/api/items" hx-target="#result" hx-swap="innerHTML">
-  <input name="name" />
-  <button type="submit">Add</button>
-</form>
+### Adding an API Route
+
+API routes use the chained Hono pattern for RPC type inference:
+
+```typescript
+// apps/api/src/routes/api.tsx
+const exampleRoutes = new Hono<{ Variables: AuthVariables }>()
+  .use("*", requireAuth)
+  .get("/", async (c) => {
+    const items = await db.query.items.findMany();
+    return c.json(items);
+  })
+  .post("/", async (c) => {
+    const body = await c.req.json();
+    // ... create item
+    return c.json({ id: newId });
+  });
+
+// Compose into main apiRoutes
+const apiRoutes = new Hono()
+  .route("/api/example", exampleRoutes);
+
+export type ApiRoutes = typeof apiRoutes;
+```
+
+### Adding a Frontend Route
+
+Frontend uses TanStack Router with file-based routing:
+
+```typescript
+// apps/web/src/routes/example.tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+
+export const Route = createFileRoute("/example")({
+  component: ExamplePage,
+});
+
+function ExamplePage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ["example"],
+    queryFn: () => api.get("/api/example"),
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  return <div>{/* render data */}</div>;
+}
 ```
 
 ### Database queries
@@ -129,19 +252,22 @@ const items = await db.query.parts.findMany({
 ### Test Structure
 
 ```
-src/
-├── __tests__/           # Test files mirror src/ structure
-│   ├── unit/            # Pure function tests, no I/O
-│   ├── integration/     # Database and API tests
-│   └── fixtures/        # Test data factories
+apps/api/src/
+└── __tests__/           # Backend tests (Bun test runner)
+    ├── unit/            # Pure function tests, no I/O
+    ├── integration/     # Database and API tests
+    └── fixtures/        # Test data factories
+
+apps/web/src/
+└── __tests__/           # Frontend tests (Vitest)
 ```
 
 ### Running Tests
 
 ```bash
-bun test                 # Run all tests
-bun test --watch         # Watch mode for development
-bun test src/__tests__/unit  # Run only unit tests
+bun run test             # Run all tests
+bun run test:api         # Run API tests only
+bun run test:web         # Run frontend tests only
 ```
 
 ### Writing Tests
@@ -163,28 +289,6 @@ describe("calculateOrderTotal", () => {
 });
 ```
 
-**Integration tests** for routes and database:
-
-```typescript
-import { describe, expect, test, beforeEach } from "bun:test";
-import { testDb, createTestUser } from "../fixtures";
-import app from "../../index";
-
-describe("GET /api/parts", () => {
-  beforeEach(async () => {
-    await testDb.reset();
-  });
-
-  test("returns team parts for authenticated user", async () => {
-    const user = await createTestUser();
-    const res = await app.request("/api/parts", {
-      headers: { Cookie: user.sessionCookie },
-    });
-    expect(res.status).toBe(200);
-  });
-});
-```
-
 ### What to Test
 
 | Layer      | What to Test     | Example                             |
@@ -197,7 +301,7 @@ describe("GET /api/parts", () => {
 
 ### What NOT to Test
 
-- CDN libraries (Tailwind, HTMX, Alpine)
+- shadcn/ui component internals
 - Better-Auth internals
 - Drizzle ORM internals
 - Third-party API behavior
@@ -213,7 +317,7 @@ The Playwright MCP server is available for browser automation. Use it to validat
 - Any bead that adds/modifies UI components
 - Form submissions and validation
 - Navigation flows
-- HTMX interactions
+- React component interactions
 - Visual layout verification
 
 ### Playwright Testing Checklist
@@ -230,7 +334,7 @@ Before closing a UI bead:
 
 ```
 # Navigate to the page
-browser_navigate -> http://localhost:3000/teams/xxx/parts
+browser_navigate -> http://localhost:5173/teams/xxx/parts
 
 # Take accessibility snapshot (better than screenshot for verification)
 browser_snapshot
@@ -342,8 +446,8 @@ Checklist:
 - RBAC enforcement on all endpoints
 - Input validation (forms, query params)
 - SQL injection (parameterized queries)
-- XSS prevention in templates
-- HTMX endpoint authorization
+- XSS prevention in React components
+- API endpoint authorization
 - Rate limiting status
 
 For each finding:
@@ -379,9 +483,9 @@ When closing a review bead, include a **full audit report** in the close reason.
 
 ```
 ## Files Reviewed
-- src/routes/auth.tsx
-- src/routes/orders.tsx
-- src/middleware/auth.ts
+- apps/api/src/routes/api.tsx
+- apps/api/src/middleware/auth.ts
+- apps/web/src/lib/api.ts
 - [list all files checked]
 
 ## Checklist Results
@@ -539,22 +643,31 @@ When dispatching a bead-worker, use this prompt structure:
 You are a bead-worker agent. Complete the bead [ID] autonomously.
 
 1. Query bead details: `bd show [ID]`
-2. Update status: `bd update [ID] --status in_progress`
-3. Write tests FIRST in src/__tests__/ for the feature
-4. Implement the feature to make tests pass
-5. Verify: `bun test && bun run typecheck && bun run lint`
-6. Close with summary: `bd close [ID] -r "Brief summary of what was done"`
+2. Check verification criteria - if missing, add them before starting
+3. Update status: `bd update [ID] --status in_progress`
+4. Write tests FIRST in apps/api/src/__tests__/ for API features
+5. Implement the feature to make tests pass
+6. Verify with EVIDENCE:
+   - For API/logic: `bun test` must pass, include output
+   - For UI: Use Playwright browser_snapshot to verify
+7. Close ONLY with verification evidence:
+   `bd close [ID] -r "Summary. VERIFIED: [test output or Playwright evidence]"`
+
+VERIFICATION IS MANDATORY:
+- You CANNOT close a bead without clear evidence of completion
+- If you cannot verify (OAuth, external services, visual design), DO NOT close:
+  `bd update [ID] --labels human-verify -d "Needs human verification: [reason]"`
 
 If you discover additional work needed, create new beads with:
 `bd create "Description" -t task`
 
 WAKE CONDITIONS (signal completion immediately):
-- Task completed successfully
+- Task completed successfully WITH verification evidence
 - Blocked by missing dependency or unclear requirements
-- Critical cross-bead issue discovered
+- Cannot verify - needs human
 - Test failures that need human decision
 
-IMPORTANT: You MUST call `bd close [ID]` when done - do not skip this step.
+IMPORTANT: Never close without verification. Unverified closes waste human time.
 ```
 
 ### Orchestration Pattern

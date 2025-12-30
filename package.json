@@ -1,69 +1,45 @@
 {
   "name": "buildseason",
   "version": "0.1.0",
+  "private": true,
   "description": "Open-source team management platform for FTC robotics teams",
-  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "turso dev --db-file local.db & sleep 1 && bun run --hot src/index.tsx",
-    "dev:app": "bun run --hot src/index.tsx",
+    "dev": "bun run --filter '*' dev",
+    "dev:api": "bun run --filter @buildseason/api dev",
+    "dev:web": "bun run --filter @buildseason/web dev",
     "dev:db": "turso dev --db-file local.db",
-    "dev:frontend": "cd frontend && bun run dev",
-    "start": "bun run src/index.tsx",
-    "build": "cd frontend && bun run build",
+    "build": "bun run --filter '*' build",
     "build:all": "bun run build && bun run typecheck",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "db:seed": "bun run src/db/seed.ts",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
-    "test:unit": "bun test src/__tests__/unit",
-    "test:integration": "bun test src/__tests__/integration",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
+    "typecheck": "bun run --filter '*' typecheck",
+    "test": "bun run --filter '*' test",
+    "test:api": "bun run --filter @buildseason/api test",
+    "test:web": "bun run --filter @buildseason/web test",
+    "db:generate": "bun run --filter @buildseason/api db:generate",
+    "db:migrate": "bun run --filter @buildseason/api db:migrate",
+    "db:push": "bun run --filter @buildseason/api db:push",
+    "db:studio": "bun run --filter @buildseason/api db:studio",
+    "db:seed": "bun run --filter @buildseason/api db:seed",
+    "lint": "bun run --filter '*' lint",
+    "lint:fix": "bun run --filter '*' lint:fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky"
   },
-  "dependencies": {
-    "@hono/node-server": "^1.13.7",
-    "@libsql/client": "^0.14.0",
-    "better-auth": "^1.1.14",
-    "drizzle-orm": "^0.38.3",
-    "hono": "^4.6.14"
-  },
   "devDependencies": {
-    "@eslint/js": "^9.17.0",
-    "@types/bun": "^1.1.14",
-    "drizzle-kit": "^0.30.6",
-    "eslint": "^9.17.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.11",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.18.2"
+    "typescript": "^5.7.2"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
   },
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/caryden/buildseason"
   },
-  "keywords": [
-    "ftc",
-    "robotics",
-    "team-management",
-    "inventory",
-    "orders"
-  ]
+  "keywords": ["ftc", "robotics", "team-management", "inventory", "orders"]
 }
