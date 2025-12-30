@@ -14,7 +14,7 @@
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test",
     "test:api": "bun run --filter @buildseason/api test",
-    "test:web": "bun run --filter @buildseason/web test",
+    "test:web": "bun --filter @buildseason/web test:run",
     "db:generate": "bun run --filter @buildseason/api db:generate",
     "db:migrate": "bun run --filter @buildseason/api db:migrate",
     "db:push": "bun run --filter @buildseason/api db:push",
