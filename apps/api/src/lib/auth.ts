@@ -32,6 +32,13 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 1 week
     updateAge: 60 * 60 * 24, // Update session every day
   },
+  advanced: {
+    defaultCookieAttributes: {
+      httpOnly: true, // Prevent JavaScript access to cookies
+      sameSite: "lax", // CSRF protection while allowing top-level navigation
+      secure: process.env.NODE_ENV === "production", // HTTPS only in production
+    },
+  },
 });
 
 export type Auth = typeof auth;
