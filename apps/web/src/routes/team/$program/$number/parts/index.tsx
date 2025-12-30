@@ -346,8 +346,8 @@ function PartsPage() {
                     className="cursor-pointer hover:bg-muted/50"
                     onClick={() =>
                       navigate({
-                        to: "/team/$program/$number/parts",
-                        params: { program, number },
+                        to: "/team/$program/$number/parts/$partId",
+                        params: { program, number, partId: part.id },
                       })
                     }
                   >
