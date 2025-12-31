@@ -571,4 +571,381 @@ bd label buildseason-cp1 checkpoint human
 
 ---
 
+## Continuous Learning Loop
+
+### The Problem with Traditional Org Memory
+
+The naive approach to organizational learning is to accumulate rules in AGENTS.md:
+
+```markdown
+# AGENTS.md (anti-pattern - grows forever)
+
+- Always use aria-labels on buttons (learned from issue #123)
+- Always validate API inputs with Zod (learned from issue #456)
+- Never use inline styles (learned from issue #789)
+- Always check for null before accessing nested properties...
+- ... (500 more rules)
+```
+
+**Problems:**
+
+1. **Context bloat** — Every rule loads on every turn, regardless of relevance
+2. **Signal dilution** — Important rules buried in noise
+3. **No structure** — Hard to find related patterns
+4. **No validation** — Rules can conflict or become stale
+5. **No composition** — Can't combine related knowledge
+
+### The Solution: Skill-Based Learning
+
+Instead of accumulating rules, capture patterns in **focused skills**:
+
+```
+.claude/commands/
+├── ui-components.md      # Component patterns, shadcn usage
+├── api-validation.md     # Zod schemas, error handling
+├── accessibility.md      # ARIA, focus, keyboard nav
+├── data-fetching.md      # TanStack Query patterns
+└── testing.md            # Test structure, mocking
+```
+
+**Benefits:**
+
+1. **Targeted loading** — Only invoked when relevant
+2. **Encapsulated knowledge** — Patterns AND anti-patterns together
+3. **Testable** — Skills can be validated independently
+4. **Composable** — Bead templates reference relevant skills
+5. **Evolvable** — Update once, all future work benefits
+
+### Wave Lifecycle (Complete)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         COMPLETE WAVE LIFECYCLE                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+1. PLAN
+   └─► Review specs, create beads, define missions, assign models
+
+2. DEPLOY
+   └─► Launch parallel agents for missions
+   └─► Each agent references relevant skills from bead template
+
+3. EXECUTE
+   └─► Agents complete beads, commit to branches
+   └─► Agents close beads when done
+
+4. REVIEW (3 parallel)
+   ├─► Code Review — patterns, tests, architecture
+   ├─► Security Review — auth, validation, injection
+   └─► UI/UX Review — visual verification via Chrome MCP
+
+5. FIX
+   └─► Deploy fix agents for discovered issues
+   └─► Re-run failing checks
+
+6. RETROSPECTIVE (After-Action Review)
+   └─► Analyze what went wrong/right
+   └─► Propose process improvements
+   └─► Create or update skills
+   └─► Tag improvements: process-improvement, discovered-from:<retro-bead>
+
+7. CHECKPOINT
+   └─► Human reviews summary
+   └─► Answers questions (human-tagged beads)
+   └─► Closes checkpoint to unblock next wave
+
+8. PREPARE NEXT WAVE
+   └─► Forward-looking skill creation
+   └─► Update bead templates with skill references
+   └─► Preemptively create skills for anticipated patterns
+```
+
+### After-Action Review (Retrospective)
+
+**Command:** `/army retro <wave>`
+
+**Process:**
+
+1. **Gather Inputs:**
+   - Review findings (code, security, UI/UX)
+   - Fixes applied
+   - Bead outcomes (success/failure/rework)
+   - Time spent per mission
+   - Model performance (opus vs sonnet vs haiku accuracy)
+
+2. **Analysis (Opus model):**
+   - What patterns led to issues?
+   - Which agents struggled? Why?
+   - What knowledge was missing?
+   - What worked exceptionally well?
+
+3. **Generate Improvements:**
+   - **New skills** — Capture recurring patterns/anti-patterns
+   - **Skill updates** — Enhance existing skills with learned edge cases
+   - **Template updates** — Add skill references to bead templates
+   - **Process changes** — Adjust review checklists, agent prompts
+   - **Forward-looking** — Pre-create skills for next wave's needs
+
+4. **Create Beads:**
+   ```bash
+   bd create --title="Skill: <name>" --type=task --priority=2 \
+     --label="process-improvement" \
+     --label="discovered-from:<retro-bead-id>"
+   ```
+
+### Skill Categories
+
+| Category          | Purpose               | Example Skills                                        |
+| ----------------- | --------------------- | ----------------------------------------------------- |
+| **UI/Visual**     | Consistent appearance | `ui-components`, `branding`, `dark-mode`              |
+| **API/Backend**   | Server patterns       | `api-validation`, `error-handling`, `auth-middleware` |
+| **Data**          | State management      | `tanstack-query`, `form-state`, `optimistic-updates`  |
+| **Testing**       | Test patterns         | `unit-tests`, `integration-tests`, `mocking`          |
+| **Accessibility** | A11y compliance       | `accessibility`, `keyboard-nav`, `screen-reader`      |
+| **Security**      | Security patterns     | `input-sanitization`, `csrf`, `rate-limiting`         |
+| **Domain**        | Project-specific      | `ftc-robotics`, `bom-management`, `vendor-catalog`    |
+
+### Skill Anatomy
+
+```markdown
+---
+description: "UI component patterns for BuildSeason"
+invocation: "automatic" # or "manual" or "on-reference"
+applies_to:
+  - "apps/web/src/components/**"
+  - "apps/web/src/routes/**"
+triggers:
+  - "creating a component"
+  - "updating UI"
+  - "fixing visual bug"
+---
+
+# UI Components Skill
+
+## DO (Patterns)
+
+- Use shadcn/ui components from @/components/ui
+- Apply Tailwind classes, never inline styles
+- Use CSS variables for theme colors (--primary, --muted, etc.)
+- Include loading and error states
+- Add aria-labels to interactive elements
+
+## DON'T (Anti-Patterns)
+
+- ❌ Create custom components when shadcn has one
+- ❌ Use hex colors directly (breaks dark mode)
+- ❌ Skip empty states
+- ❌ Forget keyboard navigation
+
+## Examples
+
+### Good: Card with proper states
+
+\`\`\`tsx
+<Card>
+{isLoading ? (
+<Skeleton className="h-24" />
+) : error ? (
+<ErrorState message={error.message} />
+) : items.length === 0 ? (
+<EmptyState icon={Package} title="No items" />
+) : (
+items.map(item => <ItemRow key={item.id} item={item} />)
+)}
+</Card>
+\`\`\`
+
+### Bad: Missing states
+
+\`\`\`tsx
+// ❌ No loading, error, or empty handling
+<Card>
+{items.map(item => <ItemRow key={item.id} item={item} />)}
+</Card>
+\`\`\`
+
+## Learned From
+
+- Wave 0: Missing empty states (buildseason-xyz)
+- Wave 1: Inconsistent loading patterns (buildseason-abc)
+```
+
+### Bead Template Enhancement
+
+Beads should reference relevant skills:
+
+```yaml
+id: buildseason-abc123
+title: "Add parts search component"
+type: feature
+priority: 2
+
+# NEW: Skills to apply
+skills:
+  - ui-components # Component patterns
+  - data-fetching # TanStack Query patterns
+  - accessibility # ARIA, keyboard nav
+
+# Existing fields
+description: |
+  Create a search component for the parts page with:
+  - Debounced input
+  - Loading state
+  - Empty results state
+
+files:
+  - apps/web/src/components/parts/search.tsx
+  - apps/web/src/routes/team/$program/$number/parts/index.tsx
+```
+
+**Agent Behavior:**
+
+When an agent picks up this bead:
+
+1. Load bead description
+2. For each skill in `skills:`, invoke `/skill <name>` to load patterns
+3. Apply patterns during implementation
+4. Reference skills in commit message for traceability
+
+### Forward-Looking Skill Creation
+
+Before each wave, analyze upcoming beads and preemptively create skills:
+
+**Command:** `/army prepare <wave>`
+
+**Process:**
+
+1. **Scan upcoming beads:**
+
+   ```bash
+   bd list --wave=2 --status=open
+   ```
+
+2. **Identify patterns:**
+   - Multiple beads touching calendar → create `calendar-patterns` skill
+   - GLaDOS integration beads → create `agent-tools` skill
+   - New data models → create `schema-patterns` skill
+
+3. **Create preemptive skills:**
+   - Research best practices
+   - Document patterns before implementation
+   - Reference in bead templates
+
+4. **Example output:**
+
+   ```
+   WAVE 2 PREPARATION
+   ==================
+
+   Analyzing 12 beads...
+
+   RECOMMENDED SKILLS:
+
+   1. calendar-patterns (NEW)
+      - 4 beads touch calendar functionality
+      - Should document: event types, recurring events, timezone handling
+
+   2. action-center (NEW)
+      - Dashboard redesign with GLaDOS suggestions
+      - Should document: action item structure, approval flow, undo patterns
+
+   3. ui-components (UPDATE)
+      - Add: Timeline component, Progress ring, Status indicators
+
+   Create these skills? [Y/n]
+   ```
+
+### Metrics & Tracking
+
+Track learning effectiveness:
+
+| Metric                 | Description                          | Target           |
+| ---------------------- | ------------------------------------ | ---------------- |
+| **Rework Rate**        | Beads requiring fixes after review   | < 20%            |
+| **Pattern Violations** | Issues from ignoring existing skills | 0                |
+| **Skill Coverage**     | % of beads with skill references     | > 80%            |
+| **Review Findings**    | Issues found per wave                | Decreasing trend |
+| **Time to Fix**        | Hours to resolve review findings     | Decreasing trend |
+
+### Example: Learning from Wave 0
+
+**Issue Found:** Robots page crashed because API response structure wasn't handled correctly.
+
+**Root Cause:** Frontend expected `Season[]` but API returned `{ seasons: Season[], activeSeasonId: string }`.
+
+**Retrospective Action:**
+
+1. **Create skill: `api-response-patterns`**
+
+   ```markdown
+   # API Response Patterns
+
+   ## Standard Response Structure
+
+   All list endpoints return wrapped responses:
+   \`\`\`typescript
+   type ApiListResponse<T> = {
+   items: T[]; // or domain-specific key like 'seasons'
+   total?: number;
+   metadata?: Record<string, unknown>;
+   };
+   \`\`\`
+
+   ## Frontend Pattern
+
+   Always destructure API responses:
+   \`\`\`typescript
+   const { data } = useQuery({
+   queryFn: async () => {
+   const res = await fetch('/api/things');
+   const json = await res.json();
+   return json.things; // Extract the array
+   }
+   });
+   \`\`\`
+
+   ## Anti-Pattern
+
+   \`\`\`typescript
+   // ❌ Assuming response IS the array
+   return res.json() as Promise<Thing[]>;
+   \`\`\`
+   ```
+
+2. **Update bead templates** for data fetching beads to reference this skill
+
+3. **Add to review checklist:** "Verify API response structure matches frontend expectations"
+
+### Integration with `/army` Command
+
+The army skill should be updated to include retrospective:
+
+```
+/army status              # Show wave progress
+/army deploy <wave>       # Launch parallel agents
+/army review <wave>       # Run code, security, UI/UX reviews
+/army deploy-fixes <wave> # Fix discovered issues
+/army retro <wave>        # Run after-action review
+/army prepare <wave>      # Forward-looking skill creation
+/army checkpoint <wave>   # Generate human review summary
+```
+
+---
+
+## Next Steps (Updated)
+
+1. [x] Create checkpoint beads (cp1, cp2, cp3, cp4)
+2. [ ] Label existing beads with model recommendations
+3. [ ] Label existing beads with parallel groups
+4. [x] Implement `/army` command
+5. [x] Implement `/bead` command
+6. [ ] Document branch strategy
+7. [x] Deploy Wave 0
+8. [ ] **NEW:** Implement `/army retro` subcommand
+9. [ ] **NEW:** Create initial skills from Wave 0 learnings
+10. [ ] **NEW:** Implement `/army prepare` subcommand
+11. [ ] **NEW:** Add skills field to bead templates
+
+---
+
 _Document maintained at: buildseason/docs/agent-army-deployment.md_
