@@ -109,6 +109,7 @@ function StatusBadge({ status, className, ...props }: StatusBadgeProps) {
         config.className,
         className
       )}
+      aria-label={`Status: ${config.label}`}
       {...props}
     >
       <span aria-hidden="true">{config.icon}</span>
