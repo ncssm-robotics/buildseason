@@ -104,7 +104,16 @@ function HeroSection() {
               Get Started
             </Button>
           </Link>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto px-8">
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full sm:w-auto px-8"
+            onClick={() =>
+              document
+                .getElementById("features")
+                ?.scrollIntoView({ behavior: "smooth" })
+            }
+          >
             See Demo
           </Button>
         </div>
