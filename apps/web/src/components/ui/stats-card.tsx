@@ -1,10 +1,12 @@
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "./card";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import type { ReactNode } from "react";
 
 export interface StatsCardProps {
   title: string;
   value: string | number;
+  icon?: ReactNode;
   status?: "ok" | "warning" | "error";
   trend?: {
     direction: "up" | "down";
@@ -28,6 +30,7 @@ const trendColors = {
 export function StatsCard({
   title,
   value,
+  icon,
   status,
   trend,
   onClick,
@@ -58,9 +61,21 @@ export function StatsCard({
     >
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
+          <div className="flex items-start gap-3">
+            {icon && (
+              <div
+                className="flex-shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              >
+                {icon}
+              </div>
+            )}
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">
+                {title}
+              </p>
+              <p className="text-2xl font-bold">{value}</p>
+            </div>
           </div>
           {status && (
             <div
