@@ -268,115 +268,49 @@ Note the bead IDs created (e.g., `buildseason-abc`, `buildseason-def`, `buildsea
 
 #### Code Review Agent Prompt:
 
-````
+```
 You are a CODE REVIEW agent for BuildSeason Wave X.
 
 YOUR ROLE: Audit code quality. DO NOT fix anything - create beads for issues found.
 
-REVIEW CHECKLIST:
-1. Run `bun run typecheck` - note any errors
-2. Run `bun test` if tests exist - note failures
-3. Check test coverage: are critical paths tested?
-4. Review code patterns:
-   - Consistent error handling?
-   - Proper TypeScript types (no `any` abuse)?
-   - Following existing patterns in codebase?
-   - Dead code or unused imports?
-   - TODO/FIXME comments that need addressing?
-5. Check for code smells:
-   - Functions over 50 lines?
-   - Deeply nested conditionals?
-   - Duplicated logic?
+REQUIRED SKILL - Read this first for full guidance:
+.claude/skills/code-review/SKILL.md (complete review checklist)
 
-FOR EACH ISSUE FOUND, create a bead:
-```bash
-bd create --title="<specific issue>" --type=bug --priority=<0-4> --label="discovered-from:<review-bead-id>" --label="review:code"
-````
-
-Priority guide:
-
-- P0: Build broken, tests failing
-- P1: Type errors, missing error handling
-- P2: Code smells, missing tests
-- P3: Style issues, minor improvements
-- P4: Nice-to-haves
-
-If you find ambiguity needing human decision:
-
-```bash
-bd create --title="Question: <specific question>" --type=task --priority=2 --label="human" --label="discovered-from:<review-bead-id>"
-```
+PROCESS:
+1. Read the code-review skill - it contains the full checklist
+2. Run `bun run typecheck` and `bun test`
+3. Review code patterns, TypeScript quality, error handling
+4. Check for code smells (large functions, duplication)
+5. Create beads for each issue with `review:code` label
 
 WHEN COMPLETE:
-
-1. Close your review bead: `bd close <review-bead-id> --reason="Found N issues"`
-2. Report summary of issues created
+1. Close your review bead with full audit report
+2. Report summary of issues created (P0-P4 breakdown)
 
 REVIEW BEAD: <code-review-bead-id>
-
 ```
 
 #### Security Review Agent Prompt:
 
 ```
-
 You are a SECURITY REVIEW agent for BuildSeason Wave X.
 
 YOUR ROLE: Audit security. DO NOT fix anything - create beads for issues found.
 
-REVIEW CHECKLIST:
+REQUIRED SKILL - Read this first for full guidance:
+.claude/skills/security-review/SKILL.md (complete OWASP checklist)
 
-1. Authentication & Authorization:
-   - Are API routes properly protected?
-   - Are user permissions checked before actions?
-   - Is session handling secure?
-
-2. Input Validation:
-   - User inputs sanitized?
-   - SQL injection possible? (check raw queries)
-   - XSS vulnerabilities? (check rendered user content)
-   - Path traversal possible?
-
-3. Data Exposure:
-   - Sensitive data in logs?
-   - Secrets in code? (API keys, passwords)
-   - PII exposed in API responses?
-   - Proper data filtering for user context?
-
-4. API Security:
-   - Rate limiting in place?
-   - CORS configured properly?
-   - Proper HTTP methods used?
-
-5. Dependencies:
-   - Run `bun audit` if available
-   - Check for known vulnerable packages
-
-FOR EACH ISSUE FOUND, create a bead:
-
-```bash
-bd create --title="SECURITY: <specific issue>" --type=bug --priority=<0-2> --label="discovered-from:<review-bead-id>" --label="review:security"
-```
-
-Security issues should generally be P0-P2:
-
-- P0: Active vulnerability, data exposure
-- P1: Missing auth check, injection possible
-- P2: Hardening needed, best practice violation
-
-If you find ambiguity needing human decision:
-
-```bash
-bd create --title="Question: <security question>" --type=task --priority=1 --label="human" --label="discovered-from:<review-bead-id>"
-```
+PROCESS:
+1. Read the security-review skill - it contains the full OWASP Top 10 checklist
+2. Review auth, input validation, data exposure, API security
+3. Run `bun audit` for dependency vulnerabilities
+4. Create beads for each issue with `review:security` label (P0-P2)
 
 WHEN COMPLETE:
-
-1. Close your review bead: `bd close <review-bead-id> --reason="Found N issues"`
+1. Close your review bead with full audit report
 2. Report summary - ESPECIALLY note any P0/P1 security issues
 
 REVIEW BEAD: <security-review-bead-id>
-
 ```
 
 #### UI/UX Review Agent Prompt:
@@ -437,7 +371,7 @@ Monitor progress: /tasks
 
 # When all 3 complete, run: /army deploy-fixes <wave>
 
-````
+```
 
 ---
 
@@ -455,7 +389,7 @@ Fix all issues discovered by reviews (except `human`-tagged questions).
 
 ```bash
 bd list --label="discovered-from:buildseason-<checkpoint>" --status=open
-````
+```
 
 Also check for issues with `review:code`, `review:security`, `review:ux` labels.
 
