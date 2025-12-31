@@ -16,11 +16,21 @@ import {
   orderItems,
   vendors,
   bomItems,
-  type TeamRole,
   type OrderStatus,
   type Program,
 } from "../db/schema";
 import { eq, and, sql, like, or, asc, desc } from "drizzle-orm";
+import {
+  createTeamSchema,
+  createPartSchema,
+  updatePartSchema,
+  createOrderSchema,
+  updateOrderSchema,
+  rejectOrderSchema,
+  updateMemberRoleSchema,
+  createInviteSchema,
+  formatZodError,
+} from "../schemas";
 
 // Escape SQL LIKE wildcards to prevent pattern injection
 function escapeLikePattern(value: string): string {
@@ -99,20 +109,12 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
     const user = c.get("user")!;
     const body = await c.req.json();
 
-    const { name, number, season, program = "ftc" } = body;
-
-    if (!name || !number || !season) {
-      return c.json({ error: "All fields are required" }, 400);
+    const result = createTeamSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
 
-    if (!/^\d+$/.test(number)) {
-      return c.json({ error: "Team number must be numeric" }, 400);
-    }
-
-    const validPrograms = ["ftc", "frc", "mate", "vex", "tarc", "other"];
-    if (!validPrograms.includes(program)) {
-      return c.json({ error: "Invalid program type" }, 400);
-    }
+    const { name, number, season, program } = result.data;
 
     try {
       const teamId = crypto.randomUUID();
@@ -121,8 +123,8 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
       await db.insert(teams).values({
         id: teamId,
         program,
-        name: name.trim(),
-        number: number.trim(),
+        name,
+        number,
         season,
       });
 
@@ -133,7 +135,7 @@ const teamsRoutes = new Hono<{ Variables: AuthVariables }>()
         role: "admin",
       });
 
-      return c.json({ id: teamId, program, name: name.trim(), number, season });
+      return c.json({ id: teamId, program, name, number, season });
     } catch (error) {
       console.error("Failed to create team:", error);
       return c.json({ error: "Failed to create team" }, 500);
@@ -244,11 +246,12 @@ const teamMembersRoutes = new Hono<{
     }
 
     const body = await c.req.json();
-    const newRole = body.role as TeamRole;
-
-    if (!["admin", "mentor", "student"].includes(newRole)) {
-      return c.json({ error: "Invalid role" }, 400);
+    const result = updateMemberRoleSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
+
+    const { role: newRole } = result.data;
 
     const targetMember = await db.query.teamMembers.findFirst({
       where: eq(teamMembers.id, memberId),
@@ -305,12 +308,12 @@ const teamMembersRoutes = new Hono<{
     }
 
     const body = await c.req.json();
-    const role = (body.role as TeamRole) || "student";
-
-    if (!["admin", "mentor", "student"].includes(role)) {
-      return c.json({ error: "Invalid role" }, 400);
+    const result = createInviteSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
 
+    const { role } = result.data;
     const token = crypto.randomUUID();
     const inviteId = crypto.randomUUID();
 
@@ -453,10 +456,21 @@ const teamPartsRoutes = new Hono<{ Variables: AuthVariables & TeamVariables }>()
     const teamId = c.get("teamId");
     const body = await c.req.json();
 
-    const name = body.name?.trim();
-    if (!name) {
-      return c.json({ error: "Part name is required" }, 400);
+    const result = createPartSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
+
+    const {
+      name,
+      sku,
+      vendorId,
+      quantity,
+      reorderPoint,
+      location,
+      unitPrice,
+      description,
+    } = result.data;
 
     try {
       const partId = crypto.randomUUID();
@@ -465,13 +479,13 @@ const teamPartsRoutes = new Hono<{ Variables: AuthVariables & TeamVariables }>()
         id: partId,
         teamId,
         name,
-        sku: body.sku?.trim() || null,
-        vendorId: body.vendorId || null,
-        quantity: parseInt(body.quantity) || 0,
-        reorderPoint: parseInt(body.reorderPoint) || 0,
-        location: body.location?.trim() || null,
-        unitPriceCents: Math.round((parseFloat(body.unitPrice) || 0) * 100),
-        description: body.description?.trim() || null,
+        sku: sku || null,
+        vendorId: vendorId || null,
+        quantity,
+        reorderPoint,
+        location: location || null,
+        unitPriceCents: Math.round(unitPrice * 100),
+        description: description || null,
       });
 
       return c.json({ id: partId, name });
@@ -529,10 +543,21 @@ const teamPartsRoutes = new Hono<{ Variables: AuthVariables & TeamVariables }>()
     const partId = c.req.param("partId");
     const body = await c.req.json();
 
-    const name = body.name?.trim();
-    if (!name) {
-      return c.json({ error: "Part name is required" }, 400);
+    const result = updatePartSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
+
+    const {
+      name,
+      sku,
+      vendorId,
+      quantity,
+      reorderPoint,
+      location,
+      unitPrice,
+      description,
+    } = result.data;
 
     const existingPart = await db.query.parts.findFirst({
       where: and(eq(parts.id, partId), eq(parts.teamId, teamId)),
@@ -547,13 +572,13 @@ const teamPartsRoutes = new Hono<{ Variables: AuthVariables & TeamVariables }>()
         .update(parts)
         .set({
           name,
-          sku: body.sku?.trim() || null,
-          vendorId: body.vendorId || null,
-          quantity: parseInt(body.quantity) || 0,
-          reorderPoint: parseInt(body.reorderPoint) || 0,
-          location: body.location?.trim() || null,
-          unitPriceCents: Math.round((parseFloat(body.unitPrice) || 0) * 100),
-          description: body.description?.trim() || null,
+          sku: sku || null,
+          vendorId: vendorId || null,
+          quantity,
+          reorderPoint,
+          location: location || null,
+          unitPriceCents: Math.round(unitPrice * 100),
+          description: description || null,
           updatedAt: new Date(),
         })
         .where(eq(parts.id, partId));
@@ -614,11 +639,12 @@ const teamOrdersRoutes = new Hono<{
     const teamId = c.get("teamId");
     const body = await c.req.json();
 
-    const { vendorId, items, notes } = body;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return c.json({ error: "Order must have at least one item" }, 400);
+    const result = createOrderSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
     }
+
+    const { vendorId, items, notes } = result.data;
 
     try {
       const orderId = crypto.randomUUID();
@@ -628,7 +654,7 @@ const teamOrdersRoutes = new Hono<{
         teamId,
         vendorId: vendorId || null,
         status: "draft",
-        notes: notes?.trim() || null,
+        notes: notes || null,
         createdById: user.id,
       });
 
@@ -637,8 +663,8 @@ const teamOrdersRoutes = new Hono<{
           id: crypto.randomUUID(),
           orderId,
           partId: item.partId,
-          quantity: parseInt(item.quantity) || 1,
-          unitPriceCents: Math.round((parseFloat(item.unitPrice) || 0) * 100),
+          quantity: item.quantity,
+          unitPriceCents: Math.round(item.unitPrice * 100),
         });
       }
 
@@ -668,6 +694,13 @@ const teamOrdersRoutes = new Hono<{
     const orderId = c.req.param("orderId");
     const body = await c.req.json();
 
+    const result = updateOrderSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
+    }
+
+    const { vendorId, notes } = result.data;
+
     const existingOrder = await db.query.orders.findFirst({
       where: and(eq(orders.id, orderId), eq(orders.teamId, teamId)),
     });
@@ -680,8 +713,8 @@ const teamOrdersRoutes = new Hono<{
       await db
         .update(orders)
         .set({
-          vendorId: body.vendorId || null,
-          notes: body.notes?.trim() || null,
+          vendorId: vendorId || null,
+          notes: notes || null,
           updatedAt: new Date(),
         })
         .where(eq(orders.id, orderId));
@@ -749,6 +782,13 @@ const teamOrdersRoutes = new Hono<{
     const orderId = c.req.param("orderId");
     const body = await c.req.json();
 
+    const result = rejectOrderSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(formatZodError(result.error), 400);
+    }
+
+    const { reason } = result.data;
+
     const order = await db.query.orders.findFirst({
       where: and(eq(orders.id, orderId), eq(orders.teamId, teamId)),
     });
@@ -765,7 +805,7 @@ const teamOrdersRoutes = new Hono<{
       .update(orders)
       .set({
         status: "rejected",
-        rejectionReason: body.reason?.trim() || null,
+        rejectionReason: reason || null,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
@@ -905,7 +945,58 @@ const teamVendorsRoutes = new Hono<{
     });
 
     return c.json(vendorsList);
+  })
+  .get("/:vendorId", async (c) => {
+    const teamId = c.get("teamId");
+    const vendorId = c.req.param("vendorId");
+
+    const vendor = await db.query.vendors.findFirst({
+      where: eq(vendors.id, vendorId),
+    });
+
+    if (!vendor) {
+      return c.json({ error: "Vendor not found" }, 404);
+    }
+
+    // Get parts from this vendor for this team
+    const vendorParts = await db.query.parts.findMany({
+      where: and(eq(parts.teamId, teamId), eq(parts.vendorId, vendorId)),
+      orderBy: asc(parts.name),
+    });
+
+    return c.json({
+      ...vendor,
+      parts: vendorParts,
+    });
   });
+
+// ============ Public Team Routes (no auth required) ============
+const publicTeamRoutes = new Hono().get("/:program/:number", async (c) => {
+  const program = c.req.param("program");
+  const number = c.req.param("number");
+
+  // Validate program type
+  const validPrograms = ["ftc", "frc", "mate", "vex", "tarc", "other"];
+  if (!validPrograms.includes(program)) {
+    return c.json({ error: "Invalid program type" }, 400);
+  }
+
+  const team = await db.query.teams.findFirst({
+    where: and(eq(teams.program, program as Program), eq(teams.number, number)),
+  });
+
+  if (!team) {
+    return c.json({ error: "Team not found", code: "team_not_found" }, 404);
+  }
+
+  // Return only public information (no internal IDs, no sensitive data)
+  return c.json({
+    program: team.program,
+    name: team.name,
+    number: team.number,
+    season: team.season,
+  });
+});
 
 // ============ Invite Routes ============
 const inviteRoutes = new Hono<{ Variables: AuthVariables }>()
@@ -1043,7 +1134,8 @@ const apiRoutes = new Hono()
   .route("/api/teams/:teamId/bom", teamBomRoutes)
   .route("/api/teams/:teamId/vendors", teamVendorsRoutes)
   .route("/api/vendors", vendorsRoutes)
-  .route("/api/invite", inviteRoutes);
+  .route("/api/invite", inviteRoutes)
+  .route("/api/public/team", publicTeamRoutes);
 
 // Export type for Hono RPC client
 export type ApiRoutes = typeof apiRoutes;

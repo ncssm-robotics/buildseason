@@ -8,6 +8,13 @@ export const queryKeys = {
     current: () => [...queryKeys.user.all, "current"] as const,
   },
 
+  // Public team info (no auth required)
+  publicTeam: {
+    all: ["public", "team"] as const,
+    byProgramNumber: (program: string, number: string) =>
+      [...queryKeys.publicTeam.all, program, number] as const,
+  },
+
   // Teams
   teams: {
     all: ["teams"] as const,
@@ -56,5 +63,7 @@ export const queryKeys = {
     list: () => [...queryKeys.vendors.all, "list"] as const,
     detail: (vendorId: string) => [...queryKeys.vendors.all, vendorId] as const,
     forTeam: (teamId: string) => ["teams", teamId, "vendors", "list"] as const,
+    teamDetail: (teamId: string, vendorId: string) =>
+      ["teams", teamId, "vendors", vendorId] as const,
   },
 } as const;
