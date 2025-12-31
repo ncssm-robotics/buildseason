@@ -105,19 +105,21 @@ bun run dev
 
 Detailed patterns and workflows are in `.claude/skills/`:
 
-| Skill                | Use When                                            |
-| -------------------- | --------------------------------------------------- |
-| `bead-workflow`      | Working with beads, verification, claiming tasks    |
-| `api-patterns`       | Creating API endpoints, database queries            |
-| `testing-guide`      | Writing tests, test philosophy                      |
-| `chrome-mcp-testing` | UI validation, browser automation                   |
-| `code-review`        | Code quality audits, patterns, test coverage        |
-| `security-review`    | Security audits, OWASP, auth, injection checks      |
-| `ui-design-review`   | Visual UI reviews with Chrome MCP                   |
-| `brand-guidelines`   | Colors, fonts, design patterns (Workshop Blueprint) |
-| `session-completion` | Ending sessions, handoff protocol                   |
-| `parallel-execution` | Dispatching multiple agents                         |
-| `skill-building`     | Creating new skills                                 |
+| Skill                  | Use When                                            |
+| ---------------------- | --------------------------------------------------- |
+| `bead-workflow`        | Working with beads, verification, claiming tasks    |
+| `api-patterns`         | Creating API endpoints, database queries            |
+| `testing-guide`        | Writing tests, test philosophy                      |
+| `chrome-mcp-testing`   | UI validation, browser automation                   |
+| `code-review`          | Code quality audits, patterns, test coverage        |
+| `security-review`      | Security audits, OWASP, auth, injection checks      |
+| `ui-design-review`     | Visual UI reviews with Chrome MCP                   |
+| `brand-guidelines`     | Colors, fonts, design patterns (Workshop Blueprint) |
+| `navigation-patterns`  | TanStack Router, sidebar structure, routes          |
+| `discord-bot-patterns` | Discord.js, GLaDOS agent, message handling          |
+| `session-completion`   | Ending sessions, handoff protocol                   |
+| `parallel-execution`   | Dispatching multiple agents                         |
+| `skill-building`       | Creating new skills                                 |
 
 Skills load automatically when context matches their description.
 
