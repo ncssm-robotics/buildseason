@@ -2,7 +2,7 @@
  * BuildSeason Agent Package
  *
  * Core agent functionality including personality system,
- * tool definitions, and agent configuration.
+ * model routing, cost optimization, and usage tracking.
  */
 
 // Personality system
@@ -25,3 +25,28 @@ export {
   isValidPersonality,
   createCustomPersonality,
 } from "./personalities";
+
+// Model routing and selection
+export {
+  type ModelConfig,
+  type QueryComplexity,
+  type TaskType,
+  MODELS,
+  classifyQuery,
+  selectModel,
+  routeQuery,
+  estimateCost,
+} from "./model-router";
+
+// Usage tracking
+export {
+  type TokenUsage,
+  type UsageRecord,
+  type UsageStats,
+  trackUsage,
+  getTeamUsage,
+  getAllTeamUsage,
+  resetTeamUsage,
+  checkBudgetStatus,
+  getCostSummary,
+} from "./usage-tracker";

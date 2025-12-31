@@ -7,7 +7,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./personalities": "./src/personalities.ts"
+    "./personalities": "./src/personalities.ts",
+    "./model-router": "./src/model-router.ts",
+    "./usage-tracker": "./src/usage-tracker.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
