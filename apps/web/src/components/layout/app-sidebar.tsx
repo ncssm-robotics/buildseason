@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Home,
   Package,
-  FileText,
+  Bot,
   ShoppingCart,
   Store,
   Users,
@@ -32,14 +32,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const mainNavItems = [
+// OVERVIEW section - Team health at a glance
+const overviewNavItems = [
   { title: "Dashboard", icon: Home, path: "" },
+  // Calendar will be added in Phase 3
+];
+
+// BUILD section - Technical work (robot building)
+const buildNavItems = [
+  { title: "Robots", icon: Bot, path: "/robots" },
   { title: "Parts", icon: Package, path: "/parts" },
-  { title: "BOM", icon: FileText, path: "/bom" },
   { title: "Orders", icon: ShoppingCart, path: "/orders" },
   { title: "Vendors", icon: Store, path: "/vendors" },
 ];
 
+// TEAM section - Team management
 const teamNavItems = [
   { title: "Members", icon: Users, path: "/members" },
   { title: "Settings", icon: Settings, path: "/settings" },
@@ -101,10 +108,34 @@ export function AppSidebar({ user, program, teamNumber }: AppSidebarProps) {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupLabel>Overview</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNavItems.map((item) => (
+              {overviewNavItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.path)}
+                    tooltip={item.title}
+                  >
+                    <Link to={getTeamPath(item.path)}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Build</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {buildNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
