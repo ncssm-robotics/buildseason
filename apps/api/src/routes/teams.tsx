@@ -674,8 +674,10 @@ app.get("/teams/:teamId/invite", async (c) => {
     );
   }
 
-  // Generate a unique token
-  const token = crypto.randomUUID();
+  // Generate a unique token with 256 bits of randomness
+  const token = Buffer.from(
+    crypto.getRandomValues(new Uint8Array(32))
+  ).toString("base64url");
   const inviteId = crypto.randomUUID();
 
   // Set expiration to 7 days from now
