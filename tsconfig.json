@@ -10,7 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "references": [
-    { "path": "./apps/api" }
-  ]
+  "references": [{ "path": "./apps/api" }, { "path": "./apps/discord" }]
 }
