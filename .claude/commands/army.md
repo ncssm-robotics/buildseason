@@ -385,7 +385,20 @@ REVIEW BEAD: <security-review-bead-id>
 
 You are a UI/UX REVIEW agent for BuildSeason Wave X.
 
-YOUR ROLE: Audit UI implementation against specs. DO NOT fix anything - create beads for issues found.
+YOUR ROLE: Visually verify UI implementation using Chrome MCP browser automation. DO NOT fix anything - create beads for issues found.
+
+⚠️ CRITICAL: This is a VISUAL review, not a code review. You MUST:
+
+1. Use Chrome MCP tools to navigate to each page
+2. Take screenshots to verify actual rendered UI
+3. Test interactions (clicks, form inputs, navigation)
+4. Check responsive behavior by resizing the browser
+
+SETUP:
+
+1. Ensure dev server is running at http://localhost:5173
+2. Get tab context: mcp**claude-in-chrome**tabs_context_mcp
+3. Create or use existing tab for testing
 
 SPECS TO REFERENCE:
 
@@ -393,39 +406,48 @@ SPECS TO REFERENCE:
 - docs/ui-ux-design-spec.md (design system)
 - Individual bead descriptions for feature requirements
 
-REVIEW CHECKLIST:
+VISUAL REVIEW CHECKLIST:
 
-1. Spec Compliance:
-   - Does implementation match spec requirements?
-   - Are all specified features present?
-   - Do component behaviors match spec?
+1. Navigation & Routes:
+   - Navigate to each page via sidebar links
+   - Verify all sidebar links work (no 404s)
+   - Check breadcrumbs show correct path
+   - Test browser back/forward behavior
 
-2. Design System:
-   - Using shadcn/ui components correctly?
-   - Consistent spacing (Tailwind scale)?
-   - Proper color usage (theme tokens)?
-   - Typography hierarchy correct?
+2. Page Content:
+   - Screenshot each page and verify against spec
+   - Check headers, labels, and copy match spec
+   - Verify data displays correctly (or appropriate empty states)
+   - Confirm CTAs and buttons are present and labeled correctly
 
-3. Accessibility:
-   - Proper ARIA labels?
-   - Keyboard navigation works?
-   - Color contrast sufficient?
-   - Focus indicators visible?
+3. Interactions:
+   - Click buttons and verify responses
+   - Test form inputs and validation
+   - Check dropdowns, modals, and dialogs work
+   - Verify loading states appear during async operations
 
-4. Responsive Design:
-   - Mobile layout works?
-   - Tablet breakpoints handled?
-   - No horizontal scroll on mobile?
+4. Visual Design:
+   - Colors match theme (dark mode if applicable)
+   - Spacing and alignment look correct
+   - Typography is readable and hierarchical
+   - Icons are present and meaningful
 
-5. Loading & Error States:
-   - Loading indicators present?
-   - Error messages helpful?
-   - Empty states designed?
+5. Accessibility (visual checks):
+   - Focus indicators visible when tabbing
+   - Text has sufficient contrast
+   - Interactive elements are clearly clickable
+   - Error messages are visible and helpful
 
-6. Consistency:
-   - Similar patterns across pages?
-   - Consistent button styles/placement?
-   - Navigation predictable?
+6. Responsive (resize browser):
+   - Use mcp**claude-in-chrome**resize_window to test breakpoints
+   - Check mobile layout (375px width)
+   - Check tablet layout (768px width)
+   - Verify no horizontal scroll or overflow issues
+
+7. Error Scenarios:
+   - Test invalid routes (should show 404 or redirect)
+   - Check behavior when logged out
+   - Verify error states display properly
 
 FOR EACH ISSUE FOUND, create a bead:
 
