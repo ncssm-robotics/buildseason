@@ -9,13 +9,19 @@ type OrderStatus =
   | "ordered"
   | "received";
 type StockStatus = "ok" | "low" | "out";
+type RobotStatus =
+  | "planning"
+  | "building"
+  | "competition_ready"
+  | "disassembled"
+  | "archived";
 
 interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  status: OrderStatus | StockStatus;
+  status: OrderStatus | StockStatus | RobotStatus;
 }
 
 const statusConfig: Record<
-  OrderStatus | StockStatus,
+  OrderStatus | StockStatus | RobotStatus,
   { label: string; icon: string; className: string }
 > = {
   // Order statuses
@@ -65,6 +71,32 @@ const statusConfig: Record<
     icon: "🔴",
     className: "bg-red-100 text-red-700 border-red-200",
   },
+  // Robot statuses
+  planning: {
+    label: "Planning",
+    icon: "📋",
+    className: "bg-purple-100 text-purple-700 border-purple-200",
+  },
+  building: {
+    label: "Building",
+    icon: "🔧",
+    className: "bg-orange-100 text-orange-700 border-orange-200",
+  },
+  competition_ready: {
+    label: "Competition Ready",
+    icon: "🏆",
+    className: "bg-green-100 text-green-700 border-green-200",
+  },
+  disassembled: {
+    label: "Disassembled",
+    icon: "📦",
+    className: "bg-gray-100 text-gray-700 border-gray-200",
+  },
+  archived: {
+    label: "Archived",
+    icon: "🗄️",
+    className: "bg-gray-100 text-gray-500 border-gray-200",
+  },
 };
 
 function StatusBadge({ status, className, ...props }: StatusBadgeProps) {
@@ -85,4 +117,4 @@ function StatusBadge({ status, className, ...props }: StatusBadgeProps) {
   );
 }
 
-export { StatusBadge, type OrderStatus, type StockStatus };
+export { StatusBadge, type OrderStatus, type StockStatus, type RobotStatus };
