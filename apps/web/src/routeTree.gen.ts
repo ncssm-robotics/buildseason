@@ -30,6 +30,7 @@ import { Route as TeamProgramNumberPartsNewIndexRouteImport } from "./routes/tea
 import { Route as TeamProgramNumberPartsPartIdIndexRouteImport } from "./routes/team/$program/$number/parts/$partId/index";
 import { Route as TeamProgramNumberOrdersNewIndexRouteImport } from "./routes/team/$program/$number/orders/new/index";
 import { Route as TeamProgramNumberOrdersOrderIdIndexRouteImport } from "./routes/team/$program/$number/orders/$orderId/index";
+import { Route as TeamProgramNumberRobotsRobotIdBomIndexRouteImport } from "./routes/team/$program/$number/robots/$robotId/bom/index";
 import { Route as TeamProgramNumberPartsPartIdEditIndexRouteImport } from "./routes/team/$program/$number/parts/$partId/edit/index";
 
 const VendorsRoute = VendorsRouteImport.update({
@@ -148,6 +149,12 @@ const TeamProgramNumberOrdersOrderIdIndexRoute =
     path: "/orders/$orderId/",
     getParentRoute: () => TeamProgramNumberRoute,
   } as any);
+const TeamProgramNumberRobotsRobotIdBomIndexRoute =
+  TeamProgramNumberRobotsRobotIdBomIndexRouteImport.update({
+    id: "/robots/$robotId/bom/",
+    path: "/robots/$robotId/bom/",
+    getParentRoute: () => TeamProgramNumberRoute,
+  } as any);
 const TeamProgramNumberPartsPartIdEditIndexRoute =
   TeamProgramNumberPartsPartIdEditIndexRouteImport.update({
     id: "/parts/$partId/edit/",
@@ -178,6 +185,7 @@ export interface FileRoutesByFullPath {
   "/team/$program/$number/robots/$robotId": typeof TeamProgramNumberRobotsRobotIdIndexRoute;
   "/team/$program/$number/robots/new": typeof TeamProgramNumberRobotsNewIndexRoute;
   "/team/$program/$number/parts/$partId/edit": typeof TeamProgramNumberPartsPartIdEditIndexRoute;
+  "/team/$program/$number/robots/$robotId/bom": typeof TeamProgramNumberRobotsRobotIdBomIndexRoute;
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
@@ -201,6 +209,7 @@ export interface FileRoutesByTo {
   "/team/$program/$number/robots/$robotId": typeof TeamProgramNumberRobotsRobotIdIndexRoute;
   "/team/$program/$number/robots/new": typeof TeamProgramNumberRobotsNewIndexRoute;
   "/team/$program/$number/parts/$partId/edit": typeof TeamProgramNumberPartsPartIdEditIndexRoute;
+  "/team/$program/$number/robots/$robotId/bom": typeof TeamProgramNumberRobotsRobotIdBomIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -226,6 +235,7 @@ export interface FileRoutesById {
   "/team/$program/$number/robots/$robotId/": typeof TeamProgramNumberRobotsRobotIdIndexRoute;
   "/team/$program/$number/robots/new/": typeof TeamProgramNumberRobotsNewIndexRoute;
   "/team/$program/$number/parts/$partId/edit/": typeof TeamProgramNumberPartsPartIdEditIndexRoute;
+  "/team/$program/$number/robots/$robotId/bom/": typeof TeamProgramNumberRobotsRobotIdBomIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -251,7 +261,8 @@ export interface FileRouteTypes {
     | "/team/$program/$number/parts/new"
     | "/team/$program/$number/robots/$robotId"
     | "/team/$program/$number/robots/new"
-    | "/team/$program/$number/parts/$partId/edit";
+    | "/team/$program/$number/parts/$partId/edit"
+    | "/team/$program/$number/robots/$robotId/bom";
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
@@ -274,7 +285,8 @@ export interface FileRouteTypes {
     | "/team/$program/$number/parts/new"
     | "/team/$program/$number/robots/$robotId"
     | "/team/$program/$number/robots/new"
-    | "/team/$program/$number/parts/$partId/edit";
+    | "/team/$program/$number/parts/$partId/edit"
+    | "/team/$program/$number/robots/$robotId/bom";
   id:
     | "__root__"
     | "/"
@@ -298,7 +310,8 @@ export interface FileRouteTypes {
     | "/team/$program/$number/parts/new/"
     | "/team/$program/$number/robots/$robotId/"
     | "/team/$program/$number/robots/new/"
-    | "/team/$program/$number/parts/$partId/edit/";
+    | "/team/$program/$number/parts/$partId/edit/"
+    | "/team/$program/$number/robots/$robotId/bom/";
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -462,6 +475,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TeamProgramNumberOrdersOrderIdIndexRouteImport;
       parentRoute: typeof TeamProgramNumberRoute;
     };
+    "/team/$program/$number/robots/$robotId/bom/": {
+      id: "/team/$program/$number/robots/$robotId/bom/";
+      path: "/robots/$robotId/bom";
+      fullPath: "/team/$program/$number/robots/$robotId/bom";
+      preLoaderRoute: typeof TeamProgramNumberRobotsRobotIdBomIndexRouteImport;
+      parentRoute: typeof TeamProgramNumberRoute;
+    };
     "/team/$program/$number/parts/$partId/edit/": {
       id: "/team/$program/$number/parts/$partId/edit/";
       path: "/parts/$partId/edit";
@@ -486,6 +506,7 @@ interface TeamProgramNumberRouteChildren {
   TeamProgramNumberRobotsRobotIdIndexRoute: typeof TeamProgramNumberRobotsRobotIdIndexRoute;
   TeamProgramNumberRobotsNewIndexRoute: typeof TeamProgramNumberRobotsNewIndexRoute;
   TeamProgramNumberPartsPartIdEditIndexRoute: typeof TeamProgramNumberPartsPartIdEditIndexRoute;
+  TeamProgramNumberRobotsRobotIdBomIndexRoute: typeof TeamProgramNumberRobotsRobotIdBomIndexRoute;
 }
 
 const TeamProgramNumberRouteChildren: TeamProgramNumberRouteChildren = {
@@ -506,6 +527,8 @@ const TeamProgramNumberRouteChildren: TeamProgramNumberRouteChildren = {
   TeamProgramNumberRobotsNewIndexRoute: TeamProgramNumberRobotsNewIndexRoute,
   TeamProgramNumberPartsPartIdEditIndexRoute:
     TeamProgramNumberPartsPartIdEditIndexRoute,
+  TeamProgramNumberRobotsRobotIdBomIndexRoute:
+    TeamProgramNumberRobotsRobotIdBomIndexRoute,
 };
 
 const TeamProgramNumberRouteWithChildren =

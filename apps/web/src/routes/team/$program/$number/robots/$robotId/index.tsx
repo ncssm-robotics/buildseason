@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge, type RobotStatus } from "@/components/ui/status-badge";
-import { ArrowLeft, Loader2, Bot } from "lucide-react";
+import { ArrowLeft, Loader2, Bot, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/team/$program/$number/robots/$robotId/")(
@@ -195,15 +195,26 @@ function EditRobotPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      {/* Back Link */}
-      <Link
-        to="/team/$program/$number/robots"
-        params={{ program, number }}
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="mr-1 h-4 w-4" />
-        Back to Robots
-      </Link>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <Link
+          to="/team/$program/$number/robots"
+          params={{ program, number }}
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          Back to Robots
+        </Link>
+        <Button variant="outline" asChild>
+          <Link
+            to="/team/$program/$number/robots/$robotId/bom"
+            params={{ program, number, robotId }}
+          >
+            <Layers className="mr-2 h-4 w-4" />
+            View BOM
+          </Link>
+        </Button>
+      </div>
 
       <Card>
         <CardHeader>
