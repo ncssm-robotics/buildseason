@@ -191,8 +191,8 @@ function OrdersPage() {
       className="cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={() =>
         navigate({
-          to: "/team/$program/$number/orders",
-          params: { program, number },
+          to: "/team/$program/$number/orders/$orderId",
+          params: { program, number, orderId: order.id },
         })
       }
     >
