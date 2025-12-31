@@ -24,24 +24,42 @@ Parse the first word of `$ARGUMENTS` to determine subcommand:
 ## Complete Wave Workflow
 
 ```
-Wave N Complete
+Wave N Agents Complete
     ↓
-/army review N              ← 3 parallel review agents
-    ↓
+/army review N              ← Code+Security parallel, then UI (foreground for Chrome MCP)
+    ↓                          Each review creates beads with discovered-from link
 Creates discovery beads (bugs, questions)
     ↓
-/army deploy-fixes N        ← fix discovered issues
+/army deploy-fixes N        ← Fix P0-P1 issues (P2+ deferred with rationale)
     ↓
-/army prepare-checkpoint N  ← generate summary
+/army prepare-checkpoint N  ← Generate CP doc for human review
     ↓
-Human Review (you close checkpoint when satisfied)
+Human Review
+    │ - Reads CP doc
+    │ - Tests locally (bun dev)
+    │ - Adds feedback to CP doc "## Human Feedback" section
     ↓
-/army retro N               ← after-action review, create skills
+/army process-feedback N    ← Convert human feedback → beads, fix P0-P1, update CP doc
     ↓
-/army prepare N+1           ← forward-looking skills for next wave
+Human closes checkpoint when satisfied
     ↓
-/army deploy N+1            ← next wave unlocked
+/army retro N               ← What worked/failed, create/update skills, add to CP doc
+    ↓
+/army prepare N+1           ← Forward-looking skills for next wave
+    ↓
+/army deploy N+1            ← Next wave unlocked
 ```
+
+## Important Notes
+
+1. **Compact before commands**: Run `/compact` before any `/army` subcommand to manage context
+2. **UI Review runs in foreground**: Chrome MCP requires foreground execution
+3. **CP doc tells the story**: Each checkpoint document captures the full wave narrative:
+   - What was implemented
+   - Issues found by reviews
+   - Human feedback and how it was addressed
+   - Retro learnings and skills created/updated/revised
+4. **Nothing falls through cracks**: Every issue becomes a bead, every bead is either fixed or deferred with rationale
 
 ---
 
@@ -270,7 +288,9 @@ bd create --title="Wave X UI/UX Review" --type=task --priority=1 --parent=<check
 
 Note the bead IDs created (e.g., `buildseason-abc`, `buildseason-def`, `buildseason-ghi`).
 
-3. **Launch 3 review agents in parallel** using a SINGLE Task tool message:
+3. **Launch Code + Security reviews in PARALLEL (background):**
+
+Use a SINGLE Task tool message with `run_in_background: true` for both:
 
 #### Code Review Agent Prompt:
 
@@ -319,6 +339,19 @@ WHEN COMPLETE:
 REVIEW BEAD: <security-review-bead-id>
 ```
 
+4. **Wait for Code + Security reviews to complete:**
+
+```
+Monitor with: /tasks
+Or use TaskOutput tool to check status of background agents
+```
+
+When both are complete, proceed to UI review.
+
+5. **Launch UI review in FOREGROUND (required for Chrome MCP):**
+
+> **IMPORTANT:** UI review MUST run in foreground because Chrome MCP browser automation requires synchronous interaction. Do NOT use `run_in_background: true`.
+
 #### UI/UX Review Agent Prompt:
 
 ```
@@ -359,24 +392,25 @@ REVIEW BEAD: <ux-review-bead-id>
 
 ```
 
-4. **Report review launch:**
+6. **Report review completion:**
 
 ```
-
 ============================================================
-WAVE X REVIEW LAUNCHED
+              WAVE X REVIEW COMPLETE
 ============================================================
 
-Review Agents Deployed:
+Review Summary:
+  1. Code Review     → <bead-id> [DONE]
+  2. Security Review → <bead-id> [DONE]
+  3. UI/UX Review    → <bead-id> [DONE]
 
-1. Code Review → <bead-id>
-2. Security Review → <bead-id>
-3. UI/UX Review → <bead-id>
+Issues Found:
+  Code:     X issues (P0: _, P1: _, P2+: _)
+  Security: X issues (P0: _, P1: _, P2+: _)
+  UI/UX:    X issues (P0: _, P1: _, P2+: _)
 
-Monitor progress: /tasks
-
-# When all 3 complete, run: /army deploy-fixes <wave>
-
+Next: /army deploy-fixes <wave>
+============================================================
 ```
 
 ---
@@ -651,6 +685,167 @@ NEXT STEPS:
 2. Answer any questions (update beads, remove 'human' label)
 3. When satisfied: bd close <checkpoint-bead>
 4. Then: /army deploy <next-wave>
+============================================================
+```
+
+---
+
+## SUBCOMMAND: process-feedback
+
+**Usage:** `/army process-feedback <wave-number>`
+
+### Purpose
+
+After human review of the checkpoint document, convert their feedback into beads, fix P0-P1 issues immediately, and update the CP doc to connect feedback to beads.
+
+### Instructions
+
+1. **Read the checkpoint summary with human feedback:**
+
+```bash
+cat docs/checkpoints/cp<N>-wave<W>-summary.md
+```
+
+Look for the "## Human Feedback" section that the human added.
+
+2. **Parse each feedback item:**
+
+For each piece of feedback in the Human Feedback section:
+
+- Determine priority (P0-P4) based on urgency and impact
+- Determine type (bug, feature, question, process)
+- Extract file references if mentioned
+
+3. **Create beads for each feedback item:**
+
+```bash
+bd create --title="<feedback summary>" --type=<bug|task|feature> --priority=<0-4> \
+  --label="human-feedback" \
+  --label="cp<N>-feedback" \
+  --description="<full feedback details>
+
+Source: CP<N> Human Feedback #<number>"
+```
+
+4. **Separate by priority:**
+
+- **P0-P1**: Fix immediately in this command
+- **P2+**: Defer to future waves (bead exists, rationale in CP doc)
+
+5. **Fix P0-P1 issues:**
+
+For each P0-P1 feedback item, either:
+
+a) Fix directly if simple:
+
+```bash
+# Make the fix
+git add -A
+git commit -m "fix: <description>
+
+Addresses human feedback #<N> from CP<W>
+Closes: <bead-id>"
+bd close <bead-id>
+```
+
+b) Launch fix agent if complex:
+
+```
+You are a FIX agent for BuildSeason.
+
+BEAD: <bead-id>
+ISSUE: <title>
+SOURCE: Human feedback from Checkpoint N
+
+FEEDBACK:
+<full feedback text>
+
+INSTRUCTIONS:
+1. Understand what the human is asking for
+2. Read relevant files
+3. Implement the requested change
+4. Verify: `bun run typecheck`
+5. Commit with message referencing the feedback
+6. Close the bead
+
+CONSTRAINTS:
+- Address EXACTLY what was requested
+- Do not over-engineer or add unrelated changes
+- If unclear, leave bead open with comment asking for clarification
+```
+
+6. **Update the checkpoint document:**
+
+Add a new section connecting feedback to beads:
+
+```markdown
+## Feedback Resolution
+
+| #   | Feedback  | Priority | Bead            | Status            |
+| --- | --------- | -------- | --------------- | ----------------- |
+| 1   | <summary> | P1       | buildseason-xyz | Fixed             |
+| 2   | <summary> | P2       | buildseason-abc | Deferred (Wave 3) |
+| 3   | <summary> | P1       | buildseason-def | Fixed             |
+
+### P0-P1 Fixes Applied
+
+#### Feedback #1: <title>
+
+- **Bead:** buildseason-xyz
+- **Fix:** <description of what was done>
+- **Commit:** <hash>
+
+#### Feedback #3: <title>
+
+- **Bead:** buildseason-def
+- **Fix:** <description of what was done>
+- **Commit:** <hash>
+
+### Deferred Items (P2+)
+
+| Bead            | Feedback  | Rationale for Deferral   |
+| --------------- | --------- | ------------------------ |
+| buildseason-abc | <summary> | <why it's okay to defer> |
+```
+
+7. **Commit and sync:**
+
+```bash
+git add -A
+git commit -m "chore: process human feedback for CP<N>
+
+- Created X beads from feedback
+- Fixed Y P0-P1 issues
+- Deferred Z items to future waves
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+bd sync
+git push
+```
+
+8. **Report completion:**
+
+```
+============================================================
+         HUMAN FEEDBACK PROCESSED: CP<N>
+============================================================
+
+Feedback Items: X total
+  P0-P1 (fixed): Y
+  P2+ (deferred): Z
+
+Beads Created:
+  ✓ buildseason-xyz: <title> (P1, fixed)
+  ✓ buildseason-abc: <title> (P2, deferred)
+  ✓ buildseason-def: <title> (P1, fixed)
+
+CP Doc Updated: docs/checkpoints/cp<N>-wave<W>-summary.md
+  Added "Feedback Resolution" section
+
+NEXT STEPS:
+- Human reviews the updated CP doc
+- When satisfied, human closes checkpoint: bd close <checkpoint-bead>
+- Then: /army retro <wave>
 ============================================================
 ```
 
