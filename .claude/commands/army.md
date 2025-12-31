@@ -404,7 +404,16 @@ SPECS TO REFERENCE:
 
 - docs/ui-refocus-spec.md (primary UI spec)
 - docs/ui-ux-design-spec.md (design system)
+- .claude/skills/brand-guidelines/SKILL.md (colors, fonts, design elements)
 - Individual bead descriptions for feature requirements
+
+BRAND GUIDELINES TO ENFORCE:
+Before reviewing, read .claude/skills/brand-guidelines/SKILL.md and verify:
+
+- Typography: Oxanium for headings, IBM Plex Sans for body, JetBrains Mono for data
+- Colors: Electric Cyan primary (#00d4ff), dark industrial background
+- Data values: Use font-mono with tabular-nums
+- Design elements: Blueprint grids, glow effects, corner accents where appropriate
 
 VISUAL REVIEW CHECKLIST:
 
@@ -426,11 +435,13 @@ VISUAL REVIEW CHECKLIST:
    - Check dropdowns, modals, and dialogs work
    - Verify loading states appear during async operations
 
-4. Visual Design:
-   - Colors match theme (dark mode if applicable)
-   - Spacing and alignment look correct
-   - Typography is readable and hierarchical
-   - Icons are present and meaningful
+4. Visual Design (per brand-guidelines skill):
+   - Colors match Workshop Blueprint theme (dark industrial)
+   - Primary accent is Electric Cyan (oklch 75% 0.18 195)
+   - Headings use font-display (Oxanium)
+   - Data values use font-mono (JetBrains Mono) with tabular-nums
+   - Spacing and alignment are consistent
+   - Icons are present and use text-primary or text-muted-foreground
 
 5. Accessibility (visual checks):
    - Focus indicators visible when tabbing

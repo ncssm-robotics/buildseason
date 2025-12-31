@@ -11,6 +11,10 @@ allowed-tools: Read, Glob, Grep, mcp__claude-in-chrome__*
 
 All UI beads must be tested with Chrome MCP before closing.
 
+## Related Skills
+
+- **brand-guidelines** - Typography, colors, and design patterns to verify
+
 ## When to Use
 
 - Any bead that adds/modifies UI components
@@ -84,6 +88,41 @@ Chrome MCP runs in your actual browser with existing cookies:
 | Auth redirect     | Log in manually first, or use existing session  |
 | Element not found | Use `read_page` to see actual DOM structure     |
 | Console errors    | Use `read_console_messages` with pattern filter |
+
+## Visual Design Verification
+
+When testing UI, verify against **brand-guidelines** skill:
+
+### Typography
+
+- Headings use `font-display` (Oxanium) - check `font-family` in DevTools
+- Body text uses `font-body` (IBM Plex Sans)
+- Data values use `font-mono` (JetBrains Mono) with `tabular-nums`
+- Status badges: uppercase, wide tracking
+
+### Colors
+
+- Background: Dark industrial (`oklch(14% 0.01 250)`)
+- Primary: Electric Cyan (`oklch(75% 0.18 195)` / #00d4ff)
+- Text: Light foreground (`oklch(92% 0.01 250)`)
+- Muted text: `text-muted-foreground` class
+
+### Design Elements
+
+- Cards use `border-border bg-card`
+- Primary buttons have cyan glow on hover
+- Data displays use `metric-box` or `font-mono tabular-nums`
+- Section headers have cyan bar accent
+
+### Quick Checks
+
+```
+[ ] Headings are Oxanium (geometric, technical look)
+[ ] Data values are monospace with aligned digits
+[ ] Primary color is cyan, not blue
+[ ] Dark theme (industrial, not pure black)
+[ ] Icons use text-primary or text-muted-foreground
+```
 
 ## Dev vs Production URLs
 
