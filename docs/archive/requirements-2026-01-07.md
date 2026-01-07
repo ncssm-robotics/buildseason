@@ -1,9 +1,10 @@
 # BuildSeason
+
 ## Product Requirements Document
 
 **Version:** 1.0  
 **Date:** December 29, 2025  
-**Status:** Draft  
+**Status:** Draft
 
 ---
 
@@ -19,9 +20,10 @@ The platform targets the intersection of two critical needs: making coaches' liv
 
 ### The Core Insight: Machines for Machine Work, Humans for Human Work
 
-The most profound impact of BuildSeason isn't efficiency—it's *liberation*. 
+The most profound impact of BuildSeason isn't efficiency—it's _liberation_.
 
 Every minute a mentor spends comparing restaurant menus, cross-referencing dietary restrictions, calculating delivery timing, and coordinating orders is a minute they're NOT:
+
 - Sitting with the kid whose code doesn't work and who's about to cry from frustration
 - Noticing that two students are having a conflict and gently intervening
 - Celebrating the moment the robot actually picks something up for the first time
@@ -32,7 +34,8 @@ Every minute a mentor spends comparing restaurant menus, cross-referencing dieta
 
 **These are irreplaceable human moments.** No machine can do them. They're why mentors volunteer. They're what students remember 20 years later.
 
-But here's the tragedy: mentors spend enormous energy on logistics that machines can do *better*. The machine can:
+But here's the tragedy: mentors spend enormous energy on logistics that machines can do _better_. The machine can:
+
 - Cross-reference 12 dietary restrictions perfectly, every time
 - Calculate delivery timing to the minute
 - Remember that Marcus hated the pizza place and Sofia loved the Thai restaurant
@@ -63,6 +66,7 @@ Mentors volunteer their limited time. They shouldn't spend it asking "did you or
 
 **4. Notice What Humans Miss**
 The agent should see patterns humans don't:
+
 - "You've emergency-ordered zip ties before 3 of your last 4 competitions"
 - "This part is showing 'limited stock' at REV—you use 12 per robot"
 - "Lead times from goBILDA have increased 2 days this month"
@@ -73,6 +77,7 @@ Sponsor relationships aren't about quarterly PDFs. They're about making sponsors
 
 **6. Prepare, Don't Just Remind**
 The difference between a reminder and preparation:
+
 - Reminder: "Don't forget to order lunch for the MakerFaire event"
 - Preparation: "Here are 3 restaurant options that can deliver to the MakerFaire location, accommodate all 8 attendees' dietary needs, and fit within budget. Option A is Thai (Sofia's favorite), Option B is pizza (but Marcus had a bad experience last time), Option C is Mediterranean (new, good reviews, halal options). Want me to poll the students?"
 
@@ -91,6 +96,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 **Budget:** $180 for the day ($18/person × 10 people)
 
 **Dietary restrictions (stored in student profiles):**
+
 - Sofia: Vegetarian
 - Marcus: Nut allergy (severe)
 - Aisha: Halal
@@ -98,6 +104,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 - Others: No restrictions
 
 **Stored preferences (from previous events):**
+
 - Sofia: Loved the Thai place (Pad Thai, 4.5 stars)
 - Marcus: Bad experience with Domino's (wrong order, late)
 - Team generally: Prefers variety over pizza again
@@ -106,7 +113,8 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 
 **Thursday, 2 days before event:**
 
-*Agent processes:*
+_Agent processes:_
+
 1. Event is Saturday, 8 students + 2 adults confirmed
 2. Cross-reference attendee dietary needs
 3. Search for restaurants that can deliver to Convention Center
@@ -116,49 +124,55 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 7. Find dinner options on route home
 8. Compile with rationale
 
-*Agent DMs Mrs. Chen (designated lead chaperone):*
+_Agent DMs Mrs. Chen (designated lead chaperone):_
 
 > "Hi Mrs. Chen! I've put together meal options for Saturday's MakerFaire. Here's what I found:
 >
 > **Lunch (delivered to booth, ~12:30pm):**
 >
 > **Option A: Thai Basil** ⭐ Recommended
+>
 > - $14-18/person, fits budget ✓
 > - Vegetarian: Extensive options (Sofia loved their Pad Thai last time)
 > - Nut-free: Kitchen can accommodate with notice
 > - Halal: Yes, certified
 > - Gluten-free: Multiple options
 > - Delivery: Reliable, 4.8 stars, delivers to Convention Center
-> - *Why I like it: Checks every dietary box, team has positive history*
+> - _Why I like it: Checks every dietary box, team has positive history_
 >
 > **Option B: Mezze Mediterranean**
+>
 > - $12-16/person, under budget ✓
 > - Vegetarian: Good falafel/hummus options
 > - Nut-free: Kitchen is nut-free
 > - Halal: Most items halal
 > - Gluten-free: Salads, rice bowls
 > - Delivery: 4.5 stars, new to area
-> - *Why I like it: Budget-friendly, naturally accommodates all restrictions*
+> - _Why I like it: Budget-friendly, naturally accommodates all restrictions_
 >
 > **Option C: Panera Bread**
+>
 > - $11-14/person, well under budget ✓
 > - Covers all dietary needs but less exciting
 > - Very reliable delivery
-> - *Backup option: Safe but the team might prefer more variety*
+> - _Backup option: Safe but the team might prefer more variety_
 >
 > **Dinner (on route home, ~6:30pm):**
 >
 > **Option A: Chili's** (exit 34, 5 min detour)
+>
 > - Quick seating for groups, predictable
 > - All dietary needs covered
 > - Kids generally like it
 >
 > **Option B: Local Mexican place "Casa del Sol"** (exit 36, 8 min detour)
+>
 > - Better food, slightly longer wait
 > - Great vegetarian/halal options
 > - More memorable
 >
 > Want me to:
+>
 > 1. ✅ Run a poll in Discord for the students to vote?
 > 2. Just pick Thai Basil + Casa del Sol (my recommendation)?
 > 3. See more options?
@@ -188,7 +202,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 
 **Friday evening, agent DMs Mrs. Chen:**
 
-> "Poll results are in! 
+> "Poll results are in!
 >
 > **Lunch:** Thai Basil (6 votes)
 > **Dinner:** Casa del Sol (5 votes)
@@ -196,6 +210,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 > I've prepared everything:
 >
 > **Thai Basil Order (ready to place):**
+>
 > - Order for 10, delivery to Convention Center Booth #47
 > - Delivery time: 12:30pm Saturday
 > - Total estimate: $156 (under budget ✓)
@@ -204,6 +219,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 > - [Link to their online ordering]
 >
 > **Casa del Sol:**
+>
 > - Reservation for 10 at 6:45pm (gives buffer from event end)
 > - Address: 1234 Main St (Exit 36, 8 min from Convention Center)
 > - Phone: (555) 987-6543
@@ -212,6 +228,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 > **Budget status:** ~$156 lunch + ~$140 dinner estimate = ~$296. You're $116 over the $180 budget.
 >
 > Options:
+>
 > - Request additional budget approval ($116)
 > - Switch dinner to Chili's (saves ~$30)
 > - Have students contribute $5 each toward dinner
@@ -225,6 +242,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 **Saturday 9am, Mrs. Chen confirms budget approved:**
 
 **Agent:**
+
 > "Perfect! Here's your Saturday meal summary card (also sent to your email for offline access):
 >
 > **LUNCH - Thai Basil**
@@ -249,6 +267,7 @@ This scenario illustrates the philosophy in action. Watch how the agent handles 
 ### What Just Happened
 
 The mentor (Mrs. Chen) spent approximately **3 minutes** on meal coordination:
+
 - 30 seconds reading options
 - 10 seconds approving the poll
 - 30 seconds reading poll results
@@ -256,6 +275,7 @@ The mentor (Mrs. Chen) spent approximately **3 minutes** on meal coordination:
 - 10 seconds acknowledging final summary
 
 The agent handled:
+
 - Cross-referencing 4 different dietary restrictions across 8 students
 - Researching restaurants that deliver to the venue
 - Checking reviews, reliability, and timing
@@ -268,13 +288,14 @@ The agent handled:
 - Storing new preference data for next time
 
 **Mrs. Chen's bandwidth on Saturday was spent:**
+
 - Helping a nervous student practice their booth presentation
 - Noticing that Jordan seemed off and checking in (turns out: stressed about a test Monday)
 - Celebrating when a middle schooler said "I want to do robotics because of you guys"
 - Taking the photos that will go to sponsors
-- Being *present* with the team
+- Being _present_ with the team
 
-**This is what technology should do.** Not replace humans—*liberate them* to be more human.
+**This is what technology should do.** Not replace humans—_liberate them_ to be more human.
 
 ---
 
@@ -283,19 +304,24 @@ The agent handled:
 ### For Students: The Agent as Team Mascot
 
 **GLaDOS in Discord (#mechanical channel):**
+
 > "I notice the arm subsystem hasn't logged progress since Tuesday. I'm not saying the robot will be incomplete. I'm just running the probability calculations. They're not good, Marcus."
 
 **Celebrating small wins:**
+
 > "Sofia just completed her first solo part order without adult supervision. The Enrichment Center is... almost impressed. [confetti emoji]"
 
 **Competition countdown with personality:**
+
 > "14 days until regionals. At current velocity, you will complete the intake with approximately 6 hours to spare. I recommend against celebrating yet. But I've been wrong before. Once."
 
 **When someone finds lost parts:**
+
 > "Inventory reconciliation detected: 6 standoffs found in the 'mystery bin.' I've added them to inventory and made a note that bin organization may require attention. No judgment. Much."
 
 **The "it just knew" moment:**
 Student updates OnShape assembly at 10pm. By 10:02pm, in #design:
+
 > "I see you've added REV-41-1877 to the arm assembly. Checking... We have 0 in stock. REV has them, 5-day lead time, $51.96 for 4. Budget can handle it. Competition is in 18 days—you have margin. Want me to add to the order queue? React ✅ to confirm."
 
 Student reacts ✅. Done. No forms, no asking permission, no wondering if someone will see it.
@@ -303,14 +329,17 @@ Student reacts ✅. Done. No forms, no asking permission, no wondering if someon
 ### For Mentors: The "I Didn't Have to Ask" Experience
 
 **Monday morning dashboard:**
+
 > "Weekend summary: 3 parts ordered (auto-approved under threshold), 2 permission forms received, OnShape BOM updated with 4 new parts (all cross-referenced, 1 needs ordering). Action needed: 0 items. GLaDOS handled it."
 
 **Escalation that actually helps:**
+
 > "I've reminded Marcus 3 times about the arm BOM update. Last reminder was Tuesday. No response. His typical response time is 4 hours. This is unusual. Want to check in?"
 
 One click opens a draft message with context. Mentor isn't starting from scratch.
 
 **Pattern recognition:**
+
 > "Observation: Build sessions before 4pm have 73% attendance. Build sessions after 6pm have 94% attendance. Consider schedule adjustment?"
 
 ### For Sponsors: Feeling Connected, Not Reported To
@@ -320,39 +349,47 @@ One click opens a draft message with context. Mentor isn't starting from scratch
 Competition day. Team wins Inspire Award. Sofia (specifically funded by TechCorp's STEM grant) was the lead presenter. Photos are uploaded to the system.
 
 Agent notices:
+
 - Award won (competition results webhook)
 - Sofia in photos (tagged or face recognition)
 - Sofia connected to TechCorp funding source
 - Last TechCorp contact: 34 days ago
 
 Agent drafts (in sponsor dashboard, with notification):
+
 > "TechCorp moment detected: Sofia, funded by their STEM grant, just led the team to an Inspire Award. Draft message ready with photo. This is the kind of story they want to hear."
 
 Coach personalizes for 30 seconds, sends. TechCorp contact gets a genuine, timely, personal message—not a quarterly PDF.
 
 **Relationship nurturing prompts:**
+
 > "It's been 47 days since you contacted TechCorp. Their renewal conversation is in 90 days. Since your last update: Won regional qualifier, Sofia presented at MakerFaire, team completed 12 outreach hours. Any of these worth sharing?"
 
 **The "sponsor memory" feature:**
+
 > "TechCorp's original funding letter mentioned they care about 'students pursuing engineering careers.' Sofia just announced she's applying to MIT for mechanical engineering. This connects directly to their stated interest. Personalized update draft ready."
 
 ### For International Teams: The Travel Concierge
 
 **Flight monitoring:**
+
 > "Your Frankfurt connection is delayed 45 minutes. Current buffer: 90 minutes. New buffer: 45 minutes. Still viable but tighter. I'm monitoring. If it slips another 20 minutes, I'll present rebooking options."
 
-*20 minutes later:*
+_20 minutes later:_
+
 > "Connection now at risk. I've identified 3 rebooking scenarios:
 > • Option A: Keep group together, arrive 4 hours late, €0 additional cost (airline responsibility)
 > • Option B: Split into two groups on different connections, both arrive 2 hours late, €340 rebooking fees
 > • Option C: Overnight in Frankfurt, airline provides hotel, arrive next morning fresh
-> 
+>
 > Budget impact and logistics breakdown for each available. Which scenario should I prepare?"
 
 **Customs preparation:**
+
 > "Based on your equipment manifest, I've pre-generated customs declarations for US entry. Note: You have 4 lithium battery packs listed. US CBP requires these in carry-on luggage, not checked. I've flagged this for your packing assignments. Also, the robot's declared value of €8,400 is below the threshold requiring an ATA Carnet, but I recommend one anyway based on community reports of smoother processing."
 
 **Dietary coordination:**
+
 > "Dinner reservation confirmed at Pappadeaux for 24. I've informed them: 4 vegetarian, 2 halal (they confirmed halal fish options), 1 severe nut allergy (kitchen will prepare separately). Menu preview sent to travelers. Marcus asked about the dessert situation—I told him there are nut-free options. He seemed relieved."
 
 ### The "This Changes Everything" Demos
@@ -363,6 +400,7 @@ These are the moments that make people say "wait, it can do THAT?"
 OnShape webhook fires → agent checks inventory → agent checks vendor availability → agent calculates lead time against competition date → Discord message with one-click ordering. Student updates CAD; 90 seconds later, they know if they have a problem.
 
 **"It noticed the pattern I missed"**
+
 > "Observation: You've ordered from goBILDA with expedited shipping 4 times this season, total $127 in rush fees. Average non-rush lead time: 7 days. If you'd ordered 7 days earlier each time, you'd have saved $127. Want me to add a 'goBILDA 7-day warning' to your competition countdown?"
 
 **"The sponsor got a video from our robot"**
@@ -370,10 +408,12 @@ Competition win → System prompts for celebration video → Student records 30 
 
 **"It knew the part was being discontinued"**
 Vendor monitoring detects "limited stock" or "discontinued" status on a part the team uses frequently:
+
 > "Alert: REV-41-1320 is showing 'limited stock' status on REV's website. You've used 12 of these this season. Current price: $8.99. Recommend ordering a buffer supply? React with quantity: 🔟 for 10, 2️⃣0️⃣ for 20."
 
 **"GLaDOS negotiated our hotel block"**
 Agent has access to team size, dates, budget parameters:
+
 > "I found 3 hotel options near the venue for Worlds. Best value: Marriott Marquis, $189/night, 2.3 miles from venue, breakfast included, 12 rooms available in block. Total: $4,536 for 4 nights. This is 23% under your lodging budget. Want me to draft a booking request?"
 
 ---
@@ -417,6 +457,7 @@ Marcus finishes redesigning the arm. New assembly uploaded.
 **10:47 PM — BuildSeason webhook receives update**
 
 **10:48 PM — Agent processes:**
+
 - Parses BOM diff from previous version
 - Cross-references each part against inventory
 - Checks vendor availability and pricing
@@ -425,23 +466,24 @@ Marcus finishes redesigning the arm. New assembly uploaded.
 - Evaluates budget impact
 
 **10:49 PM — Discord #design channel:**
+
 > "Hey Marcus, I see you've updated the arm assembly. Here's what changed:
-> 
+>
 > **New parts needed:**
-> • REV-41-1877 (qty 4) — Not in stock, not ordered. REV has it, $12.99 ea, 5-day lead. 
+> • REV-41-1877 (qty 4) — Not in stock, not ordered. REV has it, $12.99 ea, 5-day lead.
 > • goBILDA 3104 (qty 2) — 2 in inventory. You're covered.
-> 
+>
 > **Parts no longer needed:**
 > • REV-41-1320 (qty 2) — We have 4 on order. Want me to reduce the order?
-> 
+>
 > **Budget impact:** +$51.96 for new parts, -$25.98 if we reduce the order. Net: +$25.98
-> 
+>
 > **Timeline check:** Competition in 18 days. Longest lead time is 5 days. ✅ You have margin.
-> 
+>
 > Want me to:
 > ✅ Add REV-41-1877 (4) to order queue
 > 📉 Reduce REV-41-1320 order from 4 to 2
-> 
+>
 > React to confirm either/both."
 
 Marcus reacts with both emojis. Order queue updated. Mentor gets a summary notification in the morning if they want it. No meetings, no forms, no waiting until the next build session to ask.
@@ -449,12 +491,15 @@ Marcus reacts with both emojis. Order queue updated. Mentor gets a summary notif
 ---
 
 ### Vision
+
 Every robotics team—from first-year programs to world championship contenders—operates with the clarity and confidence of a well-run engineering organization.
 
 ### Mission
-To create an open-source platform that makes the *right* operational practices easy, building awareness and accountability in students without requiring mentors to constantly monitor and nag.
+
+To create an open-source platform that makes the _right_ operational practices easy, building awareness and accountability in students without requiring mentors to constantly monitor and nag.
 
 ### Strategic Positioning
+
 - **Win the best teams first.** Elite teams have the most pain, highest standards, and greatest influence. When championship-caliber teams adopt BuildSeason, others follow.
 - **Start with FTC, design for extensibility.** The architecture accommodates FRC, MATE underwater robotics, rocketry, and other programs from day one.
 - **Hosted service with community intelligence.** Aggregated, anonymized data creates network effects—lead time insights, vendor reliability scores, and community benchmarks that benefit all participating teams.
@@ -466,67 +511,78 @@ To create an open-source platform that makes the *right* operational practices e
 ### Primary Personas
 
 #### Coach Chen — The Volunteer Mentor
+
 **Demographics:** Software engineer by day, FTC mentor by evening. Parents two kids, one on the team. Limited time, high standards.
 
 **Goals:**
+
 - Stop being the bottleneck for every decision
 - Know the team is on track without micromanaging
 - Not lose sleep wondering if critical parts will arrive in time
 - Teach students real skills, not just robotics
 
 **Pain Points:**
+
 - Spreadsheets everywhere, none of them current
 - Students forget to tell her when things ship
 - Budget tracking happens in her head
 - Permission forms are a nightmare to chase
 - "Did we ever order that bearing?"
 
-**Wow Moment:** *Opening the app Monday morning and seeing: "All critical path parts ordered. Estimated arrival: 4 days before competition. No action needed." She didn't have to ask anyone.*
+**Wow Moment:** _Opening the app Monday morning and seeing: "All critical path parts ordered. Estimated arrival: 4 days before competition. No action needed." She didn't have to ask anyone._
 
 ---
 
 #### Marcus — The Build Captain
+
 **Demographics:** Junior, third year on the team. Natural leader, strong technical skills, wants more responsibility.
 
 **Goals:**
+
 - Run the mechanical subsystem like a professional team
 - Know what parts he can use without asking permission
 - Prove he's ready for engineering leadership roles
 - Build a portfolio that impresses colleges
 
 **Pain Points:**
+
 - Has to wait for coach approval for everything
 - Never knows what's actually in inventory
 - Spends meeting time tracking down parts status
 - Other students don't follow through on orders
 
-**Wow Moment:** *Getting a notification: "Part REV-41-1320 in your assembly hasn't been ordered. Based on goBILDA's current 7-day lead time, order by Wednesday to have it before regionals." He orders it himself with one click, coach gets notified, done.*
+**Wow Moment:** _Getting a notification: "Part REV-41-1320 in your assembly hasn't been ordered. Based on goBILDA's current 7-day lead time, order by Wednesday to have it before regionals." He orders it himself with one click, coach gets notified, done._
 
 ---
 
 #### Sofia — The New Programmer
+
 **Demographics:** Freshman, joined because a friend was on the team. Intimidated by the experienced members. Learning fast.
 
 **Goals:**
+
 - Understand how the team operates
 - Not mess anything up
 - Find ways to contribute beyond just coding
 - Feel like part of the team
 
 **Pain Points:**
+
 - Doesn't know who to ask about parts
 - Afraid to touch inventory system
 - Lost when seniors talk about "build season chaos"
 - Wants to help but doesn't know how
 
-**Wow Moment:** *Being assigned "Electronics Parts Manager" role and actually feeling confident because the system shows her exactly what she's responsible for, what's running low, and what to do about it.*
+**Wow Moment:** _Being assigned "Electronics Parts Manager" role and actually feeling confident because the system shows her exactly what she's responsible for, what's running low, and what to do about it._
 
 ---
 
 #### International Team Coordinator — Elena, Team from Romania
+
 **Demographics:** Teacher at technical high school in Bucharest, running nation's top FTC team with students who've competed at Worlds three times. Managing €100k+ annual budget across government grants, corporate sponsors, and parent contributions.
 
 **Goals:**
+
 - Order parts that actually arrive in time despite 8+ day lead times
 - Get 24 people (18 students, 6 mentors) to Houston and back safely
 - Track customs and international shipping without surprises
@@ -535,6 +591,7 @@ To create an open-source platform that makes the *right* operational practices e
 - Connect with global FTC community and share knowledge
 
 **Pain Points:**
+
 - Lead times from US vendors are unpredictable (customs adds uncertainty on top of shipping)
 - Worlds travel is a 3-month planning nightmare: passports, visas, consent forms, dietary needs, hotel rooms, flight connections
 - Exchange rates make budgeting complex; receipts come in 3 currencies
@@ -544,26 +601,29 @@ To create an open-source platform that makes the *right* operational practices e
 - Sponsor deliverables (social posts, logo placement, facility visits) tracked on sticky notes
 - Parents want to know exactly where their child will be at every moment of international travel
 
-**Wow Moment:** *Two weeks before Worlds departure, opening the dashboard and seeing: "24/24 travelers document-ready (passports valid, visas confirmed, consent forms signed). Dietary requirements compiled (4 vegetarian, 2 halal, 1 nut allergy). Hotel rooming assignments complete. Customs declarations pre-generated. Contingency contacts documented. Flight delay monitoring active." She doesn't have to check a single spreadsheet.*
+**Wow Moment:** _Two weeks before Worlds departure, opening the dashboard and seeing: "24/24 travelers document-ready (passports valid, visas confirmed, consent forms signed). Dietary requirements compiled (4 vegetarian, 2 halal, 1 nut allergy). Hotel rooming assignments complete. Customs declarations pre-generated. Contingency contacts documented. Flight delay monitoring active." She doesn't have to check a single spreadsheet._
 
 ---
 
 #### Parent — The Booster Club Treasurer
+
 **Demographics:** Works in finance, volunteered to help with team budget. Not technical, wants to support daughter's team.
 
 **Goals:**
+
 - Track where money goes
 - Generate reports for sponsors
 - Ensure receipts are collected
 - Understand costs for fundraising targets
 
 **Pain Points:**
+
 - Students submit receipts randomly (or not at all)
 - Hard to see committed vs. spent vs. remaining
 - Sponsor reports take hours to compile
 - No visibility into what's pending
 
-**Wow Moment:** *Generating a sponsor report in 30 seconds that shows exactly how their $500 donation was spent, complete with photos of the subsystem it funded.*
+**Wow Moment:** _Generating a sponsor report in 30 seconds that shows exactly how their $500 donation was spent, complete with photos of the subsystem it funded._
 
 ---
 
@@ -580,17 +640,20 @@ To create an open-source platform that makes the *right* operational practices e
 ### Core Jobs
 
 #### Job 1: "Help me know what to order and when"
+
 **Context:** Build season is 16 weeks of intense activity. Missing one $12 part can delay an entire subsystem.
 
 **Current Approach:** Spreadsheets, memory, frantic last-minute orders, overnight shipping costs
 
 **Success Criteria:**
+
 - Never miss a critical part for competition
 - Order at optimal time (not too early, not too late)
 - Minimize expedited shipping costs
 - Know order status without asking anyone
 
 **Functional Needs:**
+
 - BOM tracking tied to design files (OnShape integration)
 - Lead time estimation by vendor and destination
 - Proactive notifications based on competition dates
@@ -599,17 +662,20 @@ To create an open-source platform that makes the *right* operational practices e
 ---
 
 #### Job 2: "Help me track what we have and where it is"
+
 **Context:** FTC teams operate from closets, garages, classrooms. Parts migrate between locations. New students don't know the system.
 
 **Current Approach:** Memory, labels that fall off, "ask the seniors," frantic searches at 10pm
 
 **Success Criteria:**
+
 - Find any part in under 30 seconds
 - Know quantities without counting
 - Get alerts before running out
 - Handle the "found parts in random box" discovery gracefully
 
 **Functional Needs:**
+
 - Location hierarchy (room → cabinet → bin)
 - Quantity tracking with photos
 - Check-out during build sessions
@@ -619,17 +685,20 @@ To create an open-source platform that makes the *right* operational practices e
 ---
 
 #### Job 3: "Help me manage money without being the bad guy"
+
 **Context:** Teams operate on tight budgets—often grants with restrictions. Students want to order; coaches want control.
 
 **Current Approach:** Coach controls credit card, students ask for permission, receipts get lost, budget is fuzzy
 
 **Success Criteria:**
+
 - Students can request purchases independently
 - Approval workflow doesn't slow things down
 - Budget status is visible to all stakeholders
 - Sponsor reporting is effortless
 
 **Functional Needs:**
+
 - Budget categories with allocation
 - Purchase request → approval workflow
 - Receipt capture and attachment
@@ -639,17 +708,20 @@ To create an open-source platform that makes the *right* operational practices e
 ---
 
 #### Job 4: "Help me get students to competitions legally"
+
 **Context:** Schools require permission forms for every off-campus activity. Forms expire. Parents forget to sign. Coaches chase signatures.
 
 **Current Approach:** Paper forms, email reminders, spreadsheet tracking, last-minute scrambles
 
 **Success Criteria:**
+
 - Know exactly who's cleared for each event
 - Collect signatures electronically where allowed
 - Automated reminders to parents
 - Clear dashboard before each competition
 
 **Functional Needs:**
+
 - Form templates by event type
 - Per-student status tracking
 - Parent notification system
@@ -659,17 +731,20 @@ To create an open-source platform that makes the *right* operational practices e
 ---
 
 #### Job 5: "Help me build awareness without nagging"
+
 **Context:** Mentors are volunteers. They shouldn't spend their limited time chasing down status updates. Students should develop responsibility.
 
 **Current Approach:** Mentors ask in every meeting, students forget between meetings, things slip through cracks
 
 **Success Criteria:**
+
 - Students see their responsibilities proactively
 - Escalation happens only when necessary
 - Mentors can "trust but verify"
 - Deadlines are visible without being announced
 
 **Functional Needs:**
+
 - Role-based dashboards with personal action items
 - Graduated notification escalation
 - Competition-aware deadline calculation
@@ -682,6 +757,7 @@ To create an open-source platform that makes the *right* operational practices e
 ### The Transformation Promise
 
 **Before BuildSeason:**
+
 - Spreadsheets that nobody updates
 - Mentors who carry everything in their heads
 - Students who wait to be told what to do
@@ -690,6 +766,7 @@ To create an open-source platform that makes the *right* operational practices e
 - "I thought someone else ordered that"
 
 **After BuildSeason:**
+
 - Single source of truth everyone trusts
 - Mentors who check in, not check up
 - Students who own their responsibilities
@@ -700,24 +777,28 @@ To create an open-source platform that makes the *right* operational practices e
 ### Wow Moments by Persona
 
 #### Coach Chen's Wow Moments
+
 1. **"I didn't have to ask"** — Opening the dashboard and seeing all critical parts tracked, ordered, and on schedule without initiating any conversations
 2. **"The system caught what I missed"** — Notification about a part in the design that wasn't in inventory or on order
 3. **"Sponsor report in 30 seconds"** — Generating professional budget documentation instantly
 4. **"Permission forms handled themselves"** — Arriving at competition with all paperwork complete because the system managed the reminders
 
-#### Marcus's Wow Moments  
+#### Marcus's Wow Moments
+
 1. **"I can actually see what I'm responsible for"** — Personal dashboard showing exactly what actions are needed from him
 2. **"I ordered it myself"** — Submitting a purchase request, getting automatic approval under threshold, done
 3. **"The system knew before I did"** — Alert about lead time putting a needed part at risk
 4. **"I looked like a professional"** — Presenting subsystem budget report at sponsors night from the app
 
 #### Sofia's Wow Moments
+
 1. **"I understand how this works"** — Clear onboarding showing her role and responsibilities
 2. **"I found it immediately"** — Searching for a part and seeing exactly which bin it's in
 3. **"I can help without breaking anything"** — Marking parts as checked out during build session with confidence
 4. **"The seniors asked ME"** — Being the authority on electronics parts status because she owns that role
 
 #### International Team's Wow Moments
+
 1. **"I know when it will actually arrive"** — Community-powered lead time estimates to their specific region
 2. **"Currency is handled"** — Budget tracking in their currency with vendor prices converted automatically
 3. **"We're connected to the global community"** — Seeing that other teams are dealing with the same vendor challenges
@@ -726,21 +807,25 @@ To create an open-source platform that makes the *right* operational practices e
 ### Delight Factors
 
 **Unexpected Helpfulness:**
+
 - System notices design-to-inventory discrepancies before humans do
 - Suggests alternative parts when primary choice has long lead time
 - Remembers "last time you competed at this venue, you needed X"
 
 **Anticipatory Intelligence:**
+
 - "If you plan to use this part, order by Wednesday"
 - "Three teams in your region also ordered from goBILDA this week—lead times may increase"
 - "Your budget is 80% committed with 12 weeks remaining—here's how similar teams pace spending"
 
 **Community Connection:**
+
 - See (anonymized) how your team compares to others
 - Benefit from collective wisdom on vendors
 - Contribute to community knowledge automatically
 
 **Personality & Delight:**
+
 - GLaDOS-inspired agent persona (opt-in) provides dry, helpful commentary
 - "Part REV-41-1320 has been in 'needed' status for 9 days. I'm not saying you've forgotten. I'm just noting it for the permanent record."
 - Easter eggs for Portal fans (Companion Cube icons, "the cake is a lie" for slipped deliveries)
@@ -753,6 +838,7 @@ To create an open-source platform that makes the *right* operational practices e
 ### 1. Parts & BOM Management
 
 #### Intent
+
 Enable teams to connect their robot design to their operational reality—knowing what parts they need, what they have, and what to order.
 
 #### User Stories
@@ -766,6 +852,7 @@ Enable teams to connect their robot design to their operational reality—knowin
 **As a team**, I want vendor-specific part data pre-loaded (REV, goBILDA, AndyMark, ServoCity) so that we're not starting from scratch.
 
 #### Acceptance Criteria
+
 - OnShape assemblies can be linked and BOMs pulled automatically
 - Parts can be mapped from OnShape to vendor SKUs
 - Search returns results in under 500ms
@@ -773,13 +860,15 @@ Enable teams to connect their robot design to their operational reality—knowin
 - Discrepancies highlighted automatically (design needs 12, inventory shows 4)
 
 #### Wow Factor
-*A notification arrives: "Your OnShape assembly was updated. New part detected: REV-41-1877. This part is not in inventory or on order. Add to order?"*
+
+_A notification arrives: "Your OnShape assembly was updated. New part detected: REV-41-1877. This part is not in inventory or on order. Add to order?"_
 
 ---
 
 ### 2. Inventory Management
 
 #### Intent
+
 Know exactly what you have and where it is—eliminating the "I think we have some somewhere" problem.
 
 #### User Stories
@@ -793,6 +882,7 @@ Know exactly what you have and where it is—eliminating the "I think we have so
 **As a team**, I want to record "found parts" without feeling like I'm admitting a mistake so that our inventory stays accurate.
 
 #### Acceptance Criteria
+
 - Location hierarchy supports at least 4 levels (building → room → cabinet → bin)
 - Low-stock threshold is configurable per part
 - Check-out records who took what and when
@@ -801,13 +891,15 @@ Know exactly what you have and where it is—eliminating the "I think we have so
 - Kit of Parts items tracked separately with "official" status
 
 #### Wow Factor
-*Scanning a QR code on a bin shows everything in it with photos, quantities, and "last used by Marcus, 3 days ago."*
+
+_Scanning a QR code on a bin shows everything in it with photos, quantities, and "last used by Marcus, 3 days ago."_
 
 ---
 
 ### 3. Order Management
 
 #### Intent
+
 Transform multi-vendor ordering from chaos into a coordinated, visible process.
 
 #### User Stories
@@ -821,6 +913,7 @@ Transform multi-vendor ordering from chaos into a coordinated, visible process.
 **As an international team**, I want to track customs status separately from shipping so that I understand where delays happen.
 
 #### Acceptance Criteria
+
 - Cart aggregates items from multiple vendors
 - Approval threshold is configurable (e.g., $50)
 - Order status flows: requested → approved → ordered → shipped → customs (international) → delivered → inventoried
@@ -828,14 +921,16 @@ Transform multi-vendor ordering from chaos into a coordinated, visible process.
 - Split shipments handled (partial delivery recorded)
 - Order history searchable with easy reorder
 
-#### Wow Factor  
-*"Your goBILDA order shipped. Based on current community data for shipments to Romania, estimated arrival: March 15 ± 2 days. Competition is March 22. You have margin."*
+#### Wow Factor
+
+_"Your goBILDA order shipped. Based on current community data for shipments to Romania, estimated arrival: March 15 ± 2 days. Competition is March 22. You have margin."_
 
 ---
 
 ### 4. Budget & Financial Tracking
 
 #### Intent
+
 Make budget visible and manageable, with appropriate controls that don't slow teams down.
 
 #### User Stories
@@ -849,6 +944,7 @@ Make budget visible and manageable, with appropriate controls that don't slow te
 **As a team**, I want to generate sponsor reports easily so that we maintain good relationships with supporters.
 
 #### Acceptance Criteria
+
 - Budget categories configurable (parts, travel, registration, tools, etc.)
 - Real-time calculation: committed (approved not yet purchased) + spent = used; budget - used = remaining
 - Receipt/invoice photo capture on mobile
@@ -857,17 +953,21 @@ Make budget visible and manageable, with appropriate controls that don't slow te
 - Multi-currency support with exchange rate tracking
 
 #### Wow Factor
-*Sponsor receives an automated email: "Here's how your $500 donation impacted Team 12345" with photos of the subsystem their money funded and budget breakdown.*
+
+_Sponsor receives an automated email: "Here's how your $500 donation impacted Team 12345" with photos of the subsystem their money funded and budget breakdown._
 
 ---
 
 ### 5. Event & Outreach Management
 
 #### Intent
+
 Manage the full spectrum of team activities—from local outreach visits to international championship travel—with the same rigor applied to competition logistics.
 
 #### The Reality Check
+
 A competitive robotics team isn't just a competition team. A team like the Romanian squad qualifying for Worlds faces:
+
 - MakerFaire booths requiring staff scheduling, equipment transport, and public engagement
 - Middle school visits for STEM outreach (often grant-required)
 - FLL event volunteering (mentoring the next generation)
@@ -893,15 +993,16 @@ Each event is a logistics challenge with different team member subsets, differen
 
 #### Event Types & Complexity
 
-| Event Type | Typical Complexity | Key Challenges |
-|------------|-------------------|----------------|
-| Build session | Low | Attendance tracking only |
-| Local outreach | Medium | Permission forms, subset scheduling, equipment list |
-| Regional competition | High | Full team travel, packing lists, pit setup |
-| Multi-day championship | Very High | Hotels, meals, complex logistics |
-| International travel | Extreme | Passports, customs, medical, dietary, rebooking contingencies |
+| Event Type             | Typical Complexity | Key Challenges                                                |
+| ---------------------- | ------------------ | ------------------------------------------------------------- |
+| Build session          | Low                | Attendance tracking only                                      |
+| Local outreach         | Medium             | Permission forms, subset scheduling, equipment list           |
+| Regional competition   | High               | Full team travel, packing lists, pit setup                    |
+| Multi-day championship | Very High          | Hotels, meals, complex logistics                              |
+| International travel   | Extreme            | Passports, customs, medical, dietary, rebooking contingencies |
 
 #### Acceptance Criteria
+
 - Event calendar with multiple event types and custom fields
 - Team member assignment per event (who's going, who's confirmed)
 - Per-event permission form requirements and tracking
@@ -911,19 +1012,23 @@ Each event is a logistics challenge with different team member subsets, differen
 - Post-event reporting (attendance, outcomes, photos) for sponsor deliverables
 
 #### Wow Factor
-*"You have 7 outreach events scheduled this season totaling 142 volunteer hours across 23 team members. Current completion: 4 events, 89 hours logged. Grant requirement: 100 hours. You're on track."*
+
+_"You have 7 outreach events scheduled this season totaling 142 volunteer hours across 23 team members. Current completion: 4 events, 89 hours logged. Grant requirement: 100 hours. You're on track."_
 
 ---
 
 ### 6. Travel & Logistics Management
 
 #### Intent
+
 Transform complex multi-person travel coordination from email chaos into a coherent, trackable system—especially critical for international teams traveling to championships.
 
 #### The Worlds Qualification Scenario
+
 When a Romanian team qualifies for World Championship in Houston, they face:
 
 **People Logistics (24 travelers)**
+
 - 18 students with varying passport validity, visa requirements, dietary restrictions
 - 6 mentors with their own availability constraints
 - Emergency contacts and medical information for everyone
@@ -931,6 +1036,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Who sits with whom on a 14-hour journey
 
 **Equipment Logistics**
+
 - The robot (customs classification: educational equipment? machine? contains lithium batteries)
 - Spare parts inventory (47 identical aluminum brackets look suspicious at customs)
 - Tools (some restricted on aircraft, all need value declarations)
@@ -938,6 +1044,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Which cases go as checked luggage vs. cargo vs. hand-carry
 
 **Itinerary Complexity**
+
 - Flights (often with connections—CDG → JFK → IAH)
 - Ground transportation (airport → hotel → venue → airport)
 - Hotel room assignments (students grouped appropriately, mentor supervision)
@@ -945,6 +1052,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Contingency planning for delays, cancellations, missed connections
 
 **Documentation Requirements**
+
 - Passport copies accessible offline
 - Travel insurance documentation
 - Medical authorization forms
@@ -969,6 +1077,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 #### Acceptance Criteria
 
 **Traveler Management**
+
 - Per-person profiles: passport info, visa status, dietary restrictions, medical notes, emergency contacts
 - Document status tracking: valid / expiring soon / expired / not uploaded
 - Travel consent form workflow with electronic signature (where legally sufficient)
@@ -976,6 +1085,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Rooming assignment management with appropriate groupings
 
 **Itinerary Management**
+
 - Multi-leg trip builder (flight → ground → hotel → venue)
 - Shared itinerary visible to all travelers and parents
 - Offline access to critical information (PDF export, mobile app caching)
@@ -983,6 +1093,7 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Rebooking scenario tracking (if flight 1 is delayed, here are our options)
 
 **Equipment & Customs**
+
 - Packing list with assignment (who's responsible for which case)
 - Customs declaration generator based on contents and destination country
 - Value documentation for temporary import (robot, tools)
@@ -990,12 +1101,14 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - Carnet support for teams that need formal temporary import documentation
 
 **Meal & Dietary Management**
+
 - Per-person dietary restrictions/preferences/allergies
 - Meal planning across trip duration
 - Restaurant/catering coordination with headcounts by dietary need
 - "Sofia is vegetarian, Marcus has nut allergy, 3 students require halal" → meal orders
 
 **Contingency Planning**
+
 - Emergency contact cascade (who calls whom)
 - Alternative routing documentation
 - Local emergency services information
@@ -1003,18 +1116,21 @@ When a Romanian team qualifies for World Championship in Houston, they face:
 - "If separated" protocol documentation
 
 #### Wow Factor
-*Flight delay notification arrives. System shows: "Your CDG→JFK connection is now at risk. 3 rebooking options identified. Option A preserves all 24 travelers together, arrives 4 hours late. Option B splits into two groups, both arrive 2 hours late. Option C: overnight in Paris, next day arrival. Budget impact and logistics summary for each option available."*
+
+_Flight delay notification arrives. System shows: "Your CDG→JFK connection is now at risk. 3 rebooking options identified. Option A preserves all 24 travelers together, arrives 4 hours late. Option B splits into two groups, both arrive 2 hours late. Option C: overnight in Paris, next day arrival. Budget impact and logistics summary for each option available."_
 
 ---
 
 ### 7. Sponsor Relationship Nurturing
 
 #### Intent
+
 Transform sponsor management from quarterly reporting into continuous relationship cultivation—making sponsors feel genuinely connected to something meaningful, and making it effortless for teams to share the moments that matter.
 
 #### The Deeper Truth About Sponsors
 
 Sponsors don't give money because they want PDFs. They give because:
+
 - They believe in STEM education
 - They want to be part of something bigger than their business
 - They remember being a kid who loved building things
@@ -1022,6 +1138,7 @@ Sponsors don't give money because they want PDFs. They give because:
 - They want to see the impact of their contribution—real stories, real students, real outcomes
 
 The real product isn't report generation. It's **moment capture and relationship nurturing**:
+
 - The student who got into MIT partly because of skills learned on this team
 - The robot that actually worked for the first time (send them the video!)
 - The shy freshman who's now presenting confidently to 200 people
@@ -1044,6 +1161,7 @@ A team that sends one personalized, meaningful update every 3-4 weeks will retai
 #### Acceptance Criteria
 
 **Moment Detection & Capture**
+
 - Recognize "shareable moments": awards won, milestones reached, student achievements, competition results
 - Connect moments to relevant sponsors (Sofia won an award → TechCorp funded Sofia's participation)
 - Auto-generate draft messages with context, photos, and personalization hooks
@@ -1051,6 +1169,7 @@ A team that sends one personalized, meaningful update every 3-4 weeks will retai
 - "Quick video" prompt for student-recorded thank-yous
 
 **Relationship Health Tracking**
+
 - "Days since last contact" per sponsor
 - Renewal timeline awareness ("TechCorp renewal conversation due in 90 days")
 - Sponsor interest memory ("TechCorp's original letter mentioned they care about students pursuing engineering careers")
@@ -1058,24 +1177,28 @@ A team that sends one personalized, meaningful update every 3-4 weeks will retai
 - Engagement pattern tracking (which sponsors open emails, which respond, which go quiet)
 
 **Funding Source Management**
+
 - Create funding sources with: name, amount, restrictions, key contacts, stated interests
 - Restriction categories: unrestricted, competition only, outreach only, travel only, equipment only
 - Multi-year tracking with relationship history
 - In-kind donation tracking with fair market value
 
 **Deliverable Tracking (The Minimum)**
+
 - Per-sponsor deliverable list (logo placement, social posts, facility visit)
 - Status tracking: promised → scheduled → completed → documented
 - Photo/evidence attachment
 - Automated reminders for upcoming deliverables
 
 **Impact Documentation**
+
 - Auto-compile impact metrics: students served, competitions attended, awards won, outreach hours
 - Connect expenses to outcomes ("$3,400 on travel → Regional Championship qualification")
 - Story library: tagged photos, quotes, student achievements linked to funding sources
 - One-click "impact snapshot" for any sponsor at any time
 
 **Reporting (When Required)**
+
 - Report templates by funder type (government grant format, corporate summary, individual donor thank-you)
 - Auto-populated data from all team activities
 - Export in multiple formats
@@ -1084,22 +1207,23 @@ A team that sends one personalized, meaningful update every 3-4 weeks will retai
 #### Wow Factors
 
 **The proactive moment notification:**
-*"Sofia just led the team to an Inspire Award. She's funded by TechCorp's STEM grant. Photos are ready. Draft message: 'Hi [contact name], wanted you to see this—Sofia, one of the students your grant supports, just led our Inspire Award presentation. The judges specifically cited her explanation of our autonomous navigation. This is the kind of confidence your investment builds. [Photo attached]' Send with one click?"*
+_"Sofia just led the team to an Inspire Award. She's funded by TechCorp's STEM grant. Photos are ready. Draft message: 'Hi [contact name], wanted you to see this—Sofia, one of the students your grant supports, just led our Inspire Award presentation. The judges specifically cited her explanation of our autonomous navigation. This is the kind of confidence your investment builds. [Photo attached]' Send with one click?"_
 
 **The relationship reminder:**
-*"It's been 47 days since you contacted TechCorp. Since your last update: Won regional qualifier, Sofia presented at MakerFaire (photos available), team logged 12 outreach hours. Their renewal is in 90 days. Draft update ready."*
+_"It's been 47 days since you contacted TechCorp. Since your last update: Won regional qualifier, Sofia presented at MakerFaire (photos available), team logged 12 outreach hours. Their renewal is in 90 days. Draft update ready."_
 
 **The "sponsor memory" insight:**
-*"TechCorp's original funding letter mentioned they care about 'students pursuing engineering careers.' Sofia just announced she's applying to MIT for mechanical engineering. This connects directly to their stated interest. Personalized update drafted."*
+_"TechCorp's original funding letter mentioned they care about 'students pursuing engineering careers.' Sofia just announced she's applying to MIT for mechanical engineering. This connects directly to their stated interest. Personalized update drafted."_
 
 **The gratitude that feels genuine:**
-*Competition win. System prompts: "Record a quick thank-you video for sponsors? I can package it with competition footage and send to your top 5 funders." Student records 30 seconds. System adds intro/outro, team branding, competition results. Sponsors receive a personalized video that took the team 2 minutes total.*
+_Competition win. System prompts: "Record a quick thank-you video for sponsors? I can package it with competition footage and send to your top 5 funders." Student records 30 seconds. System adds intro/outro, team branding, competition results. Sponsors receive a personalized video that took the team 2 minutes total._
 
 ---
 
 ### 8. Competition Logistics
 
 #### Intent
+
 Ensure teams arrive at competitions prepared, with all logistics handled, paperwork complete, and roles assigned for competition day.
 
 #### User Stories
@@ -1115,6 +1239,7 @@ Ensure teams arrive at competitions prepared, with all logistics handled, paperw
 **As a drive team**, I want to know the competition schedule and when we need to be where so that we're never late to a match.
 
 #### Acceptance Criteria
+
 - Competition calendar integration (FTC, FRC schedule imports)
 - Custom event creation for scrimmages, outreach
 - Permission form templates by event type
@@ -1126,18 +1251,21 @@ Ensure teams arrive at competitions prepared, with all logistics handled, paperw
 - Spare parts kit verification against inventory
 
 #### Wow Factor
-*"Competition in 14 days. All 18 students have signed permission forms. Spare parts kit is complete (47/47 items verified). Tools checklist verified. Room assignments confirmed. Meal plan accounts for 2 vegetarians and 1 nut allergy. You're ready."*
+
+_"Competition in 14 days. All 18 students have signed permission forms. Spare parts kit is complete (47/47 items verified). Tools checklist verified. Room assignments confirmed. Meal plan accounts for 2 vegetarians and 1 nut allergy. You're ready."_
 
 ---
 
 ### 9. Meal & Event Logistics Planning
 
 #### Intent
+
 Handle the logistical complexity of feeding teams at events—cross-referencing dietary restrictions, finding appropriate restaurants, managing budgets, and coordinating preferences—so that mentors can focus on mentoring instead of menu research.
 
 #### The Problem This Solves
 
 A typical outreach event requires:
+
 - Knowing who's attending and their dietary restrictions
 - Finding restaurants that can deliver to the venue (lunch)
 - Finding restaurants on the route home (dinner)
@@ -1164,6 +1292,7 @@ A typical outreach event requires:
 #### Agent Capabilities
 
 **Pre-Event Research (Automatic)**
+
 - Cross-reference attendees with dietary restrictions/allergies
 - Identify meal needs (delivered lunch? sit-down dinner? both?)
 - Search for restaurants matching: location, delivery capability, dietary accommodations, budget range
@@ -1172,18 +1301,21 @@ A typical outreach event requires:
 - Compile options with rationale for each
 
 **Recommendation with Rationale**
+
 - Present 2-3 options per meal, not a raw list
 - Explain WHY each option works ("covers all dietary needs, Sofia loved it last time, reliable delivery")
 - Flag concerns ("Marcus had a bad experience here last time")
 - Show budget impact for each option
 
 **Student Polling**
+
 - Post poll in appropriate Discord channel
 - Emoji voting for easy participation
 - Deadline enforcement ("Poll closes Friday 6pm")
 - Results compilation with tie-breaking if needed
 
 **Order Preparation**
+
 - Generate complete order details (items, quantities, special instructions)
 - Include dietary accommodation notes ("nut allergy - prepare separately")
 - Provide restaurant contact info and online ordering links
@@ -1191,12 +1323,14 @@ A typical outreach event requires:
 - Track delivery status on event day
 
 **Preference Learning**
+
 - Store individual preferences from votes and feedback
 - Flag restaurants with positive/negative history
 - Use preferences to improve future recommendations
 - "Sofia voted for Thai again" → weight Thai higher for future events
 
 #### Acceptance Criteria
+
 - Dietary restrictions pulled from student profiles
 - Restaurant search considers: delivery capability, dietary accommodations, budget, reviews
 - Agent presents options with clear rationale, not raw search results
@@ -1222,13 +1356,14 @@ Agent → Chaperone: "Lunch delivery confirmed on track, ETA 12:35pm. Enjoy the 
 
 #### Wow Factor
 
-*The chaperone spends 3 minutes on meal logistics instead of 90 minutes. That's 87 extra minutes to actually be present with the students—noticing who needs encouragement, celebrating small wins, handling the inevitable teenage drama that no machine can address.*
+_The chaperone spends 3 minutes on meal logistics instead of 90 minutes. That's 87 extra minutes to actually be present with the students—noticing who needs encouragement, celebrating small wins, handling the inevitable teenage drama that no machine can address._
 
 ---
 
 ### 10. Communication & Awareness
 
 #### Intent
+
 Build student accountability and awareness through intelligent notifications—not mentor nagging.
 
 #### User Stories
@@ -1242,6 +1377,7 @@ Build student accountability and awareness through intelligent notifications—n
 **As a student**, I want to know WHY something is urgent so that I can prioritize intelligently.
 
 #### Acceptance Criteria
+
 - Role-based dashboards with personal action items
 - Graduated escalation (student notification → reminder → mentor escalation)
 - Discord bot integration (notifications, slash commands for lookups)
@@ -1250,13 +1386,15 @@ Build student accountability and awareness through intelligent notifications—n
 - Digest options (real-time vs. daily summary)
 
 #### Wow Factor
-*Discord notification: "Hey Marcus, the servo you're waiting on (REV-41-1320) just shipped. ETA Tuesday. Just wanted you to know so you can plan the arm assembly."*
+
+_Discord notification: "Hey Marcus, the servo you're waiting on (REV-41-1320) just shipped. ETA Tuesday. Just wanted you to know so you can plan the arm assembly."_
 
 ---
 
 ### 11. Team & Role Management
 
 #### Intent
+
 Enable students to own responsibilities while giving mentors appropriate oversight.
 
 #### User Stories
@@ -1270,6 +1408,7 @@ Enable students to own responsibilities while giving mentors appropriate oversig
 **As a new team member**, I want to understand my role and permissions so that I can contribute confidently.
 
 #### Acceptance Criteria
+
 - Roles: student, mentor, coach, parent (with permission levels)
 - Subsystem assignments (drivetrain, arm, intake, etc.)
 - Operational roles (parts manager, budget lead, logistics coordinator, travel coordinator, sponsor relations)
@@ -1279,13 +1418,15 @@ Enable students to own responsibilities while giving mentors appropriate oversig
 - Per-person profiles for travel: passport, dietary restrictions, medical notes, emergency contacts
 
 #### Wow Factor
-*Sofia gets assigned "Electronics Parts Manager" and sees a welcome message: "Here's your domain. These 47 parts are your responsibility. 3 are below reorder point. Here's what to do."*
+
+_Sofia gets assigned "Electronics Parts Manager" and sees a welcome message: "Here's your domain. These 47 parts are your responsibility. 3 are below reorder point. Here's what to do."_
 
 ---
 
 ### 12. Agent & Extensibility
 
 #### Intent
+
 Create an intelligent presence that becomes part of the team's culture—not a tool to be used, but a team member to interact with. The agent should meet students where they are (Discord), handle the work mentors shouldn't have to do (nagging), and demonstrate what's possible with modern AI technology.
 
 #### The Agent Philosophy
@@ -1311,6 +1452,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 #### Agent Capabilities
 
 **Proactive Monitoring & Notification**
+
 - Parts status changes → notify relevant people
 - Deadlines approaching → escalating reminders
 - Orders shipped/delivered → celebration or heads-up
@@ -1318,6 +1460,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 - Patterns recognized → suggestions offered
 
 **Natural Language Queries**
+
 - "What parts do we need to order?"
 - "How much budget do we have left?"
 - "Who hasn't signed permission forms?"
@@ -1325,6 +1468,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 - "When will the goBILDA order arrive?"
 
 **Discord-Native Interactions**
+
 - Posts in appropriate channels (#parts, #mechanical, #travel, etc.)
 - Responds to mentions and DMs
 - Uses reactions for quick confirmations (✅ to approve, 📦 to mark received)
@@ -1332,6 +1476,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 - Threads long conversations appropriately
 
 **Graduated Escalation**
+
 1. First reminder: To the responsible student, friendly tone
 2. Second reminder: Slightly more pointed, still to student
 3. Third reminder: "I've reminded you 3 times..." tone
@@ -1341,18 +1486,23 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 #### Personality System
 
 **GLaDOS (Default)** — Dry, passive-aggressive, secretly helpful
+
 > "I see you've added REV-41-1877 to the arm assembly. We don't have any. I'm not saying this is a problem. I'm saying it's a situation that, left unaddressed, will become a problem. Shall I add it to the order queue?"
 
 **Wheatley** — Enthusiastic, chaotic, tries his best
+
 > "OH! New part! Brilliant! I love new parts! Let me just check if we have—nope. We don't have any. Should we order some? I think we should order some! Let's order some! 🎉"
 
 **Cave Johnson** — Aggressive motivation, science-first
+
 > "I'm not going to stand here and let some BACKORDERED PART stop us from building the greatest robot this competition has ever seen! Find an alternative! MAKE one if you have to! When life gives you lemons, you MAKE COMBUSTIBLE LEMONS!"
 
 **Turret** — Sweet, slightly ominous, helpful
+
 > "Hello. I noticed something. The arm assembly needs parts we don't have. I want to help you. Do you want me to order them? I promise I won't hurt you. I mean... I can't hurt you. I'm software. Ordering parts now? 🎯"
 
 **Neutral** — Professional, minimal personality
+
 > "New part detected in arm assembly: REV-41-1877 (qty 4). Status: Not in inventory, not on order. Vendor availability: In stock at REV. Lead time: 5 days. Add to order queue?"
 
 #### Skills Architecture
@@ -1360,6 +1510,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 **Core Philosophy:** The agent should be extensible by students. Contributing a new skill should be a great "first PR" experience—teaching real software development while adding value to the platform.
 
 **Skill Types:**
+
 - **Vendor integrations** — Price checking, availability monitoring, order status
 - **Platform integrations** — OnShape sync, Discord commands, Google Calendar
 - **Monitoring skills** — Flight status, shipping tracking, vendor website changes
@@ -1367,6 +1518,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 - **Meal planning skills** — Restaurant search, dietary matching, delivery coordination
 
 **Skill API Requirements:**
+
 - Clear input/output contracts
 - Sandboxed execution
 - Rate limiting and error handling built-in
@@ -1374,6 +1526,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 - Review process for community contributions
 
 #### Acceptance Criteria
+
 - Discord bot with slash commands and natural language understanding
 - Configurable persona per team (with preview/test mode)
 - Graduated escalation system with configurable timing
@@ -1386,22 +1539,25 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 #### Wow Factors
 
 **The conversation that blew someone's mind:**
+
 > Student: "@buildseason can we afford 4 of those new servos?"
-> 
+>
 > Agent: "The REV Smart Servo is $24.99 each, so 4 would be $99.96. You have $212 remaining in parts budget. Yes, you can afford them.
-> 
+>
 > However: Your current BOM shows 2 servos in the intake design. Are you adding 4 to that (total 6) or replacing them? If adding, I'd note that 6 servos will draw more current than your current PDP configuration supports—you'd need to rebalance breakers.
-> 
+>
 > Also, goBILDA has a comparable servo for $19.99 that several teams have used successfully. Want me to pull up the comparison?"
 
 **The "it saved our competition" moment:**
+
 > 11 PM night before competition. Agent notices parts checklist incomplete.
-> 
+>
 > Agent (DM to pit manager): "Hey Sofia, the spare parts checklist shows the backup intake motor as 'packed' but inventory shows it was checked out to Marcus 3 days ago and not returned. Can you verify it's actually in the travel kit? I'm probably wrong, but I'd rather ask now than have you discover this at 7 AM."
 
 **The sponsor relationship that deepened:**
+
 > Agent notices: Competition won, photos uploaded, student tagged, student linked to sponsor.
-> 
+>
 > Agent (to sponsor relations lead): "Moment detected: Sofia led the Inspire Award presentation. She's funded by TechCorp's STEM grant. Here's a draft message with the best photo attached. Their contact usually responds within 24 hours. Send now and you'll hit their inbox Monday morning."
 
 ---
@@ -1409,6 +1565,7 @@ Create an intelligent presence that becomes part of the team's culture—not a t
 ### 13. Community Intelligence
 
 #### Intent
+
 Leverage collective experience across teams to provide insights no single team could generate.
 
 #### User Stories
@@ -1424,6 +1581,7 @@ Leverage collective experience across teams to provide insights no single team c
 **As a Worlds-bound team**, I want to know what other international teams have experienced with customs, shipping, and travel so that I can avoid their mistakes.
 
 #### Acceptance Criteria
+
 - Anonymized, aggregated lead time data by vendor × destination region
 - Opt-in data sharing with clear consent
 - Vendor reliability scores based on delivery accuracy
@@ -1434,25 +1592,29 @@ Leverage collective experience across teams to provide insights no single team c
 - Sponsor/grant intelligence (what funders support teams like ours?)
 
 #### Wow Factor
-*"Community insight: Teams traveling to Houston from Europe report average customs clearance time of 2.3 hours for robot cases when using ATA Carnet. 94% success rate with pre-prepared documentation. 3 teams reported issues with undeclared lithium batteries—make sure all battery packs are listed."*
+
+_"Community insight: Teams traveling to Houston from Europe report average customs clearance time of 2.3 hours for robot cases when using ATA Carnet. 94% success rate with pre-prepared documentation. 3 teams reported issues with undeclared lithium batteries—make sure all battery packs are listed."_
 
 ---
 
 ## Non-Functional Requirements
 
 ### Performance
+
 - Page loads under 2 seconds on 3G connections (international teams)
 - Search results return in under 500ms
 - Real-time updates for order status changes
 - Mobile-responsive for build session use
 
-### Reliability  
+### Reliability
+
 - 99.9% uptime during competition season (September-April)
 - Graceful degradation for offline scenarios
 - Data backup with point-in-time recovery
 - Zero data loss guarantee
 
 ### Security
+
 - Role-based access control
 - Student data privacy (FERPA considerations)
 - Parent contact information protected
@@ -1460,11 +1622,13 @@ Leverage collective experience across teams to provide insights no single team c
 - OAuth integration for school SSO where available
 
 ### Scalability
+
 - Support 10,000+ teams without degradation
 - Efficient handling of competition-day traffic spikes
 - International CDN for global performance
 
 ### Accessibility
+
 - WCAG 2.1 AA compliance
 - Screen reader compatible
 - Keyboard navigation
@@ -1477,26 +1641,32 @@ Leverage collective experience across teams to provide insights no single team c
 ### Phase 1 Exclusions
 
 **Full CAD Integration Beyond OnShape**
+
 - SolidWorks, Fusion 360 integration deferred
 - Rationale: OnShape dominates FTC; expand later based on demand
 
 **Vendor Direct Purchase**
+
 - API integration to place orders directly with vendors
 - Rationale: Vendor API availability varies; start with tracking
 
 **Advanced Analytics & Reporting**
+
 - Machine learning predictions, advanced visualizations
 - Rationale: Get core value working first
 
 **Native Mobile Apps**
+
 - iOS/Android apps
 - Rationale: PWA provides adequate mobile experience initially
 
 **Video/Media Management**
+
 - Engineering notebook integration, match video storage
 - Rationale: Out of core scope; other tools exist
 
 **Scheduling & Calendar Management**
+
 - Practice scheduling, room booking
 - Rationale: Teams have existing solutions; avoid scope creep
 
@@ -1505,6 +1675,7 @@ Leverage collective experience across teams to provide insights no single team c
 ## Success Metrics
 
 ### Leading Indicators (Track Monthly)
+
 - Active teams (used in past 7 days)
 - Parts tracked per team
 - Orders placed through system
@@ -1515,6 +1686,7 @@ Leverage collective experience across teams to provide insights no single team c
 - Funding sources tracked
 
 ### Lagging Indicators (Track Seasonally)
+
 - Teams retained season-over-season
 - Net Promoter Score
 - "Would recommend to other teams" survey
@@ -1524,6 +1696,7 @@ Leverage collective experience across teams to provide insights no single team c
 - Grant compliance rate (teams that met all reporting requirements)
 
 ### Wow Moment Metrics
+
 - "Proactive notification prevented issue" events
 - Zero mentor intervention orders completed
 - Permission form completion rate before competition week
@@ -1539,51 +1712,56 @@ Leverage collective experience across teams to provide insights no single team c
 ### Current Alternatives
 
 **Google Sheets/Docs**
+
 - Universal, free, familiar
 - No structure, no automation, no integration
 - BuildSeason advantage: Purpose-built workflows, proactive intelligence
 
 **Notion/Airtable**
+
 - Flexible, modern interface
 - Requires significant setup, no FTC-specific features
 - BuildSeason advantage: Out-of-box FTC optimization, community data
 
 **Custom Team Solutions**
+
 - Tailored to specific team needs
 - Not shared, not maintained, not scalable
 - BuildSeason advantage: Community benefits, ongoing development
 
 **Nothing (Memory + Chaos)**
+
 - Zero cost, zero setup
 - High stress, missed parts, overnight shipping
 - BuildSeason advantage: Peace of mind
 
 ### Positioning Statement
+
 For FTC robotics teams who struggle with parts ordering, inventory tracking, and operational coordination, BuildSeason is an open-source team management platform that provides intelligent awareness and proactive notifications. Unlike spreadsheets and generic project tools, BuildSeason understands robotics teams—integrating with OnShape, knowing vendor lead times, and building student accountability without mentor nagging.
 
 ---
 
 ## Appendix A: Glossary
 
-| Term | Definition |
-|------|------------|
-| ATA Carnet | International customs document for temporary import of goods (like robots and equipment) without paying duties |
-| Build Season | The period from game reveal (typically September) to competition when teams design and build their robot |
-| BOM | Bill of Materials—list of parts needed for a design |
-| Deliverable | Promised action or output owed to a sponsor (logo placement, social post, facility visit, etc.) |
-| FLL | FIRST LEGO League—robotics competition for younger students that FTC teams often mentor |
-| FTC | FIRST Tech Challenge—robotics competition for grades 7-12 |
-| FRC | FIRST Robotics Competition—larger-scale robotics for high school |
-| In-Kind Donation | Non-cash contribution (parts, tools, services) that has value and should be tracked |
-| Kit of Parts | Standard parts provided with team registration |
-| Lead Time | Days from order to delivery |
-| MATE | Marine Advanced Technology Education—underwater robotics program |
-| OnShape | Cloud-based CAD software popular with FTC teams |
-| Outreach | Community engagement activities (school visits, MakerFaire, FLL mentoring) often required by grants |
-| Pit | Team's workspace area at competition venues |
-| Restricted Funds | Sponsor or grant money that can only be used for specific purposes |
-| Subsystem | Functional unit of the robot (drivetrain, arm, intake, etc.) |
-| Worlds | FIRST World Championship—annual international competition in Houston |
+| Term             | Definition                                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------------------------- |
+| ATA Carnet       | International customs document for temporary import of goods (like robots and equipment) without paying duties |
+| Build Season     | The period from game reveal (typically September) to competition when teams design and build their robot       |
+| BOM              | Bill of Materials—list of parts needed for a design                                                            |
+| Deliverable      | Promised action or output owed to a sponsor (logo placement, social post, facility visit, etc.)                |
+| FLL              | FIRST LEGO League—robotics competition for younger students that FTC teams often mentor                        |
+| FTC              | FIRST Tech Challenge—robotics competition for grades 7-12                                                      |
+| FRC              | FIRST Robotics Competition—larger-scale robotics for high school                                               |
+| In-Kind Donation | Non-cash contribution (parts, tools, services) that has value and should be tracked                            |
+| Kit of Parts     | Standard parts provided with team registration                                                                 |
+| Lead Time        | Days from order to delivery                                                                                    |
+| MATE             | Marine Advanced Technology Education—underwater robotics program                                               |
+| OnShape          | Cloud-based CAD software popular with FTC teams                                                                |
+| Outreach         | Community engagement activities (school visits, MakerFaire, FLL mentoring) often required by grants            |
+| Pit              | Team's workspace area at competition venues                                                                    |
+| Restricted Funds | Sponsor or grant money that can only be used for specific purposes                                             |
+| Subsystem        | Functional unit of the robot (drivetrain, arm, intake, etc.)                                                   |
+| Worlds           | FIRST World Championship—annual international competition in Houston                                           |
 
 ---
 
@@ -1592,26 +1770,33 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 ### GLaDOS Mode (Default)
 
 **Order Reminder:**
+
 > "Part REV-41-1320 has been sitting in 'needed' status for 9 days. I'm not saying you've forgotten about it. I'm just noting it for the permanent record."
 
 **Delivery Update:**
+
 > "Good news: Your goBILDA order shipped. Bad news: Based on current lead times, it will arrive 2 days after regionals. I'm sure you have a backup plan. You do have a backup plan, don't you?"
 
 **Permission Forms:**
+
 > "Three students still haven't submitted permission forms for Saturday. I've added them to the list of test subjects who will not be attending. I mean competitors."
 
 **Budget Warning:**
+
 > "Your budget shows $47.23 remaining. The part you just requested costs $52.99. I'll wait while you do the math."
 
 **BOM Alert:**
+
 > "Congratulations on completing your BOM. The OnShape assembly shows 47 parts you haven't added yet. But I'm sure those are just decorative."
 
 ### Neutral Mode
 
 **Order Reminder:**
+
 > "Part REV-41-1320 hasn't been ordered yet. Based on lead times, order by March 8 to receive before competition."
 
 **Delivery Update:**
+
 > "Your goBILDA order shipped. Estimated arrival: March 20. Competition is March 22."
 
 ---
@@ -1646,6 +1831,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 ### Journey 3: International Worlds Travel (Romanian Team)
 
 **3 Months Before Departure**
+
 1. Worlds qualification confirmed → system creates "Worlds 2025" trip
 2. Travel coordinator Elena invited to build itinerary
 3. System prompts: Who's traveling? (Select from team roster)
@@ -1654,6 +1840,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 6. Automated reminders begin for missing documents
 
 **2 Months Before**
+
 1. Flight options researched, itinerary entered (Bucharest → Frankfurt → Houston)
 2. System calculates: connection time, rebooking risk, group seating feasibility
 3. Hotel block entered with room count
@@ -1663,6 +1850,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 7. System flags nut allergy: "Ensure airline is notified, restaurants confirmed nut-free options"
 
 **1 Month Before**
+
 1. Document dashboard: 22/24 passports uploaded, 5/6 visas confirmed, 20/24 consent forms signed
 2. Automated escalation: Parents of 4 students receive reminder
 3. Budget tracking: €67,000 committed against €75,000 Worlds travel allocation
@@ -1671,6 +1859,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 6. System recommends: "Consider ATA Carnet for equipment valued over €10,000"
 
 **2 Weeks Before**
+
 1. All documents complete (system verified passport validity against travel dates)
 2. Meal plan finalized: breakfast at hotel, lunch vouchers at venue, team dinners booked
 3. Restaurant reservations include dietary notes
@@ -1679,6 +1868,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 6. Offline packet generated: PDF with all itineraries, contacts, emergency info
 
 **Travel Day**
+
 1. Flight monitoring active
 2. Frankfurt connection delay detected (45 minutes)
 3. System calculates: "Connection still viable with 38-minute buffer. Monitoring."
@@ -1686,12 +1876,14 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 5. Arrival in Houston confirmed for all 24 travelers
 
 **At Competition**
+
 1. Daily schedule visible to all
 2. Meal coordination: "Dinner tonight at Pappadeaux, 6:30pm. Nut allergy accommodated, halal fish confirmed."
 3. Parents receive daily photo update (opt-in)
 4. Expense tracking continues for reimbursement documentation
 
 **Return Journey**
+
 1. Customs declaration ready for robot return
 2. Receipts collected throughout trip attached to expenses
 3. Return flights monitored
@@ -1699,6 +1891,7 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 5. System generates: "Worlds 2025 Trip Complete. Total spend: €71,247. Budget variance: €3,753 under. All travelers returned safely."
 
 **Post-Trip**
+
 1. Expense report auto-generated for government grant
 2. Sponsor deliverables checked: "Logo photos collected ✓, social posts completed ✓, thank-you notes drafted"
 3. "Lessons learned" prompt for future travel planning
@@ -1755,4 +1948,4 @@ For FTC robotics teams who struggle with parts ordering, inventory tracking, and
 
 ---
 
-*Document maintained at: buildseason.org/docs/prd*
+_Document maintained at: buildseason.org/docs/prd_
