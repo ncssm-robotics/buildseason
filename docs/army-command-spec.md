@@ -249,6 +249,27 @@ Each bead captures:
 - **REQUIRED:** Every bead must have at least one `skill:*` label before deploy
 - If no skill exists for a task, the plan phase creates it first
 
+**What Skills Are (and Aren't):**
+
+Skills are **general project patterns**, not bead-specific instructions. They bridge general knowledge/documentation to how THIS project uses that technology.
+
+| Good Skill Names          | Bad Skill Names        |
+| ------------------------- | ---------------------- |
+| `discord-api`             | `implement-bead-123`   |
+| `drizzle-patterns`        | `fix-auth-bug`         |
+| `onshape-api`             | `add-vendor-crud`      |
+| `better-auth-integration` | `complete-wave-2-task` |
+| `tanstack-router`         | `refactor-sidebar`     |
+
+A skill like `discord-api` should contain:
+
+- How we use the Discord API in this project
+- Our patterns, conventions, and architectural decisions
+- Salient examples from the codebase
+- Links to external docs for deeper exploration
+
+Skills are reusable across many beads. The bead describes WHAT to build; the skill describes HOW we build things like that in this project.
+
 **EXPECTATIONS:**
 
 - Priority and type labels
@@ -495,21 +516,28 @@ Human closes checkpoint
    - For each skill gap or update candidate:
 
      ```bash
-     bd create --title="Create/Update skill: <skill-name>" \
+     bd create --title="Create skill: <technology/pattern>" \
        --label="skill:skill-builder" \
        --label="process-improvement:plan-wave-N" \
-       --description="Needed for: <list of beads>
+       --description="Technology/Pattern: <e.g., discord-api, drizzle-patterns>
 
-       Work patterns observed:
-       - <pattern 1>
-       - <pattern 2>
+       Why needed:
+       - Beads in this wave require <pattern>
+       - No existing skill covers this
 
-       Skill should cover:
-       - <capability 1>
-       - <capability 2>"
+       Skill should document:
+       - How we use <technology> in this project
+       - Our conventions and patterns
+       - Key examples from the codebase
+       - Links to official docs for reference
+
+       Example beads that will use this:
+       - <bead-id>: <title>
+       - <bead-id>: <title>"
      ```
 
    - Launch parallel agents to build/update skills
+   - Skills are GENERAL (discord-api, drizzle-patterns) not bead-specific
    - Wait for completion
    - Commit skill changes
 
