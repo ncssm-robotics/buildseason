@@ -459,44 +459,71 @@ Human closes checkpoint
 
 ### `/army plan <wave>`
 
-**Purpose:** Forward-looking planning and proactive skill preparation.
+**Purpose:** Forward-looking planning and proactive skill preparation. This is where beads (describing WHAT) get matched with skills (defining HOW).
 
 **Steps:**
 
-1. **Organize Beads into Wave:**
-   - Query beads ready for this wave (via dependencies/labels)
-   - Group into missions based on AO patterns
-   - Create wave structure if not exists
+1. **Form Wave Structure:**
+   - Query open beads ready for this wave (unblocked, appropriate priority)
+   - Group into missions based on AO patterns (from bead descriptions)
+   - Create wave bead if not exists, link missions as children
+   - Record AoI-on-AO dependencies and determine merge order
 
 2. **Generate Synchronization Matrix:**
    - Extract AO patterns from mission beads
    - Build File × Mission grid
-   - Flag any AO overlaps for attention
+   - Flag any AO-on-AO overlaps (must resolve)
+   - Flag any AoI-on-AO dependencies (decision point: sequence or accept risk)
+   - Record merge order in wave bead description
 
-3. **Conduct Skills Audit:**
-   - For each bead in wave, check `skill:*` labels
-   - **Requirement check:** Flag any beads missing `skill:*` labels (deploy blocked until resolved)
-   - Compare required skills against existing skills
-   - Identify gaps (skills referenced but don't exist)
-   - Identify update candidates (skills that may need revision based on recent changes)
+3. **Analyze Work Requirements:**
+   - For each bead in wave, read its description and success criteria
+   - Identify what KIND of work this is (API implementation, UI component, database migration, etc.)
+   - Determine what patterns, approaches, and processes would help
+   - This is forward-looking: "What skills would make this work go well?"
+
+4. **Conduct Skills Audit:**
+   - Based on work analysis, list skills that would help each bead
+   - Compare against existing skills in `.claude/skills/`
+   - Categorize each needed skill:
+     - **Exists and current:** Ready to use
+     - **Exists but needs update:** Queue for revision
+     - **Does not exist:** Queue for creation
    - **No bead runs without a skill.** Plan ensures all skills exist before deploy proceeds.
 
-4. **Create Skill Improvement Beads:**
-   - For each gap or update candidate:
+5. **Create/Update Skills:**
+   - For each skill gap or update candidate:
+
      ```bash
      bd create --title="Create/Update skill: <skill-name>" \
        --label="skill:skill-builder" \
        --label="process-improvement:plan-wave-N" \
-       --description="..."
-     ```
-   - Link with `discovered-from` to the plan command run
+       --description="Needed for: <list of beads>
 
-5. **Execute Skill Building:**
+       Work patterns observed:
+       - <pattern 1>
+       - <pattern 2>
+
+       Skill should cover:
+       - <capability 1>
+       - <capability 2>"
+     ```
+
    - Launch parallel agents to build/update skills
    - Wait for completion
    - Commit skill changes
 
-6. **Output Ready State:**
+6. **Assign Skill Labels to Beads:**
+   - NOW that skills exist, tag each bead with appropriate `skill:*` labels
+   - Each bead gets at least one skill label
+   - Multiple skills can be assigned if work spans patterns
+
+   ```bash
+   bd label <bead-id> skill:api-crud
+   bd label <bead-id> skill:drizzle-patterns
+   ```
+
+7. **Output Ready State:**
 
    ```
    ═══════════════════════════════════════════════════════════════
@@ -511,13 +538,17 @@ Human closes checkpoint
    Synchronization Matrix:
    [matrix display]
 
-   AO Conflicts: NONE ✓ (or list conflicts to resolve)
+   AO Conflicts: NONE ✓
+   AoI-on-AO Dependencies: 2 (decisions recorded in wave bead)
+   Merge Order: vendors → parts → auth (in wave bead)
 
    Skills Audit:
      ✓ skill:api-crud (exists, current)
      ✓ skill:drizzle-patterns (exists, current)
-     ⚡ skill:rbac-patterns (updated this planning cycle)
+     ⚡ skill:rbac-patterns (created this cycle)
      ✓ skill:testing-patterns (exists, current)
+
+   Beads Tagged: 12/12 have skill:* labels
 
    Ready to deploy: /army deploy N
    ═══════════════════════════════════════════════════════════════
