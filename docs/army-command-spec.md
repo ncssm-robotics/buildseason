@@ -4,17 +4,22 @@
 
 This specification defines the `/army` command for orchestrating parallel AI agent development, incorporating lessons from U.S. Army battlespace management doctrine.
 
+**Plugin Dependency:** Requires [beads](https://github.com/caryden/beads) for issue tracking. All configuration is managed through beads metadata and labels.
+
+---
+
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
 2. [Core Concepts](#core-concepts)
-3. [Current State Analysis](#current-state-analysis)
-4. [Target Architecture](#target-architecture)
+3. [The PDCA Loop](#the-pdca-loop)
+4. [Git Worktrees for Isolation](#git-worktrees-for-isolation)
 5. [Subcommand Reference](#subcommand-reference)
 6. [Data Model](#data-model)
-7. [Migration Plan](#migration-plan)
-8. [Plugin Packaging](#plugin-packaging)
-9. [Testing Strategy](#testing-strategy)
+7. [Wave-Command Coordination](#wave-command-coordination)
+8. [Migration Plan](#migration-plan)
+9. [Plugin Packaging](#plugin-packaging)
+10. [Testing Strategy](#testing-strategy)
 
 ---
 
@@ -22,32 +27,33 @@ This specification defines the `/army` command for orchestrating parallel AI age
 
 ### Problem Statement
 
-Multiple AI agents working in parallel will conflict if they touch the same files. Git merge conflicts are the agent equivalent of friendly fire—wasted effort, broken code, confused state. The current `/army` command handles wave deployment and review but lacks explicit territorial boundaries, leading to:
+Multiple AI agents working in parallel will conflict if they touch the same files. Git merge conflicts are the agent equivalent of friendly fire—wasted effort, broken code, confused state. The current `/army` command handles wave deployment and review but lacks:
 
-- Agents occasionally modifying files outside their scope
-- Merge conflicts when waves run in parallel
-- Unclear ownership when agents discover cross-cutting concerns
-- No pre-deployment conflict detection
+- Explicit territorial boundaries leading to scope creep
+- Pre-deployment conflict detection and planning
+- Process improvement loops (skills are created but not systematically improved)
+- Isolation mechanisms for true parallel execution
 
 ### Solution
 
-Adopt U.S. Army battlespace management principles:
+Adopt U.S. Army battlespace management principles combined with git worktrees for isolation:
 
-| Army Concept            | Agent Implementation                                         |
-| ----------------------- | ------------------------------------------------------------ |
-| Area of Operations (AO) | Files a mission OWNS and can modify                          |
-| Area of Interest (AI)   | Files a mission READS but cannot modify                      |
-| Boundaries              | Hard lines between missions; crossing requires coordination  |
-| No-Fire Areas           | Protected files nobody modifies (package.json, schema index) |
-| Phase Lines             | Waves synchronized by checkpoints                            |
-| Synchronization Matrix  | File × Mission grid showing ownership before deployment      |
+| Army Concept            | Agent Implementation                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| Area of Operations (AO) | Files a mission OWNS and can modify                         |
+| Area of Interest (AoI)  | Files that FOCUS the agent's context (not a restriction)    |
+| Boundaries              | Hard lines between missions; crossing requires coordination |
+| Phase Lines             | Waves synchronized by checkpoints                           |
+| Synchronization Matrix  | File × Mission grid showing ownership before deployment     |
+| Worktrees               | Isolated git working directories per mission                |
 
 ### Expected Outcomes
 
-- **Zero merge conflicts** in parallel deployments (AO exclusivity)
+- **Minimal merge conflicts** in parallel deployments (worktree isolation + AO planning)
 - **Clear escalation path** when agents need files outside their AO
 - **Pre-deployment validation** via synchronization matrix
-- **Reusable plugin** extractable for other projects
+- **Continuous process improvement** via PDCA loop and skill evolution
+- **Reusable plugin** extractable for any project using beads
 
 ---
 
@@ -55,81 +61,73 @@ Adopt U.S. Army battlespace management principles:
 
 ### Area of Operations (AO)
 
-**Definition:** Files and directories a mission owns. Agents can freely modify anything in their AO. No merge conflicts possible because no other mission touches these files.
+**Definition:** Files and directories a mission owns. Agents can freely modify anything in their AO. Within a wave, AOs should be exclusive to minimize merge complexity.
 
-```yaml
-mission: auth-team
-area_of_operations:
-  - apps/api/src/routes/auth/**
-  - apps/api/src/routes/teams/**
-  - apps/web/src/features/auth/**
-  - drizzle/schema/users.ts
-  - drizzle/schema/teams.ts
+```markdown
+# In bead description
+
+## Area of Operations
+
+- apps/api/src/routes/auth/\*\*
+- apps/api/src/routes/teams/\*\*
+- apps/web/src/features/auth/\*\*
+- drizzle/schema/users.ts
+- drizzle/schema/teams.ts
 ```
 
 **Rules:**
 
 - Agent has FULL authority within AO
-- No coordination needed for modifications
-- AO must be EXCLUSIVE within a wave (no overlaps)
+- No coordination needed for modifications within AO
+- AO should be EXCLUSIVE within a wave (overlap = future merge work)
+- Defined via `ao:<pattern>` labels or bead description
 
-### Area of Interest (AI)
+### Area of Interest (AoI)
 
-**Definition:** Files a mission reads but doesn't modify. Dependencies that the mission relies on but doesn't own.
+**Definition:** Files that help focus the agent's attention and reduce context load. This is NOT a read restriction—agents CAN read any file in the codebase. AoI narrows the agent's focus to relevant files.
 
-```yaml
-mission: auth-team
-area_of_interest:
-  - apps/api/src/lib/db.ts # Read for DB connection
-  - apps/api/src/index.ts # Read for route registration
-  - drizzle/schema/index.ts # Read for schema imports
+```markdown
+# In bead description
+
+## Area of Interest
+
+- apps/api/src/lib/db.ts # Understand DB patterns
+- apps/api/src/index.ts # See route registration
+- drizzle/schema/index.ts # Reference schema exports
 ```
+
+**Purpose:**
+
+- Reduce context window usage by focusing agent attention
+- Help agents understand relevant patterns and interfaces
+- Guide initial exploration before starting work
+- NOT a restriction on what can be read
 
 **Rules:**
 
-- Agent may READ files in AI
-- Agent CANNOT modify files in AI
-- To modify AI files, agent must request coordination
+- Agent SHOULD prioritize reading AoI files for context
+- Agent CAN read files outside AoI as needed
+- Agent CANNOT modify files outside AO (modification restriction is on AO, not AoI)
 
 ### Boundaries
 
-**Definition:** The explicit file list defines the boundary. Agents don't cross boundaries without explicit coordination.
+**Definition:** The AO list defines the modification boundary. Agents don't modify outside their AO without explicit coordination.
 
 **Agent Prompt Enforcement:**
 
 ```
 BOUNDARY RULES:
 - You may MODIFY any file in your AO
-- You may READ files in your AI but NOT modify them
-- Files outside both lists are OFF LIMITS
-- If you need a file outside your AO, STOP and create:
+- You may READ any file (AoI focuses your context, not restricts reading)
+- Do NOT modify files outside your AO
+- If you need to modify a file outside your AO, STOP and create:
   bd create --title="Coordination: need to modify <file>" \
     --label="coordination-required"
 ```
 
-### No-Fire Areas (Protected Files)
-
-**Definition:** Files that affect everyone and require human approval or dedicated infrastructure missions.
-
-```yaml
-protected_files:
-  - package.json
-  - bun.lock
-  - drizzle/schema/index.ts
-  - apps/api/src/index.ts
-  - .env.example
-  - tsconfig.json
-```
-
-**Rules:**
-
-- No mission claims AO on protected files
-- Changes require human coordination
-- Violations flagged during `/army plan`
-
 ### Waves as Phase Lines
 
-**Definition:** All missions in Wave N must complete before Wave N+1 begins. Checkpoints are the gates.
+**Definition:** All missions in Wave N should complete before Wave N+1 begins. Checkpoints are the gates.
 
 ```
 WAVE 0 ──────────────────────────────────────────────
@@ -153,7 +151,7 @@ WAVE 1 ────────────────────────�
 ══════════════════ CHECKPOINT 2 ═════════════════════
 ```
 
-**Why waves work:** Within a wave, missions have non-overlapping AOs—they run safely in parallel. Between waves, checkpoints ensure stability before new work begins.
+**Why waves work:** Within a wave, missions run in isolated worktrees. Non-overlapping AOs mean minimal merge complexity when worktrees are integrated. Between waves, checkpoints ensure stability.
 
 ### Synchronization Matrix
 
@@ -162,272 +160,204 @@ WAVE 1 ────────────────────────�
 ```
                       │ auth/** │ teams/** │ vendors/** │ parts/** │ shared/ui/** │
 ──────────────────────┼─────────┼──────────┼────────────┼──────────┼──────────────│
-Mission: Auth+Team    │   AO    │    AO    │     -      │    -     │      AI      │
-Mission: Vendors      │    -    │     -    │     AO     │    AI    │      AI      │
-Mission: Parts/BOM    │    -    │     -    │     AI     │    AO    │      AI      │
+Mission: Auth+Team    │   AO    │    AO    │     -      │    -     │     AoI      │
+Mission: Vendors      │    -    │     -    │     AO     │   AoI    │     AoI      │
+Mission: Parts/BOM    │    -    │     -    │    AoI     │    AO    │     AoI      │
 Mission: UI Polish    │    -    │     -    │     -      │    -     │      AO      │
 ```
 
-**Conflict Detection:** If two missions both have `AO` in the same column, you have a conflict. Resolve before deploying.
+**Conflict Detection:** If two missions both have `AO` in the same column, you have potential merge work. Plan subcommand flags these for resolution or sequencing.
 
 ### Deconfliction Rules
 
-1. **Exclusive AO:** No two missions in the same wave can have overlapping AOs
-2. **AI is Read-Only:** Files in your AI can be read but never modified
-3. **Protected Files Require Coordination:** No-fire areas need human approval
-4. **Main Effort Gets Priority:** When conflicts arise, main effort mission gets the file
-5. **Boundary Crossings Create Beads:** Need a file outside AO? Create coordination bead
+1. **Exclusive AO Preferred:** No two missions in the same wave should have overlapping AOs
+2. **AoI is Focus, Not Restriction:** AoI helps agents focus but doesn't limit reading
+3. **Main Effort Gets Priority:** When conflicts arise, main effort mission gets the file
+4. **Boundary Crossings Create Beads:** Need a file outside AO? Create coordination bead
+5. **Worktrees Provide Isolation:** Each mission runs in its own git worktree
 
 ---
 
-## Current State Analysis
+## The PDCA Loop
 
-### What Works Well
-
-| Feature           | Status | Notes                          |
-| ----------------- | ------ | ------------------------------ |
-| Wave deployment   | ✓      | Parallel agent launch works    |
-| Checkpoint gates  | ✓      | Blocking dependencies enforced |
-| Review workflow   | ✓      | Code/Security/UI reviews       |
-| Fix deployment    | ✓      | Automated issue resolution     |
-| Retro process     | ✓      | Skills created from learnings  |
-| Skill preparation | ✓      | Forward-looking skill creation |
-
-### Gaps to Address
-
-| Gap                     | Impact                     | Solution                           |
-| ----------------------- | -------------------------- | ---------------------------------- |
-| No AO/AI definitions    | Agents may modify any file | Add territory metadata to missions |
-| No conflict detection   | Merge conflicts possible   | Add `/army plan` with sync matrix  |
-| No boundary enforcement | Agents exceed scope        | Add boundary rules to prompts      |
-| No protected files list | Infrastructure can break   | Add no-fire areas config           |
-| BuildSeason-specific    | Not reusable               | Extract to plugin                  |
-
-### Current Subcommands
+The army command implements Deming's Plan-Do-Check-Act (PDCA) cycle for continuous improvement:
 
 ```
-status             - Wave progress and checkpoint gates
-deploy <wave>      - Launch parallel agents
-review <wave>      - Code/Security/UI audits
-deploy-fixes       - Fix discovered issues
-prepare-checkpoint - Generate human review doc
-process-feedback   - Convert feedback to beads
-retro <wave>       - After-action review
-prepare <wave>     - Forward-looking skills
+┌─────────────────────────────────────────────────────────────────┐
+│                         PDCA CYCLE                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   PLAN (/army plan)                                             │
+│   ├── Organize beads into waves/missions                        │
+│   ├── Conduct skills audit (forward-looking)                    │
+│   ├── Create skill:skill-builder beads for gaps                 │
+│   └── Execute skill improvements before deploy                  │
+│                                                                 │
+│   DO (/army deploy)                                             │
+│   ├── Launch agents in isolated worktrees                       │
+│   ├── Each bead specifies skill: labels for "how"               │
+│   └── Agents execute using designated skills                    │
+│                                                                 │
+│   CHECK (/army review)                                          │
+│   ├── Automated reviews (code, security, UI)                    │
+│   ├── Compare results against expectations                      │
+│   ├── Open defect beads with discovered-from links              │
+│   └── Human checkpoint review                                   │
+│                                                                 │
+│   ACT (/army retro)                                             │
+│   ├── Analyze defects from this wave                            │
+│   ├── Review agent trajectories vs designated skills            │
+│   ├── Open process-improvement beads for skill updates          │
+│   └── Feed learnings into next plan cycle                       │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Bead Structure for PDCA
 
-## Target Architecture
+Each bead captures:
 
-### New Subcommand: `plan`
+**WHAT (Goal):**
 
-**Usage:** `/army plan <wave>`
+- Title: Clear statement of what needs to be done
+- Description: Detailed requirements
+- Success Criteria: How we know it's done (end state)
 
-**Purpose:** Generate and validate the synchronization matrix before deployment.
+**HOW (Process):**
 
-**Output (Clean):**
+- `skill:<skill-name>` labels: Which skills the agent should use
+- Multiple skills can be attached (e.g., `skill:api-crud`, `skill:drizzle-patterns`)
 
-```
-═══════════════════════════════════════════════════════════════
-                 WAVE 1 SYNCHRONIZATION MATRIX
-═══════════════════════════════════════════════════════════════
+**EXPECTATIONS:**
 
-Missions: 2
-  • Navigation (buildseason-b5u.1)
-  • Discord Bot (buildseason-il2.1)
-
-File Ownership Matrix:
-                          │ nav/**  │ bot/**  │ shared/** │
-──────────────────────────┼─────────┼─────────┼───────────│
-Mission: Navigation       │   AO    │    -    │    AI     │
-Mission: Discord Bot      │    -    │   AO    │    AI     │
-
-Conflicts: NONE ✓
-
-Protected Files:
-  • package.json — NO MISSIONS TOUCH ✓
-  • drizzle/schema/index.ts — NO MISSIONS TOUCH ✓
-
-Ready to deploy: /army deploy 1
-═══════════════════════════════════════════════════════════════
-```
-
-**Output (Conflict Detected):**
-
-```
-CONFLICT DETECTED:
-  • Navigation and UI-Polish both claim AO on: components/sidebar/**
-
-Resolution options:
-  1. Sequence: Run Navigation first, then UI-Polish
-  2. Merge: Combine into single mission
-  3. Refactor: Split sidebar into nav-specific and general components
-
-Cannot deploy until resolved.
-```
-
-### Enhanced `deploy` Prompt
-
-Agent prompts now include explicit boundary rules:
+- Priority and type labels
+- Parent/child relationships for scope
+- Dependencies for sequencing
 
 ```markdown
-You are an agent in the BuildSeason army.
+# Example bead description
 
-MISSION: Auth & Team Management
-BEAD: buildseason-5pw.2 (Team CRUD)
+## Goal
 
-AREA OF OPERATIONS (you may modify):
+Implement team CRUD operations with role-based access.
+
+## Success Criteria
+
+- [ ] Teams can be created, read, updated, deleted
+- [ ] Only team admins can modify team settings
+- [ ] API returns proper error codes for unauthorized access
+- [ ] Tests cover happy path and permission denied cases
+
+## Area of Operations
 
 - apps/api/src/routes/teams/\*\*
 - apps/web/src/features/teams/\*\*
 - drizzle/schema/teams.ts
 
-AREA OF INTEREST (read-only):
+## Area of Interest
 
-- apps/api/src/lib/db.ts
-- drizzle/schema/index.ts
-
-BOUNDARY RULES:
-✓ Full authority to modify ANY file in your AO
-✓ May read files in your AI
-✗ Do NOT modify files in your AI
-✗ Do NOT touch files outside both lists
-
-If you need a file outside your AO:
-
-1. STOP current work
-2. Create coordination bead:
-   bd create --title="Coordination: need <file>" --label="coordination-required"
-3. Continue with other aspects of your task
-4. Note the dependency in your commit message
+- apps/api/src/lib/auth.ts
+- drizzle/schema/users.ts
 ```
 
-### Mission Definition Schema
+Labels: `skill:api-crud`, `skill:drizzle-patterns`, `skill:rbac-patterns`, `wave:0`, `ao:apps/api/src/routes/teams/**`
 
-Each mission (epic bead) should define:
+---
 
-```yaml
-mission:
-  id: buildseason-5pw
-  name: "Auth & Team Management"
-  wave: 0
+## Git Worktrees for Isolation
 
-  # WHY this mission exists
-  purpose: |
-    Enable multi-user team collaboration so robotics teams
-    can coordinate parts ordering and robot builds.
+### Why Worktrees
 
-  # WHAT success looks like
-  end_state: |
-    Users can create accounts, form teams, invite members,
-    and manage roles. All auth flows work on mobile and desktop.
+Git worktrees enable parallel execution with file-level isolation:
 
-  # Files this mission OWNS
-  area_of_operations:
-    - apps/api/src/routes/auth/**
-    - apps/api/src/routes/teams/**
-    - apps/web/src/features/auth/**
-    - drizzle/schema/users.ts
-    - drizzle/schema/teams.ts
+- Each mission runs in its own working directory
+- Same repository, shared history, independent file state
+- No conflicts DURING execution
+- Merge complexity concentrated at integration points
 
-  # Files this mission READS
-  area_of_interest:
-    - apps/api/src/lib/db.ts
-    - apps/api/src/lib/auth.ts
-    - drizzle/schema/index.ts
+### Worktree Lifecycle
 
-  # Child beads (tasks)
-  tasks:
-    - buildseason-5pw.1 # User registration
-    - buildseason-5pw.2 # Team CRUD
-    - buildseason-5pw.3 # Invite flow
-
-  # Missions that cannot run in parallel (AO conflicts)
-  conflicts: []
-
-  # Missions that must complete first
-  dependencies: []
+```
+/army deploy N
+    │
+    ├── For each mission in wave:
+    │   │
+    │   ├── git worktree add ~/.claude-worktrees/<project>-<mission-id> -b <mission-branch>
+    │   │
+    │   ├── Copy .worktreeinclude files (.env, secrets, local config)
+    │   │
+    │   └── Launch agent in worktree directory
+    │
+    ▼
+Agents work in parallel (isolated)
+    │
+    ▼
+Wave complete
+    │
+    ├── For each mission:
+    │   │
+    │   ├── Agent commits to mission branch
+    │   │
+    │   └── git worktree remove (cleanup)
+    │
+    ▼
+Integration phase
+    │
+    ├── Rebase mission branches onto main
+    │
+    ├── Resolve any conflicts (AO planning minimizes these)
+    │
+    └── Merge to main
 ```
 
-### Configuration File
+### .worktreeinclude Pattern
 
-New file: `.claude/army.yaml`
+Honor Claude Code Desktop's `.worktreeinclude` file for copying gitignored files to worktrees:
 
-```yaml
-# Agent Army Configuration
+```text
+# .worktreeinclude
+.env
+.env.local
+.env.*
+**/.claude/settings.local.json
+```
 
-version: "1.0"
+Files matching BOTH `.worktreeinclude` AND `.gitignore` are copied when creating worktrees.
 
-# Project-specific protected files
-protected_files:
-  - package.json
-  - bun.lock
-  - drizzle/schema/index.ts
-  - apps/api/src/index.ts
-  - .env.example
-  - tsconfig.json
-  - tsconfig.*.json
+### Worktree Commands
 
-# Default model for agents
-default_model: sonnet
+```bash
+# Create worktree for a mission
+git worktree add ~/.claude-worktrees/myproject-auth -b mission/auth
 
-# Wave definitions (can also be derived from beads)
-waves:
-  0:
-    checkpoint: buildseason-6ea
-    missions:
-      - buildseason-8o9 # UI Framework
-      - buildseason-5pw # Auth & Team
-      - buildseason-ck0 # Vendor Directory
-      - buildseason-03y # BOM
-      - buildseason-8mf # Robots & Seasons
-  1:
-    checkpoint: buildseason-2zlp
-    requires: buildseason-6ea
-    missions:
-      - buildseason-b5u.1 # Navigation
-      - buildseason-il2.1 # Discord Bot
-  2:
-    checkpoint: buildseason-z942
-    requires: buildseason-2zlp
-    missions:
-      - buildseason-b5u.2 # Dashboard
-      - buildseason-b5u.3 # Calendar
-      - buildseason-il2.2 # Agent SDK
-      - buildseason-il2.3 # Claude MCP
+# List active worktrees
+git worktree list
 
-# Review configuration
-reviews:
-  code:
-    skill: code-review
-    run_in_background: true
-  security:
-    skill: security-review
-    run_in_background: true
-  ui:
-    skill: ui-design-review
-    run_in_background: false # Chrome MCP requires foreground
+# Clean up after integration
+git worktree remove ~/.claude-worktrees/myproject-auth
+
+# Prune stale worktree metadata
+git worktree prune
 ```
 
 ---
 
 ## Subcommand Reference
 
-### Updated Workflow
+### Workflow Overview
 
 ```
-/army plan N                ← NEW: Validate sync matrix, detect conflicts
+/army plan N                ← Organize beads, skills audit, build skills
     ↓
-/army deploy N              ← Enhanced with AO/AI in prompts
+/army deploy N              ← Launch agents in worktrees
     ↓
 Wave N Agents Complete
     ↓
-/army review N              ← Code+Security parallel, UI foreground
+/army review N              ← Automated + human checks
     ↓
 /army deploy-fixes N        ← Fix P0-P1 issues
     ↓
-/army prepare-checkpoint N  ← Generate CP doc
+/army prepare-checkpoint N  ← Generate checkpoint doc
     ↓
 Human Review + Feedback
     ↓
@@ -435,146 +365,513 @@ Human Review + Feedback
     ↓
 Human closes checkpoint
     ↓
-/army retro N               ← After-action review
+/army retro N               ← After-action, skill improvement
     ↓
-/army prepare N+1           ← Forward-looking skills
-    ↓
-/army plan N+1              ← Validate next wave
+/army plan N+1              ← Next cycle
 ```
 
-### Subcommand Summary
+### `/army plan <wave>`
 
-| Subcommand           | Purpose                             | Key Changes                     |
-| -------------------- | ----------------------------------- | ------------------------------- |
-| `plan`               | **NEW** - Pre-deployment validation | Sync matrix, conflict detection |
-| `status`             | Show progress                       | Add AO conflict warnings        |
-| `deploy`             | Launch agents                       | Add AO/AI to prompts            |
-| `review`             | Run audits                          | No change                       |
-| `deploy-fixes`       | Fix issues                          | Add boundary awareness          |
-| `prepare-checkpoint` | Generate summary                    | Include boundary violations     |
-| `process-feedback`   | Handle feedback                     | No change                       |
-| `retro`              | After-action                        | Track boundary issues           |
-| `prepare`            | Forward skills                      | Include AO planning             |
+**Purpose:** Forward-looking planning and proactive skill preparation.
+
+**Steps:**
+
+1. **Organize Beads into Wave:**
+   - Query beads ready for this wave (via dependencies/labels)
+   - Group into missions based on AO patterns
+   - Create wave structure if not exists
+
+2. **Generate Synchronization Matrix:**
+   - Extract AO patterns from mission beads
+   - Build File × Mission grid
+   - Flag any AO overlaps for attention
+
+3. **Conduct Skills Audit:**
+   - For each bead in wave, check `skill:*` labels
+   - Compare required skills against existing skills
+   - Identify gaps (skills referenced but don't exist)
+   - Identify update candidates (skills that may need revision based on recent changes)
+
+4. **Create Skill Improvement Beads:**
+   - For each gap or update candidate:
+     ```bash
+     bd create --title="Create/Update skill: <skill-name>" \
+       --label="skill:skill-builder" \
+       --label="process-improvement:plan-wave-N" \
+       --description="..."
+     ```
+   - Link with `discovered-from` to the plan command run
+
+5. **Execute Skill Building:**
+   - Launch parallel agents to build/update skills
+   - Wait for completion
+   - Commit skill changes
+
+6. **Output Ready State:**
+
+   ```
+   ═══════════════════════════════════════════════════════════════
+                    WAVE N PLANNING COMPLETE
+   ═══════════════════════════════════════════════════════════════
+
+   Missions: 3
+     • Auth+Team (AO: auth/**, teams/**)
+     • Vendors (AO: vendors/**)
+     • Parts/BOM (AO: parts/**)
+
+   Synchronization Matrix:
+   [matrix display]
+
+   AO Conflicts: NONE ✓ (or list conflicts to resolve)
+
+   Skills Audit:
+     ✓ skill:api-crud (exists, current)
+     ✓ skill:drizzle-patterns (exists, current)
+     ⚡ skill:rbac-patterns (updated this planning cycle)
+     ✓ skill:testing-patterns (exists, current)
+
+   Ready to deploy: /army deploy N
+   ═══════════════════════════════════════════════════════════════
+   ```
+
+### `/army status`
+
+**Purpose:** Show wave progress and checkpoint gates.
+
+**Output:**
+
+- Current wave and checkpoint status
+- Mission completion percentages
+- Blocked/ready bead counts
+- Active worktrees (if any)
+
+### `/army deploy <wave>`
+
+**Purpose:** Launch parallel agents in isolated worktrees.
+
+**Steps:**
+
+1. Verify checkpoint gate (previous wave checkpoint closed)
+2. Create worktrees for each mission
+3. Copy .worktreeinclude files
+4. Launch agents with enhanced prompts including:
+   - AO boundaries
+   - AoI focus areas
+   - Designated skills
+   - Worktree-specific instructions
+5. Wave-command (coordinator) monitors progress
+
+**Agent Prompt Template:**
+
+```markdown
+You are an agent in the ${PROJECT_NAME} army.
+
+MISSION: ${MISSION_NAME}
+BEAD: ${BEAD_ID}
+TASK: ${TASK_TITLE}
+WORKTREE: ${WORKTREE_PATH}
+
+## Area of Operations (you may modify)
+
+${AO_LIST}
+
+## Area of Interest (focus your context here)
+
+${AOI_LIST}
+
+## Skills to Use
+
+${SKILL_LIST}
+
+For each skill, read the skill documentation and follow its patterns.
+
+## Boundary Rules
+
+✓ Full authority to modify ANY file in your AO
+✓ May read any file (AoI helps focus, doesn't restrict)
+✗ Do NOT modify files outside your AO
+
+If you need to modify a file outside your AO:
+
+1. STOP current work
+2. Create coordination bead:
+   bd create --title="Coordination: need <file>" \
+    --label="coordination-required" \
+    --label="mission:${MISSION_ID}"
+3. Continue with other aspects of your task
+4. Note the dependency in your commit message
+
+## Success Criteria
+
+${SUCCESS_CRITERIA}
+
+## Instructions
+
+1. Read skill documentation for each skill: label
+2. Read AoI files for context
+3. Implement the required changes following skill patterns
+4. Verify: ${VERIFY_COMMAND}
+5. Commit with message referencing ${BEAD_ID}
+6. Close bead: bd close ${BEAD_ID}
+```
+
+### `/army review <wave>`
+
+**Purpose:** Automated reviews comparing results against expectations.
+
+**Reviews:**
+
+- **Code Review:** Pattern adherence, code quality
+- **Security Review:** Vulnerability scan, auth checks
+- **UI Review:** Visual regression, accessibility (requires foreground)
+
+**Defect Handling:**
+
+For each issue found:
+
+```bash
+bd create --title="<issue description>" \
+  --priority=<P0-P4> \
+  --label="review:code|security|ui" \
+  --label="discovered-from:<review-bead>" \
+  --label="related-to:<original-bead>"
+```
+
+This creates the audit trail for the retro.
+
+### `/army deploy-fixes <wave>`
+
+**Purpose:** Fix P0-P1 issues from review.
+
+- Deploy agents to fix high-priority issues
+- Lower priority issues remain for next plan cycle
+
+### `/army prepare-checkpoint <wave>`
+
+**Purpose:** Generate checkpoint document for human review.
+
+Includes:
+
+- Wave summary
+- Completed beads
+- Open issues by priority
+- Boundary violations (if any)
+- Review checklist
+
+### `/army process-feedback <wave>`
+
+**Purpose:** Convert human feedback into beads.
+
+### `/army retro <wave>`
+
+**Purpose:** After-action review with focus on process improvement.
+
+**Steps:**
+
+1. **Gather Defect Beads:**
+   - Find all beads with `discovered-from` links to this wave's review
+   - Group by original bead
+
+2. **Analyze Agent Trajectories:**
+   - For beads that generated defects:
+     - What skills were designated (`skill:*` labels)?
+     - What skills were actually used (from commits/comments)?
+     - Did the agent follow the skill or deviate?
+
+3. **Identify Skill Improvement Opportunities:**
+   - Skill not followed → improve prompting or skill clarity
+   - Skill followed but wrong result → improve skill content
+   - Missing skill → flag for creation in next plan
+
+4. **Create Process Improvement Beads:**
+
+   ```bash
+   bd create --title="Improve skill: <skill-name> - <issue>" \
+     --label="process-improvement:retro-wave-N" \
+     --label="skill:skill-builder" \
+     --label="discovered-from:<defect-bead>" \
+     --description="Agent was told to use skill:xxx but [didn't use it | used it incorrectly | skill was insufficient].
+
+     Analysis:
+     - Original bead: <bead-id>
+     - Defect: <description>
+     - Root cause: <analysis>
+
+     Recommended fix:
+     - [Update skill content | Improve skill prompting | Add examples]"
+   ```
+
+5. **Boundary Violation Analysis:**
+   - For any `coordination-required` beads created during wave:
+     - Was this a planning defect (should have been in AO)?
+     - Was this unavoidable cross-cutting concern?
+     - Create process improvement beads for planning skill updates
+
+6. **Output Retro Summary:**
+
+   ```
+   ═══════════════════════════════════════════════════════════════
+                    WAVE N RETROSPECTIVE
+   ═══════════════════════════════════════════════════════════════
+
+   Beads Completed: X
+   Defects Found: Y (P0: a, P1: b, P2: c, P3: d)
+
+   Defect Analysis:
+     • skill:api-crud: 2 defects → prompting issue
+     • skill:testing-patterns: 1 defect → skill content gap
+
+   Boundary Violations: Z
+     • 1 planning defect (should have expanded AO)
+     • 2 legitimate cross-cutting (coordination worked)
+
+   Process Improvement Beads Created: W
+     • Improve skill:api-crud prompting
+     • Add error handling examples to skill:testing-patterns
+     • Update planning skill for AO estimation
+
+   These improvements will be executed in: /army plan N+1
+   ═══════════════════════════════════════════════════════════════
+   ```
 
 ---
 
 ## Data Model
 
-### Bead Metadata Extensions
+### Bead Labels
 
-Add to mission (epic) beads:
+All configuration is through beads. No separate config file needed.
 
-```yaml
-# In bead description or structured metadata
-metadata:
-  type: mission
-  wave: 0
-  area_of_operations:
-    - apps/api/src/routes/auth/**
-    - apps/web/src/features/auth/**
-  area_of_interest:
-    - apps/api/src/lib/db.ts
+| Label Pattern                      | Purpose                                    |
+| ---------------------------------- | ------------------------------------------ |
+| `ao:<glob-pattern>`                | Area of Operations file pattern            |
+| `aoi:<glob-pattern>`               | Area of Interest file pattern              |
+| `skill:<skill-name>`               | Skill(s) to use for this bead              |
+| `wave:<N>`                         | Wave assignment                            |
+| `mission:<mission-id>`             | Mission grouping                           |
+| `checkpoint`                       | Marks a checkpoint bead                    |
+| `coordination-required`            | Needs cross-mission coordination           |
+| `boundary-violation`               | Agent modified outside AO (for tracking)   |
+| `main-effort`                      | Priority mission for this wave             |
+| `process-improvement:plan-wave-N`  | Created during planning for skill work     |
+| `process-improvement:retro-wave-N` | Created during retro for skill improvement |
+| `skill:skill-builder`              | Bead is about creating/updating a skill    |
+| `discovered-from:<bead-id>`        | Audit trail: where this bead came from     |
+| `related-to:<bead-id>`             | Audit trail: what bead this relates to     |
+| `model:opus\|sonnet\|haiku`        | Model preference for this bead             |
+
+### Bead Description Structure
+
+Mission beads should include structured sections:
+
+```markdown
+# Mission: Auth & Team Management
+
+## Purpose
+
+Enable multi-user team collaboration so teams can coordinate work.
+
+## End State (Success Criteria)
+
+- [ ] Users can create accounts
+- [ ] Users can form teams
+- [ ] Users can invite members
+- [ ] Role-based permissions enforced
+
+## Area of Operations
+
+- apps/api/src/routes/auth/\*\*
+- apps/api/src/routes/teams/\*\*
+- apps/web/src/features/auth/\*\*
+- drizzle/schema/users.ts
+- drizzle/schema/teams.ts
+
+## Area of Interest
+
+- apps/api/src/lib/db.ts
+- apps/api/src/lib/auth.ts
+
+## Skills
+
+Uses: skill:api-crud, skill:drizzle-patterns, skill:rbac-patterns
 ```
-
-### Label Conventions (Extended)
-
-| Label                   | Meaning                          |
-| ----------------------- | -------------------------------- |
-| `ao:<pattern>`          | Area of Operations pattern       |
-| `ai:<pattern>`          | Area of Interest pattern         |
-| `coordination-required` | Needs cross-mission coordination |
-| `boundary-violation`    | Agent modified outside AO        |
-| `main-effort`           | Priority mission for this wave   |
 
 ### Graph Structure
 
 ```
-Wave Epic (buildseason-w0)
+Wave 0 (label: wave:0)
 │
-├── Mission: Auth (buildseason-5pw)
-│   │   labels: [ao:apps/api/src/routes/auth/**, ao:drizzle/schema/users.ts]
+├── Mission: Auth (bead with mission:auth, wave:0)
+│   │   labels: [ao:apps/api/src/routes/auth/**, skill:api-crud]
 │   │
-│   ├── Task: Registration (buildseason-5pw.1)
-│   ├── Task: Team CRUD (buildseason-5pw.2)
-│   └── Task: Invites (buildseason-5pw.3)
+│   ├── Task: Registration (child bead, inherits wave)
+│   ├── Task: Team CRUD (child bead)
+│   └── Task: Invites (child bead)
 │
-├── Mission: Vendors (buildseason-ck0)
+├── Mission: Vendors (bead with mission:vendors, wave:0)
 │   │   labels: [ao:apps/api/src/routes/vendors/**]
 │   │
-│   └── Task: Vendor CRUD (buildseason-ck0.1)
+│   └── Task: Vendor CRUD (child bead)
 │
-└── Checkpoint: CP1 (buildseason-6ea)
-        blocks: [Wave 1 Epic]
+└── Checkpoint: CP1 (label: checkpoint)
+        blocks: Wave 1 beads
 ```
+
+---
+
+## Wave-Command Coordination
+
+During deployment, the orchestrating agent (wave-command) manages coordination requests.
+
+### Coordination Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    WAVE-COMMAND COORDINATION                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   Mission A needs file outside AO                               │
+│       │                                                         │
+│       ├── Creates: bd create --title="Coordination: need X"     │
+│       │            --label="coordination-required"              │
+│       │            --label="mission:A"                          │
+│       │            --label="blocks:current-task"                │
+│       │                                                         │
+│       └── Continues other work in AO                            │
+│                                                                 │
+│   Wave-Command monitors coordination beads                      │
+│       │                                                         │
+│       ├── Checks sync matrix: Who owns file X?                  │
+│       │                                                         │
+│       ├── If Mission B owns X:                                  │
+│       │   │                                                     │
+│       │   ├── Wait for Mission B to complete                    │
+│       │   │                                                     │
+│       │   ├── Add comment to coordination bead:                 │
+│       │   │   "Cleared: Mission B complete. File X available.   │
+│       │   │    If using worktrees, pull from mission/B branch." │
+│       │   │                                                     │
+│       │   └── Update bead status to unblock                     │
+│       │                                                         │
+│       └── If no mission owns X:                                 │
+│           │                                                     │
+│           └── Grant clearance immediately with audit comment    │
+│                                                                 │
+│   Mission A receives clearance                                  │
+│       │                                                         │
+│       ├── If worktree: git pull from completed mission branch   │
+│       │                                                         │
+│       └── Proceed with modification                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Audit Trail
+
+Every coordination action is recorded in the bead:
+
+```markdown
+# Coordination Bead Comments
+
+## Request (Mission A agent)
+
+Need to modify `shared/api-client.ts` to add auth headers.
+Currently owned by Mission B (Auth team).
+
+## Clearance (Wave-Command)
+
+Timestamp: 2025-01-06T15:30:00Z
+Mission B completed at 15:28:00Z.
+File `shared/api-client.ts` is now available.
+If in worktree, run: `git fetch origin mission/B && git merge origin/mission/B`
+
+## Completion (Mission A agent)
+
+Modified file as needed. Committed in abc1234.
+```
+
+### Retro Treatment
+
+Coordination requests are reviewed in retro:
+
+- **Planning defect:** File should have been in Mission A's AO
+  → Create process improvement bead for planning skill
+- **Legitimate cross-cutting:** Coordination was necessary
+  → No action, but track frequency for future planning
 
 ---
 
 ## Migration Plan
 
-### Phase 1: Configuration (1 session)
+### Phase 1: Labels Setup
 
-1. Create `.claude/army.yaml` with protected files
-2. Add wave definitions to config
-3. No changes to existing beads or workflow
+1. Add `wave:N` labels to existing beads
+2. Add `ao:<pattern>` labels to mission beads
+3. Add `skill:<name>` labels to task beads
+4. No new commands yet
 
-**Validation:** `/army status` still works
+**Validation:** `bd list --label=wave:0` shows wave 0 beads
 
-### Phase 2: AO Labels (1-2 sessions)
-
-1. Add `ao:<pattern>` labels to existing mission beads
-2. Add `ai:<pattern>` labels for read dependencies
-3. Update mission bead descriptions with structured metadata
-
-**Commands:**
-
-```bash
-bd label buildseason-5pw ao:apps/api/src/routes/auth/**
-bd label buildseason-5pw ao:apps/web/src/features/auth/**
-bd label buildseason-5pw ai:apps/api/src/lib/db.ts
-```
-
-**Validation:** Labels visible in `bd show`
-
-### Phase 3: Plan Subcommand (1 session)
+### Phase 2: Plan Subcommand
 
 1. Implement `/army plan <wave>`
 2. Parse AO labels from mission beads
 3. Generate synchronization matrix
-4. Detect and report conflicts
+4. Add skills audit (gap detection only, no auto-creation)
 
-**Validation:** `/army plan 2` shows matrix, detects any conflicts
+**Validation:** `/army plan 1` shows matrix and skill gaps
 
-### Phase 4: Enhanced Prompts (1 session)
+### Phase 3: Skills Audit + Building
 
-1. Update `/army deploy` to include AO/AI in agent prompts
-2. Add boundary rules section
-3. Include coordination bead creation instructions
+1. Add skill building to plan command
+2. Create process-improvement beads automatically
+3. Launch parallel skill-builder agents
 
-**Validation:** Deployed agents respect boundaries (manual observation)
+**Validation:** Plan creates and executes skill improvement beads
 
-### Phase 5: Boundary Tracking (ongoing)
+### Phase 4: Worktree Integration
 
-1. Add `boundary-violation` label for issues
-2. Include boundary metrics in retros
-3. Update review skills to check for violations
+1. Update `/army deploy` to create worktrees
+2. Honor `.worktreeinclude` patterns
+3. Add worktree cleanup after integration
 
-**Validation:** Retros report boundary compliance %
+**Validation:** Agents run in isolated worktrees
+
+### Phase 5: Enhanced Retro
+
+1. Implement trajectory analysis
+2. Create process-improvement beads from defects
+3. Link to discovered-from and related-to
+
+**Validation:** Retro produces actionable skill improvements
+
+### Phase 6: Wave-Command Coordination
+
+1. Implement coordination bead monitoring
+2. Add clearance signaling
+3. Create audit trail in beads
+
+**Validation:** Coordination requests are handled with full audit trail
 
 ### Migration Checklist
 
 ```
-[ ] Phase 1: Create .claude/army.yaml
-[ ] Phase 1: Add protected_files list
-[ ] Phase 1: Add wave definitions
-[ ] Phase 2: Label mission beads with ao: patterns
-[ ] Phase 2: Label mission beads with ai: patterns
-[ ] Phase 3: Implement /army plan subcommand
-[ ] Phase 3: Add sync matrix generation
-[ ] Phase 3: Add conflict detection
-[ ] Phase 4: Update deploy prompts with AO/AI
-[ ] Phase 4: Add boundary rules to prompts
-[ ] Phase 5: Track boundary-violation labels
-[ ] Phase 5: Add boundary metrics to retro
+[ ] Phase 1: Add wave:N labels to beads
+[ ] Phase 1: Add ao:<pattern> labels to missions
+[ ] Phase 1: Add skill:<name> labels to tasks
+[ ] Phase 2: Implement /army plan with sync matrix
+[ ] Phase 2: Add skills audit (gap detection)
+[ ] Phase 3: Add skill building to plan
+[ ] Phase 3: Launch parallel skill-builder agents
+[ ] Phase 4: Create worktrees in deploy
+[ ] Phase 4: Honor .worktreeinclude
+[ ] Phase 4: Clean up worktrees after integration
+[ ] Phase 5: Implement trajectory analysis in retro
+[ ] Phase 5: Create process-improvement beads
+[ ] Phase 5: Link discovered-from and related-to
+[ ] Phase 6: Implement coordination monitoring
+[ ] Phase 6: Add clearance signaling
+[ ] Phase 6: Create audit trail
 ```
 
 ---
@@ -583,10 +880,10 @@ bd label buildseason-5pw ai:apps/api/src/lib/db.ts
 
 ### Goal
 
-Extract the `/army` command, related skills, and configuration into a standalone Claude Code plugin that can be:
+Extract the `/army` command, related skills, and patterns into a standalone plugin that can be:
 
-1. Published to a marketplace repository
-2. Installed in other projects
+1. Published to a GitHub repository
+2. Installed in any project using beads
 3. Maintained independently
 
 ### Plugin Structure
@@ -595,13 +892,15 @@ Extract the `/army` command, related skills, and configuration into a standalone
 claude-army-plugin/
 ├── plugin.yaml              # Plugin manifest
 ├── README.md                # Documentation
-├── LICENSE                  # MIT or similar
+├── LICENSE                  # MIT
 │
 ├── commands/
 │   └── army.md              # Main /army command
 │
 ├── skills/
-│   ├── army-concepts/       # AO/AI/Boundaries documentation
+│   ├── army-concepts/       # AO/AoI/Boundaries documentation
+│   │   └── SKILL.md
+│   ├── skill-builder/       # Meta-skill for creating skills
 │   │   └── SKILL.md
 │   ├── code-review/
 │   │   └── SKILL.md
@@ -611,30 +910,32 @@ claude-army-plugin/
 │       └── SKILL.md
 │
 ├── templates/
-│   ├── army.yaml.template   # Project config template
-│   ├── mission.yaml         # Mission definition template
-│   └── checkpoint.md        # Checkpoint doc template
+│   ├── mission-bead.md      # Mission description template
+│   ├── checkpoint.md        # Checkpoint doc template
+│   └── retro-summary.md     # Retro output template
 │
-├── hooks/
-│   └── pre-deploy.sh        # Optional pre-deployment hook
-│
-└── tests/
-    ├── test-plan.md         # Manual test scenarios
-    └── fixtures/            # Test bead fixtures
+└── docs/
+    ├── getting-started.md
+    ├── pdca-loop.md
+    └── worktrees.md
 ```
 
-### Plugin Manifest (`plugin.yaml`)
+### Plugin Manifest
 
 ```yaml
 name: claude-army
 version: "1.0.0"
 description: >
   Agent army orchestration for parallel AI development.
+  Implements PDCA loop with git worktree isolation.
   Based on U.S. Army battlespace management doctrine.
 
-author: BuildSeason
-repository: https://github.com/caryden/claude-army-plugin
+repository: https://github.com/your-org/claude-army-plugin
 license: MIT
+
+# Dependencies
+requires:
+  - beads # Issue tracking infrastructure
 
 # Plugin capabilities
 provides:
@@ -642,184 +943,33 @@ provides:
     - army
   skills:
     - army-concepts
+    - skill-builder
     - code-review
     - security-review
     - ui-design-review
-
-# Dependencies
-requires:
-  - beads # Depends on beads plugin for issue tracking
-
-# Project configuration
-config_file: army.yaml
-config_template: templates/army.yaml.template
-
-# Installation hooks
-hooks:
-  post_install: |
-    echo "Claude Army installed!"
-    echo "Run: /army status to get started"
-    echo "Configure: .claude/army.yaml"
 ```
 
-### Installation Methods
-
-**Method 1: Direct from GitHub**
+### Installation
 
 ```bash
-# In Claude Code session
-claude plugins install github:caryden/claude-army-plugin
-```
+# From GitHub
+claude plugins install github:your-org/claude-army-plugin
 
-**Method 2: From marketplace (future)**
-
-```bash
-claude plugins install army
-```
-
-**Method 3: Local development**
-
-```bash
-# Clone plugin repo
-git clone https://github.com/caryden/claude-army-plugin.git
-
-# Link to current project
+# Local development
+git clone https://github.com/your-org/claude-army-plugin
 claude plugins link ./claude-army-plugin
 ```
 
-### Configuration Merging
+### Project Setup
 
-When installed, the plugin provides defaults that merge with project config:
+After installation, projects configure via beads:
 
-```yaml
-# Plugin defaults (in plugin)
-protected_files:
-  - package.json
-  - "*.lock"
-  - tsconfig.json
+1. Create wave beads with `wave:N` labels
+2. Create mission beads with `ao:<pattern>` labels
+3. Create checkpoint beads with `checkpoint` label and blocking dependencies
+4. Add `skill:<name>` labels to task beads
 
-# Project overrides (in .claude/army.yaml)
-protected_files:
-  - package.json
-  - bun.lock
-  - drizzle/schema/index.ts  # Project-specific
-```
-
-### Extracting from BuildSeason
-
-**Step 1: Create plugin repo**
-
-```bash
-mkdir -p ~/github/claude-army-plugin
-cd ~/github/claude-army-plugin
-git init
-```
-
-**Step 2: Copy and generalize files**
-
-```bash
-# Copy command
-cp ~/github/buildseason/.claude/commands/army.md commands/
-
-# Copy skills
-cp -r ~/github/buildseason/.claude/skills/code-review skills/
-cp -r ~/github/buildseason/.claude/skills/security-review skills/
-cp -r ~/github/buildseason/.claude/skills/ui-design-review skills/
-
-# Remove BuildSeason-specific references
-# - Replace "buildseason-" bead prefixes with "<project>-"
-# - Remove hardcoded wave definitions
-# - Generalize checkpoint bead references
-```
-
-**Step 3: Create templates**
-
-```bash
-# army.yaml template with placeholders
-# Mission definition template
-# Checkpoint document template
-```
-
-**Step 4: Update BuildSeason to use plugin**
-
-```bash
-# In buildseason project
-claude plugins install github:caryden/claude-army-plugin
-
-# Create project-specific army.yaml
-cat > .claude/army.yaml << 'EOF'
-# BuildSeason Army Configuration
-# Extends: claude-army-plugin defaults
-
-project_prefix: buildseason
-
-waves:
-  0:
-    checkpoint: buildseason-6ea
-    missions: [...]
-  # ...
-EOF
-```
-
-### Testing Plugin Installation
-
-**Test in fresh project:**
-
-```bash
-# Create test project
-mkdir /tmp/test-army-plugin
-cd /tmp/test-army-plugin
-git init
-
-# Install plugin
-claude plugins install github:caryden/claude-army-plugin
-
-# Verify
-claude /army status
-# Should show: "No army.yaml found. Run /army init to create one."
-
-# Initialize
-claude /army init
-# Creates .claude/army.yaml from template
-
-# Verify configuration
-cat .claude/army.yaml
-```
-
-**Test in BuildSeason:**
-
-```bash
-cd ~/github/buildseason
-
-# Remove local army.md (will use plugin version)
-mv .claude/commands/army.md .claude/commands/army.md.backup
-
-# Install plugin
-claude plugins install github:caryden/claude-army-plugin
-
-# Verify existing workflow still works
-claude /army status
-claude /army plan 2
-```
-
-### Versioning Strategy
-
-- **Major:** Breaking changes to command interface
-- **Minor:** New subcommands, backward-compatible features
-- **Patch:** Bug fixes, documentation updates
-
-```yaml
-# In plugin.yaml
-version: "1.0.0"
-
-# Changelog in CHANGELOG.md
-## [1.0.0] - 2025-01-01
-### Added
-- Initial release
-- Core subcommands: status, plan, deploy, review
-- AO/AI boundary enforcement
-- Synchronization matrix
-```
+No separate configuration file needed—everything is in beads.
 
 ---
 
@@ -827,128 +977,131 @@ version: "1.0.0"
 
 ### Unit Tests
 
-| Test                 | Description               |
-| -------------------- | ------------------------- |
-| Config parsing       | army.yaml loads correctly |
-| AO pattern matching  | Glob patterns match files |
-| Conflict detection   | Overlapping AOs flagged   |
-| Protected file check | No-fire areas enforced    |
+| Test               | Description                        |
+| ------------------ | ---------------------------------- |
+| AO pattern parsing | Glob patterns extracted from beads |
+| Conflict detection | Overlapping AOs flagged correctly  |
+| Skills audit       | Gaps detected against skill labels |
+| Worktree creation  | .worktreeinclude honored           |
 
 ### Integration Tests
 
-| Test                 | Description                         |
-| -------------------- | ----------------------------------- |
-| Wave deployment      | Agents launch with correct prompts  |
-| Boundary enforcement | Agent stops at AO boundary          |
-| Coordination flow    | Coordination bead created correctly |
-| Review workflow      | All three reviews complete          |
+| Test                 | Description                           |
+| -------------------- | ------------------------------------- |
+| Plan cycle           | Beads organized, skills audited       |
+| Deploy with worktree | Agents launch in isolated directories |
+| Coordination flow    | Bead created, clearance granted       |
+| Retro analysis       | Defects linked to skill improvements  |
 
-### Manual Test Scenarios
+### Manual Scenarios
 
-**Scenario 1: Clean Deploy**
+**Scenario 1: Clean Plan + Deploy**
 
 ```
-Given: Wave 1 with no AO conflicts
+Given: Wave 1 beads with non-overlapping AOs
 When: /army plan 1
-Then: Sync matrix shows CLEAN, ready to deploy
+Then: Sync matrix clean, skills current
+When: /army deploy 1
+Then: Agents run in worktrees, complete successfully
 ```
 
-**Scenario 2: Conflict Detection**
+**Scenario 2: Skills Gap Detection**
 
 ```
-Given: Two missions both claim sidebar/**
+Given: Bead with skill:new-pattern label
+And: skill:new-pattern does not exist
 When: /army plan 1
-Then: CONFLICT flagged, resolution options shown
+Then: Gap detected, skill-builder bead created
+And: Skill created before deploy allowed
 ```
 
-**Scenario 3: Boundary Crossing**
+**Scenario 3: Coordination Request**
 
 ```
-Given: Agent needs file outside AO
-When: Agent attempts modification
-Then: Agent creates coordination bead, continues other work
+Given: Mission A needs file owned by Mission B
+When: Agent creates coordination bead
+Then: Wave-command monitors bead
+When: Mission B completes
+Then: Clearance granted with audit trail
 ```
 
-**Scenario 4: Plugin Install**
+**Scenario 4: Retro Skill Improvement**
 
 ```
-Given: Fresh project with no army config
-When: claude plugins install github:caryden/claude-army-plugin
-Then: /army status shows init prompt
-When: /army init
-Then: army.yaml created with defaults
+Given: Wave completed with defects
+When: /army retro 1
+Then: Defects analyzed for skill gaps
+And: process-improvement beads created
+And: Linked to discovered-from sources
 ```
 
 ---
 
 ## Appendix A: Army Doctrine Reference
 
-| Army Term                      | Definition                            | Agent Analog        |
-| ------------------------------ | ------------------------------------- | ------------------- |
-| AO (Area of Operations)        | Geographic area assigned to commander | Files mission owns  |
-| AI (Area of Interest)          | Area that could affect operations     | Files mission reads |
-| Boundary                       | Line between units                    | File pattern edge   |
-| Phase Line                     | Control measure for timing            | Wave checkpoint     |
-| Main Effort                    | Priority unit                         | Main effort mission |
-| Fire Support Coordination Line | Beyond which fires are OK             | Outside all AOs     |
-| No-Fire Area                   | Protected zone                        | Protected files     |
-| Synchronization Matrix         | Time × Unit grid                      | File × Mission grid |
+| Army Term               | Definition                            | Agent Analog                   |
+| ----------------------- | ------------------------------------- | ------------------------------ |
+| AO (Area of Operations) | Geographic area assigned to commander | Files mission owns             |
+| AoI (Area of Interest)  | Area that could affect operations     | Files that focus agent context |
+| Boundary                | Line between units                    | AO pattern edge                |
+| Phase Line              | Control measure for timing            | Wave checkpoint                |
+| Main Effort             | Priority unit                         | Main effort mission            |
+| Synchronization Matrix  | Time × Unit grid                      | File × Mission grid            |
 
 ## Appendix B: Label Quick Reference
 
 ```bash
-# AO/AI labels
+# Territory labels
 bd label <mission> ao:apps/api/src/routes/auth/**
-bd label <mission> ai:apps/api/src/lib/db.ts
+bd label <mission> aoi:apps/api/src/lib/db.ts
+
+# Wave and mission
+bd label <bead> wave:0
+bd label <bead> mission:auth
+
+# Skills
+bd label <bead> skill:api-crud
+bd label <bead> skill:skill-builder
+
+# Process improvement
+bd label <bead> process-improvement:plan-wave-1
+bd label <bead> process-improvement:retro-wave-0
+
+# Audit trail
+bd label <bead> discovered-from:xyz-123
+bd label <bead> related-to:abc-456
 
 # Coordination
-bd create --title="Coordination: need <file>" --label="coordination-required"
+bd create --title="Coordination: need <file>" \
+  --label="coordination-required" \
+  --label="mission:auth"
 
-# Violations
-bd label <issue> boundary-violation
-
-# Priority
+# Priority missions
 bd label <mission> main-effort
 ```
 
-## Appendix C: Prompt Template
+## Appendix C: Worktree Quick Reference
 
-```markdown
-You are an agent in the ${PROJECT} army.
+```bash
+# Create worktree for mission
+git worktree add ~/.claude-worktrees/project-mission-auth -b mission/auth
 
-MISSION: ${MISSION_NAME}
-BEAD: ${BEAD_ID}
-TASK: ${TASK_TITLE}
+# List active worktrees
+git worktree list
 
-AREA OF OPERATIONS (you may modify):
-${AO_LIST}
+# In worktree: pull from another mission's completed branch
+git fetch origin mission/vendors
+git merge origin/mission/vendors
 
-AREA OF INTEREST (read-only):
-${AI_LIST}
+# Remove worktree after integration
+git worktree remove ~/.claude-worktrees/project-mission-auth
 
-BOUNDARY RULES:
-✓ Full authority to modify ANY file in your AO
-✓ May read files in your AI
-✗ Do NOT modify files in your AI
-✗ Do NOT touch files outside both lists
-
-If you need a file outside your AO:
-
-1. STOP current work
-2. Create coordination bead:
-   bd create --title="Coordination: need <file>" --label="coordination-required"
-3. Continue with other aspects of your task
-4. Note the dependency in your commit message
-
-DESCRIPTION:
-${TASK_DESCRIPTION}
-
-INSTRUCTIONS:
-
-1. Read any files mentioned in the description
-2. Read relevant spec docs
-3. Implement the required changes
-4. Verify: ${VERIFY_COMMAND}
-5. Commit with message referencing ${BEAD_ID}
-6. Close bead: bd close ${BEAD_ID}
+# Clean up stale metadata
+git worktree prune
 ```
+
+## Appendix D: Sources
+
+- [Git Worktrees for Parallel AI Development](https://stevekinney.com/courses/ai-development/git-worktrees)
+- [Using Git Worktrees for Concurrent Development](https://www.kenmuse.com/blog/using-git-worktrees-for-concurrent-development/)
+- [Claude Code Desktop Worktrees](https://code.claude.com/docs/en/desktop)
