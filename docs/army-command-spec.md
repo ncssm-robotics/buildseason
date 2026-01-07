@@ -166,7 +166,26 @@ Mission: Parts/BOM    │    -    │     -    │    AoI     │    AO    │  
 Mission: UI Polish    │    -    │     -    │     -      │    -     │      AO      │
 ```
 
-**Conflict Detection:** If two missions both have `AO` in the same column, you have potential merge work. Plan subcommand flags these for resolution or sequencing.
+**Conflict Detection:**
+
+1. **AO-on-AO Conflict:** If two missions both have `AO` in the same column → Must resolve before deploy (sequence, merge, or refactor)
+
+2. **AoI-on-AO Dependency:** If Mission A has `AoI` on a file that Mission B has `AO` on → Planning decision point
+
+```
+Dependency Analysis:
+  ⚠️ Mission: Parts has AoI on drizzle/schema/users.ts
+     which is in AO of Mission: Auth
+
+  Decision Required:
+    1. Sequence: Run Auth before Parts (Auth's changes inform Parts)
+    2. Accept risk: Changes are minor/unlikely to affect Parts
+    3. Coordinate: Parts pulls from Auth worktree mid-wave if needed
+
+  Selected: [human/plan chooses]
+```
+
+The plan command surfaces these decision points. Not all AoI-on-AO overlaps require sequencing—sometimes the AoI file is just for reference patterns and changes won't affect the dependent mission. The key is making an explicit, recorded decision.
 
 ### Deconfliction Rules
 
@@ -227,6 +246,8 @@ Each bead captures:
 
 - `skill:<skill-name>` labels: Which skills the agent should use
 - Multiple skills can be attached (e.g., `skill:api-crud`, `skill:drizzle-patterns`)
+- **REQUIRED:** Every bead must have at least one `skill:*` label before deploy
+- If no skill exists for a task, the plan phase creates it first
 
 **EXPECTATIONS:**
 
@@ -340,6 +361,72 @@ git worktree remove ~/.claude-worktrees/myproject-auth
 git worktree prune
 ```
 
+### Deterministic Merge Strategy
+
+**Problem:** Merging worktrees as missions complete creates non-deterministic results. Mission A might merge first in one run, Mission B first in another—leading to different conflict resolution paths and unpredictable outcomes.
+
+**Solution:** Planned merge order, executed after ALL missions complete.
+
+**Merge Order Determination:**
+
+During `/army plan`, the synchronization matrix analysis produces a merge order based on:
+
+1. **AoI-on-AO dependencies:** If Mission A has AoI on files Mission B modifies, B should merge first
+2. **Main effort priority:** Main effort mission merges last (gets final say on conflicts)
+3. **Minimal conflict surface:** Missions with smaller/isolated AOs merge first
+
+The merge order is recorded in the wave bead description:
+
+```markdown
+# Wave 1 Plan
+
+## Merge Order
+
+1. discord-bot (isolated, no dependencies)
+2. navigation (depends on shared/ui from discord-bot)
+3. auth-improvements (main effort, merges last)
+
+## Rationale
+
+- Discord bot has no AoI overlaps, safe to merge first
+- Navigation has AoI on shared/ui which discord-bot also touches
+- Auth is main effort and touches shared auth patterns
+```
+
+**Merge Execution:**
+
+```
+All missions complete
+    │
+    ▼
+Wave-command initiates merge sequence
+    │
+    ├── For mission in merge_order:
+    │   │
+    │   ├── git checkout main
+    │   ├── git merge mission/<mission-id> --no-ff
+    │   │
+    │   ├── If conflict:
+    │   │   ├── Record conflict details in wave bead
+    │   │   ├── Resolve using AO ownership (AO owner wins)
+    │   │   └── If unclear, flag for human review
+    │   │
+    │   └── Commit merge
+    │
+    ▼
+All missions integrated to main
+    │
+    ▼
+Clean up worktrees
+```
+
+**Key Properties:**
+
+- **Deterministic:** Same input beads → same merge order → same result
+- **Planned:** Merge order is decided during planning, not ad-hoc
+- **Auditable:** Merge order and rationale recorded in wave bead
+- **Conflict-aware:** AO ownership determines conflict resolution
+
 ---
 
 ## Subcommand Reference
@@ -388,9 +475,11 @@ Human closes checkpoint
 
 3. **Conduct Skills Audit:**
    - For each bead in wave, check `skill:*` labels
+   - **Requirement check:** Flag any beads missing `skill:*` labels (deploy blocked until resolved)
    - Compare required skills against existing skills
    - Identify gaps (skills referenced but don't exist)
    - Identify update candidates (skills that may need revision based on recent changes)
+   - **No bead runs without a skill.** Plan ensures all skills exist before deploy proceeds.
 
 4. **Create Skill Improvement Beads:**
    - For each gap or update candidate:
@@ -512,8 +601,11 @@ ${SUCCESS_CRITERIA}
 3. Implement the required changes following skill patterns
 4. Verify: ${VERIFY_COMMAND}
 5. Commit with message referencing ${BEAD_ID}
-6. Close bead: bd close ${BEAD_ID}
+6. Close bead with skills telemetry:
+   bd close ${BEAD_ID} --reason "Skills used: skill:X, skill:Y. [Brief summary of what was done]"
 ```
+
+**Important:** The close message MUST enumerate which skills were actually used. This telemetry flows through the bead and enables retro analysis of skill effectiveness.
 
 ### `/army review <wave>`
 
@@ -582,6 +674,7 @@ Includes:
    - Skill not followed → improve prompting or skill clarity
    - Skill followed but wrong result → improve skill content
    - Missing skill → flag for creation in next plan
+   - **Skill fundamentally broken** → trigger revert and retry (see below)
 
 4. **Create Process Improvement Beads:**
 
@@ -607,7 +700,31 @@ Includes:
      - Was this unavoidable cross-cutting concern?
      - Create process improvement beads for planning skill updates
 
-6. **Output Retro Summary:**
+6. **Revert and Retry for Broken Skills:**
+
+   When a skill is fundamentally broken (caused systematic failures, not just edge cases):
+
+   ```
+   Revert and Retry Flow:
+       │
+       ├── Identify affected mission(s) that used the broken skill
+       │
+       ├── Revert the mission's worktree changes:
+       │   git checkout main -- <files in mission AO>
+       │
+       ├── Reopen the mission beads (bd update <id> --status=open)
+       │
+       ├── Rewrite or replace the skill entirely:
+       │   - Create skill:skill-builder bead with high priority
+       │   - Execute skill rebuild immediately
+       │   - Commit new skill
+       │
+       └── Re-run the affected mission with corrected skill
+   ```
+
+   This is expensive but necessary when a skill causes systematic damage. The goal is to fix the process (skill), not just the symptoms (individual defects).
+
+7. **Output Retro Summary:**
 
    ```
    ═══════════════════════════════════════════════════════════════
@@ -888,6 +1005,8 @@ Extract the `/army` command, related skills, and patterns into a standalone plug
 
 ### Plugin Structure
 
+**Design Principle:** The `army.md` command is thin orchestration. All prompts and processes live in skills, making everything improvable through the PDCA loop.
+
 ```
 claude-army-plugin/
 ├── plugin.yaml              # Plugin manifest
@@ -895,13 +1014,30 @@ claude-army-plugin/
 ├── LICENSE                  # MIT
 │
 ├── commands/
-│   └── army.md              # Main /army command
+│   └── army.md              # Thin orchestration (routes to skills)
 │
 ├── skills/
-│   ├── army-concepts/       # AO/AoI/Boundaries documentation
+│   │
+│   ├── army-process/        # Core process skill (meta-skill)
+│   │   ├── SKILL.md         # Overview, when to use each sub-process
+│   │   ├── plan.md          # /army plan process
+│   │   ├── deploy.md        # /army deploy process
+│   │   ├── review.md        # /army review process
+│   │   ├── retro.md         # /army retro process
+│   │   ├── merge.md         # Worktree integration process
+│   │   ├── coordination.md  # Wave-command coordination
+│   │   └── scripts/
+│   │       ├── sync-matrix.sh      # Generate matrix from beads
+│   │       ├── skill-audit.sh      # Check skill:* vs existing skills
+│   │       ├── merge-worktrees.sh  # Ordered merge execution
+│   │       └── copy-worktreeinclude.sh
+│   │
+│   ├── army-concepts/       # Reference skill for AO/AoI/Boundaries
 │   │   └── SKILL.md
-│   ├── skill-builder/       # Meta-skill for creating skills
-│   │   └── SKILL.md
+│   │
+│   ├── skill-builder/       # Meta-skill for creating/updating skills
+│   │   └── SKILL.md         # Built from Anthropic docs on skill design
+│   │
 │   ├── code-review/
 │   │   └── SKILL.md
 │   ├── security-review/
@@ -911,6 +1047,7 @@ claude-army-plugin/
 │
 ├── templates/
 │   ├── mission-bead.md      # Mission description template
+│   ├── wave-bead.md         # Wave plan with merge order
 │   ├── checkpoint.md        # Checkpoint doc template
 │   └── retro-summary.md     # Retro output template
 │
@@ -919,6 +1056,41 @@ claude-army-plugin/
     ├── pdca-loop.md
     └── worktrees.md
 ```
+
+### Meta-Skills Architecture
+
+The `army.md` command delegates to `army-process/*` skills:
+
+```markdown
+# army.md (thin orchestration)
+
+Parse subcommand from arguments and delegate:
+
+| Subcommand         | Skill Document         |
+| ------------------ | ---------------------- |
+| plan               | army-process/plan.md   |
+| deploy             | army-process/deploy.md |
+| review             | army-process/review.md |
+| retro              | army-process/retro.md  |
+| status             | army-process/SKILL.md  |
+| prepare-checkpoint | army-process/review.md |
+| process-feedback   | army-process/review.md |
+| deploy-fixes       | army-process/deploy.md |
+
+For the given subcommand:
+
+1. Read the corresponding skill document
+2. Follow its process exactly
+3. Use any referenced scripts from army-process/scripts/
+
+This separation means:
+
+- All prompts are in skills (improvable via PDCA)
+- Scripts handle repetitive automation
+- army.md stays stable while skills evolve
+```
+
+**Why this matters:** If `/army deploy` produces bad results, we improve `army-process/deploy.md` through the normal skill improvement process. The command itself doesn't change—only the skill it references. This makes the entire army orchestration system subject to continuous improvement.
 
 ### Plugin Manifest
 
@@ -940,10 +1112,11 @@ requires:
 # Plugin capabilities
 provides:
   commands:
-    - army
+    - army # Thin orchestration, delegates to skills
   skills:
-    - army-concepts
-    - skill-builder
+    - army-process # Core meta-skill (plan, deploy, review, retro, merge)
+    - army-concepts # Reference documentation for AO/AoI/boundaries
+    - skill-builder # Meta-skill for creating/updating skills
     - code-review
     - security-review
     - ui-design-review
