@@ -1,4 +1,5 @@
 # BuildSeason
+
 ## Technical Specification
 
 **Version:** 1.0
@@ -18,6 +19,7 @@ This document specifies HOW BuildSeason will be built, complementing the require
 4. **No Lock-in** — Current implementation choices don't constrain future architecture
 
 **Key Technology Decisions:**
+
 - **Temporal.io** for workflow orchestration (sagas, escalation, monitoring)
 - **Claude Agent SDK** for intelligent Discord interactions (personality, NLU, context)
 - **Turso** for database with path to multi-region
@@ -25,11 +27,13 @@ This document specifies HOW BuildSeason will be built, complementing the require
 
 **Multi-Team from Day One:**
 BuildSeason supports multiple teams in a single deployment from Phase 1. Initial deployment targets NCSSM robotics programs:
+
 - **FTC Teams:** Aperture Science (5064), Sigmacorns (20377), RoboKnights (8569)
 - **FRC Team:** Zebracorns (900) — to be added after FTC validation
 - **Future Programs:** MATE underwater, VEX, Rocketry
 
 The architecture follows a GitHub-style org/team model:
+
 - **Organizations** group multiple teams (like GitHub orgs)
 - **Teams** can exist standalone or within an organization (like GitHub repos)
 - **Users** can belong to multiple organizations and teams
@@ -78,15 +82,15 @@ buildseason/
 
 ### 1.2 Current Technology Stack
 
-| Layer | Technology | Purpose |
-|-------|------------|---------|
-| Runtime | Bun | Fast JavaScript runtime with workspaces |
-| API Framework | Hono | Lightweight, fast HTTP framework with RPC |
-| Frontend | React + TanStack Router/Query | Type-safe routing and data fetching |
-| UI Components | shadcn/ui + Tailwind CSS | Component library and styling |
-| Database | Turso (libSQL) | SQLite-compatible distributed database |
-| ORM | Drizzle | Type-safe SQL with migrations |
-| Authentication | Better-Auth | Session-based auth with OAuth support |
+| Layer          | Technology                    | Purpose                                   |
+| -------------- | ----------------------------- | ----------------------------------------- |
+| Runtime        | Bun                           | Fast JavaScript runtime with workspaces   |
+| API Framework  | Hono                          | Lightweight, fast HTTP framework with RPC |
+| Frontend       | React + TanStack Router/Query | Type-safe routing and data fetching       |
+| UI Components  | shadcn/ui + Tailwind CSS      | Component library and styling             |
+| Database       | Turso (libSQL)                | SQLite-compatible distributed database    |
+| ORM            | Drizzle                       | Type-safe SQL with migrations             |
+| Authentication | Better-Auth                   | Session-based auth with OAuth support     |
 
 ### 1.3 Current Data Model
 
@@ -110,6 +114,7 @@ buildseason/
 ```
 
 **Key Entities:**
+
 - **Teams** — FTC/FRC teams (persist across years)
 - **Team Seasons** — A team's participation in a specific season (e.g., "2024-2025 Into The Deep")
 - **Team Members** — Scoped to a season (handles yearly roster churn)
@@ -124,6 +129,7 @@ buildseason/
 **Core Insight:** Teams build multiple robots per season. Each robot has its own BOM.
 
 **Real-World Example (FTC Team 5064, 2024-2025 "Into The Deep"):**
+
 ```
 Team 5064 - Aperture Science
 └── Season: 2024-2025 "Into The Deep"
@@ -136,12 +142,14 @@ Team 5064 - Aperture Science
 ```
 
 **Robot Lifecycle:**
+
 1. **Created** — Robot is named, BOM starts empty
 2. **Active** — Parts allocated from inventory to BOM, being built
 3. **Competition Ready** — BOM complete, robot operational
 4. **Disassembled** — Parts returned to inventory, robot archived
 
 **Parts Flow:**
+
 ```
 Team Inventory ──allocate──► Robot BOM (Cheddar)
                                     │
@@ -151,6 +159,7 @@ Team Inventory ◄──return────────────┘
 ```
 
 **Why This Matters:**
+
 - A team's parts inventory persists across seasons and robots
 - When a robot is disassembled, parts go back to inventory
 - BOM shows what a specific robot needs, not what the team needs overall
@@ -187,6 +196,7 @@ BuildSeason uses a GitHub-inspired organization model where teams can exist stan
 ```
 
 **Key Design Principles:**
+
 - **Teams can exist without an organization** (like personal GitHub repos)
 - **Organizations group related teams** (like GitHub orgs)
 - **Users have roles at both levels** (org-level and team-level)
@@ -200,6 +210,7 @@ BuildSeason uses a GitHub-inspired organization model where teams can exist stan
 | Team | Parts inventory, BOM, orders, team-specific vendors | Team members |
 
 **Organization Benefits (when used):**
+
 - **Shared mentors**: One login, access to all teams you mentor
 - **Org-wide dashboard**: See all teams' status at a glance
 - **Shared vendors**: Org-level vendor relationships
@@ -208,21 +219,23 @@ BuildSeason uses a GitHub-inspired organization model where teams can exist stan
 - **Competition type agnostic**: FTC, FRC, MATE, VEX, Rocketry all work the same
 
 **Standalone Team Benefits:**
+
 - **Simple setup**: No org overhead for single-team programs
 - **Full autonomy**: Team controls all settings and resources
 - **Easy upgrade**: Can join/create an org later without migration
 
 **Competition Types:**
 
-| Type | Competition | Scale | Key Differences |
-|------|-------------|-------|-----------------|
-| FTC | FIRST Tech Challenge | 15 students | Smaller robots, standard parts |
-| FRC | FIRST Robotics Competition | 25+ students | Larger robots, more fabrication |
-| MATE | Marine ROV | Varies | Underwater, waterproofing concerns |
-| VEX | VEX Robotics | Varies | VEX-specific parts ecosystem |
-| Rocketry | Team America Rocketry | Varies | Consumables, safety protocols |
+| Type     | Competition                | Scale        | Key Differences                    |
+| -------- | -------------------------- | ------------ | ---------------------------------- |
+| FTC      | FIRST Tech Challenge       | 15 students  | Smaller robots, standard parts     |
+| FRC      | FIRST Robotics Competition | 25+ students | Larger robots, more fabrication    |
+| MATE     | Marine ROV                 | Varies       | Underwater, waterproofing concerns |
+| VEX      | VEX Robotics               | Varies       | VEX-specific parts ecosystem       |
+| Rocketry | Team America Rocketry      | Varies       | Consumables, safety protocols      |
 
 The data model accommodates these differences through:
+
 - `teams.program` field (ftc, frc, mate, vex, tarc, other)
 - Competition-type-specific vendor seeds
 - Flexible subsystem definitions per team
@@ -240,6 +253,7 @@ buildseason.org/team/ftc/5064/orders    → Orders (auth required)
 ```
 
 **Public Team Pages** (like GitHub public repos):
+
 - Visible without authentication
 - Shows: name, number, location, sponsors, description, logo
 - Links to: team website, GitHub, social media
@@ -248,6 +262,7 @@ buildseason.org/team/ftc/5064/orders    → Orders (auth required)
 - Contact: how to reach the team (filtered through BuildSeason)
 
 **Authenticated Views** add:
+
 - Parts inventory, BOM, orders
 - Budget information
 - Member directory with roles
@@ -257,15 +272,16 @@ buildseason.org/team/ftc/5064/orders    → Orders (auth required)
 
 **Team Roles:**
 
-| Role | Description | Capabilities |
-|------|-------------|--------------|
-| admin | Team leads, head coach | All permissions, manage members, billing |
-| mentor | Adult volunteers, coaches | Approve orders, view budget, manage inventory |
-| student | Team members | Request orders, update inventory, view BOM |
-| parent | Parent/guardian of a student | View their child's activity, sign permission forms, emergency contact |
-| alumni | Former team members | Read-only access, can be re-activated |
+| Role    | Description                  | Capabilities                                                          |
+| ------- | ---------------------------- | --------------------------------------------------------------------- |
+| admin   | Team leads, head coach       | All permissions, manage members, billing                              |
+| mentor  | Adult volunteers, coaches    | Approve orders, view budget, manage inventory                         |
+| student | Team members                 | Request orders, update inventory, view BOM                            |
+| parent  | Parent/guardian of a student | View their child's activity, sign permission forms, emergency contact |
+| alumni  | Former team members          | Read-only access, can be re-activated                                 |
 
 **Parent Role Details:**
+
 - Linked to specific student(s) via `parentOfMemberId`
 - Can view: their child's participation, upcoming events, permission forms needed
 - Can action: sign permission slips, update emergency contact info, dietary restrictions
@@ -273,6 +289,7 @@ buildseason.org/team/ftc/5064/orders    → Orders (auth required)
 - Receives: event notifications, permission form requests, emergency alerts
 
 **Permission Slip Flow:**
+
 ```
 1. Event created requiring permission
 2. Agent identifies students needing forms
@@ -288,6 +305,7 @@ buildseason.org/team/ftc/5064/orders    → Orders (auth required)
 A core design principle: **users can and do belong to multiple teams simultaneously.**
 
 **Real-World Examples:**
+
 - **Mentors** often coach multiple teams (e.g., Marcus mentors both Aperture Science and Sigmacorns)
 - **Students** may be members of multiple teams (e.g., Pete was on two FTC teams last year)
 - **Parents** may have children on different teams (or the same child on multiple teams)
@@ -338,12 +356,14 @@ A core design principle: **users can and do belong to multiple teams simultaneou
 ```
 
 **Data Model Support:**
+
 - `teamMembers` table allows multiple rows per user (one per team)
 - Each membership has its own role (user can be admin on one team, student on another)
 - Parent-student links are per-membership (parent of Pete on Team A, same parent of Pete on Team B)
 - User preferences can be global or team-scoped
 
 **UI/UX Patterns:**
+
 - Team switcher in header (always visible)
 - "All Teams" dashboard view for users on multiple teams
 - Notification preferences per-team or aggregated
@@ -416,17 +436,20 @@ This has profound architectural implications:
 ### 2.3 Key Architectural Principles
 
 **1. Separation of Concerns**
+
 - API handles CRUD and business logic
 - Temporal handles durable workflows
 - Claude Agent SDK handles natural language
 - Workers handle background monitoring
 
 **2. Event-Driven Where It Matters**
+
 - OnShape webhooks → BOM sync
 - Order status changes → Notifications
 - Time-based triggers → Temporal schedules
 
 **3. Graceful Degradation**
+
 - If Temporal is down, API still works (no new workflows)
 - If Discord is down, web interface still works
 - Offline-capable PWA for competition venues
@@ -452,6 +475,7 @@ This has profound architectural implications:
 | Discord | Discord.js | Basic slash commands only |
 
 **Features:**
+
 - [ ] Team creation and member management with roles
 - [ ] Parts inventory CRUD with search
 - [ ] BOM management tied to parts and subsystems
@@ -461,12 +485,14 @@ This has profound architectural implications:
 - [ ] Webhook notifications to Discord channels
 
 **Architecture Notes:**
+
 - Monolithic API (no microservices)
 - No Temporal yet (simple cron jobs if needed)
 - Focus on data model correctness
 - Basic permission checks in middleware
 
 **Discord Commands (Phase 1):**
+
 ```
 /inventory search <query>     - Find parts
 /inventory check <sku>        - Check stock level
@@ -491,6 +517,7 @@ This has profound architectural implications:
 | Workers | Bun workers | Background monitoring |
 
 **Features:**
+
 - [ ] Natural language Discord interactions
 - [ ] Personality system (GLaDOS, Wheatley, neutral, etc.)
 - [ ] Graduated escalation workflows
@@ -571,7 +598,7 @@ const personalities = {
 // Discord handler with Claude Agent SDK
 async function handleMessage(message: Message) {
   const team = await getTeamFromGuild(message.guild.id);
-  const personality = personalities[team.agentPersonality || 'glados'];
+  const personality = personalities[team.agentPersonality || "glados"];
 
   const agent = new ClaudeAgent({
     ...personality,
@@ -617,6 +644,7 @@ async function handleMessage(message: Message) {
 | CDN | Fly CDN or Cloudflare | Static assets, edge caching |
 
 **Features:**
+
 - [ ] Travel & logistics management (Worlds scenario from requirements)
 - [ ] Multi-currency budget tracking with exchange rates
 - [ ] Customs documentation generation
@@ -721,17 +749,20 @@ communityMetrics: {
 
 **The Problem:**
 Many BuildSeason operations are inherently long-running and multi-step:
+
 - Order approval (wait hours/days for human input)
 - Permission form collection (escalating reminders over days)
 - Travel coordination (monitor flights for weeks)
 - Sponsor nurturing (detect moments, suggest outreach)
 
 Traditional approaches fail:
+
 - Cron jobs: Stateless, hard to debug, lose context on restart
 - Simple queues: No built-in timeout, retry, or saga support
 - In-memory state: Lost on deployment, single-machine limit
 
 **Why Temporal:**
+
 - **Durable execution**: Workflows survive restarts, deployments, crashes
 - **Built-in primitives**: Timers, retries, sagas, signals, queries
 - **Visibility**: See all running workflows, their state, history
@@ -741,8 +772,8 @@ Traditional approaches fail:
 
 ```typescript
 // workflows/orderApproval.ts
-import { proxyActivities, sleep, condition } from '@temporalio/workflow';
-import type * as activities from '../activities/order';
+import { proxyActivities, sleep, condition } from "@temporalio/workflow";
+import type * as activities from "../activities/order";
 
 const {
   notifyApprovers,
@@ -752,7 +783,7 @@ const {
   markRejected,
   notifyRequester,
 } = proxyActivities<typeof activities>({
-  startToCloseTimeout: '1 minute',
+  startToCloseTimeout: "1 minute",
 });
 
 export async function orderApprovalWorkflow(orderId: string): Promise<void> {
@@ -792,30 +823,30 @@ export async function orderApprovalWorkflow(orderId: string): Promise<void> {
 
   if (approved) {
     await markApproved(orderId);
-    await notifyRequester(orderId, 'approved');
+    await notifyRequester(orderId, "approved");
   } else if (rejected) {
     await markRejected(orderId, rejectionReason);
-    await notifyRequester(orderId, 'rejected', rejectionReason);
+    await notifyRequester(orderId, "rejected", rejectionReason);
   } else {
     // Timed out
     await escalateToMentor(orderId);
-    await notifyRequester(orderId, 'expired');
+    await notifyRequester(orderId, "expired");
   }
 }
 
 // Signal handlers
-export const approveSignal = defineSignal('approve');
-export const rejectSignal = defineSignal<[string]>('reject');
+export const approveSignal = defineSignal("approve");
+export const rejectSignal = defineSignal<[string]>("reject");
 ```
 
 **Alternatives Considered:**
 
-| Option | Pros | Cons |
-|--------|------|------|
-| Bull/BullMQ | Simple, Redis-based | No durable workflows, no sagas |
-| Inngest | Good DX, serverless | Less mature, fewer primitives |
-| Trigger.dev | Modern, easy setup | Less battle-tested |
-| Custom solution | Full control | Enormous effort, bugs |
+| Option          | Pros                | Cons                           |
+| --------------- | ------------------- | ------------------------------ |
+| Bull/BullMQ     | Simple, Redis-based | No durable workflows, no sagas |
+| Inngest         | Good DX, serverless | Less mature, fewer primitives  |
+| Trigger.dev     | Modern, easy setup  | Less battle-tested             |
+| Custom solution | Full control        | Enormous effort, bugs          |
 
 **Decision:** Temporal.io (Temporal Cloud for simplicity, or self-hosted on Fly for cost)
 
@@ -825,6 +856,7 @@ export const rejectSignal = defineSignal<[string]>('reject');
 
 **The Problem:**
 The requirements demand a conversational agent that:
+
 - Understands natural language queries ("can we afford 4 servos?")
 - Maintains personality (GLaDOS, Wheatley, etc.)
 - Has context about the team, inventory, budget
@@ -832,6 +864,7 @@ The requirements demand a conversational agent that:
 - Feels like a team member, not a chatbot
 
 **Why Claude Agent SDK:**
+
 - **Native tool use**: Define tools, Claude calls them appropriately
 - **Personality control**: System prompts + temperature tuning
 - **Context management**: Conversation history, team context
@@ -843,24 +876,22 @@ The requirements demand a conversational agent that:
 ```typescript
 // tools/inventory.ts
 export const inventoryQueryTool = {
-  name: 'query_inventory',
-  description: 'Search for parts in team inventory by name, SKU, or description',
+  name: "query_inventory",
+  description:
+    "Search for parts in team inventory by name, SKU, or description",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
-      query: { type: 'string', description: 'Search query' },
-      teamId: { type: 'string', description: 'Team ID' },
+      query: { type: "string", description: "Search query" },
+      teamId: { type: "string", description: "Team ID" },
     },
-    required: ['query', 'teamId'],
+    required: ["query", "teamId"],
   },
   execute: async ({ query, teamId }) => {
     const parts = await db.query.parts.findMany({
       where: and(
         eq(parts.teamId, teamId),
-        or(
-          like(parts.name, `%${query}%`),
-          like(parts.sku, `%${query}%`),
-        )
+        or(like(parts.name, `%${query}%`), like(parts.sku, `%${query}%`))
       ),
       with: { vendor: true },
     });
@@ -869,15 +900,19 @@ export const inventoryQueryTool = {
 };
 
 export const budgetCheckTool = {
-  name: 'check_budget',
-  description: 'Check remaining budget for a team, optionally for a specific category',
+  name: "check_budget",
+  description:
+    "Check remaining budget for a team, optionally for a specific category",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
-      teamId: { type: 'string' },
-      category: { type: 'string', description: 'Optional: parts, travel, registration' },
+      teamId: { type: "string" },
+      category: {
+        type: "string",
+        description: "Optional: parts, travel, registration",
+      },
     },
-    required: ['teamId'],
+    required: ["teamId"],
   },
   execute: async ({ teamId, category }) => {
     // Calculate committed + spent vs allocated
@@ -887,17 +922,17 @@ export const budgetCheckTool = {
 };
 
 export const addToOrderQueueTool = {
-  name: 'add_to_order_queue',
-  description: 'Add a part to the order queue for the team',
+  name: "add_to_order_queue",
+  description: "Add a part to the order queue for the team",
   parameters: {
-    type: 'object',
+    type: "object",
     properties: {
-      teamId: { type: 'string' },
-      partId: { type: 'string' },
-      quantity: { type: 'number' },
-      requestedBy: { type: 'string', description: 'User ID requesting' },
+      teamId: { type: "string" },
+      partId: { type: "string" },
+      quantity: { type: "number" },
+      requestedBy: { type: "string", description: "User ID requesting" },
     },
-    required: ['teamId', 'partId', 'quantity', 'requestedBy'],
+    required: ["teamId", "partId", "quantity", "requestedBy"],
   },
   execute: async ({ teamId, partId, quantity, requestedBy }) => {
     // Add to pending order or create new draft
@@ -921,7 +956,6 @@ PDP configuration supports—you'd need to rebalance breakers.
 
 Also, goBILDA has a comparable servo for $19.99 that several
 teams have used successfully. Want me to pull up the comparison?`
-
 // Wheatley response to same question
 `OH! Servos! I LOVE servos! Let me check...
 *rummages through the budget spreadsheet*
@@ -933,7 +967,7 @@ And you've got $212 left! So YES! Absolutely!
 You can totally afford them! This is BRILLIANT!
 
 Wait, wait—should I add them to the order? I can do that!
-I'm very helpful! 🎉`
+I'm very helpful! 🎉`;
 ```
 
 ---
@@ -942,6 +976,7 @@ I'm very helpful! 🎉`
 
 **The Problem:**
 The "magic" moment from requirements:
+
 > Student updates OnShape assembly at 10pm. By 10:02pm, in #design:
 > "I see you've added REV-41-1877 to the arm assembly. Checking...
 > We have 0 in stock. REV has them, 5-day lead time, $51.96 for 4..."
@@ -981,25 +1016,27 @@ This requires real-time awareness of CAD changes.
 
 ```typescript
 // routes/webhooks/onshape.ts
-app.post('/webhooks/onshape', async (c) => {
-  const signature = c.req.header('x-onshape-signature');
+app.post("/webhooks/onshape", async (c) => {
+  const signature = c.req.header("x-onshape-signature");
   if (!verifyOnShapeSignature(signature, await c.req.raw.text())) {
-    return c.text('Invalid signature', 401);
+    return c.text("Invalid signature", 401);
   }
 
   const payload = await c.req.json();
 
-  if (payload.event === 'onshape.model.translation.complete' ||
-      payload.event === 'onshape.revision.created') {
+  if (
+    payload.event === "onshape.model.translation.complete" ||
+    payload.event === "onshape.revision.created"
+  ) {
     // Trigger BOM sync workflow
     await temporal.workflow.start(onShapeSyncWorkflow, {
       args: [payload.documentId, payload.elementId],
-      taskQueue: 'onshape-sync',
+      taskQueue: "onshape-sync",
       workflowId: `onshape-sync-${payload.documentId}-${Date.now()}`,
     });
   }
 
-  return c.text('OK');
+  return c.text("OK");
 });
 ```
 
@@ -1023,24 +1060,29 @@ export async function fetchBOMDiff(
 
   // Calculate diff
   const added = currentBOM.items.filter(
-    item => !previousBOM?.items.find(p => p.partNumber === item.partNumber)
+    (item) => !previousBOM?.items.find((p) => p.partNumber === item.partNumber)
   );
-  const removed = previousBOM?.items.filter(
-    item => !currentBOM.items.find(c => c.partNumber === item.partNumber)
-  ) || [];
-  const quantityChanged = currentBOM.items.filter(item => {
-    const prev = previousBOM?.items.find(p => p.partNumber === item.partNumber);
+  const removed =
+    previousBOM?.items.filter(
+      (item) => !currentBOM.items.find((c) => c.partNumber === item.partNumber)
+    ) || [];
+  const quantityChanged = currentBOM.items.filter((item) => {
+    const prev = previousBOM?.items.find(
+      (p) => p.partNumber === item.partNumber
+    );
     return prev && prev.quantity !== item.quantity;
   });
 
   // Cross-reference with inventory
   for (const item of [...added, ...quantityChanged]) {
     const inventoryPart = await matchPartToInventory(item, teamId);
-    item.inventoryStatus = inventoryPart ? {
-      inStock: inventoryPart.quantity,
-      onOrder: await getOnOrderQuantity(inventoryPart.id),
-      reorderPoint: inventoryPart.reorderPoint,
-    } : null;
+    item.inventoryStatus = inventoryPart
+      ? {
+          inStock: inventoryPart.quantity,
+          onOrder: await getOnOrderQuantity(inventoryPart.id),
+          reorderPoint: inventoryPart.reorderPoint,
+        }
+      : null;
   }
 
   return { added, removed, quantityChanged };
@@ -1053,6 +1095,7 @@ export async function fetchBOMDiff(
 
 **The Problem:**
 Software teams need the same operational support as mechanical teams:
+
 - Track progress on robot code across PRs
 - Get AI-assisted code reviews
 - Surface blockers and stalled work
@@ -1094,6 +1137,7 @@ Software teams need the same operational support as mechanical teams:
 | `workflow_run.completed` | Report CI/CD status, flag failures |
 
 **Agent Capabilities:**
+
 - **Code Review**: Claude analyzes PR diffs, suggests improvements, catches bugs
 - **Progress Tracking**: "Robot code is 73% complete based on open issues"
 - **Blocker Detection**: "PR #42 has been waiting for review for 5 days"
@@ -1116,10 +1160,12 @@ Software teams need the same operational support as mechanical teams:
 ## BuildSeason Code Review
 
 ### Summary
+
 This PR adds vision-based alignment for the scoring mechanism.
 The approach looks solid, but I have a few suggestions.
 
 ### Suggestions
+
 1. **Line 47**: `getTarget()` can return null if no AprilTag is visible.
    Consider adding a null check before accessing `.getX()`.
 
@@ -1130,11 +1176,13 @@ The approach looks solid, but I have a few suggestions.
    will make testing easier.
 
 ---
-🤖 *Review by BuildSeason Agent (GLaDOS mode)*
-*"The code is acceptable. For now."*
+
+🤖 _Review by BuildSeason Agent (GLaDOS mode)_
+_"The code is acceptable. For now."_
 ```
 
 **Skills for Software Teams:**
+
 - `github-pr-review` — AI-powered code review with team context
 - `github-progress` — Track issues/PRs against milestones
 - `github-notify` — Smart notifications (don't spam, escalate when needed)
@@ -1181,15 +1229,15 @@ The approach looks solid, but I have a few suggestions.
 
 **Channel Strategy:**
 
-| Channel | Purpose | Bot Behavior |
-|---------|---------|--------------|
-| #general | Team chat | Responds to mentions only |
-| #parts | Parts/inventory | Proactive low-stock alerts |
-| #orders | Order tracking | Order status updates, approvals needed |
-| #design | CAD/OnShape | BOM change notifications |
-| #travel | Travel logistics | Flight updates, document reminders |
-| #budget | Financial | Budget warnings, expense tracking |
-| DMs | Private | Personal reminders, escalations |
+| Channel  | Purpose          | Bot Behavior                           |
+| -------- | ---------------- | -------------------------------------- |
+| #general | Team chat        | Responds to mentions only              |
+| #parts   | Parts/inventory  | Proactive low-stock alerts             |
+| #orders  | Order tracking   | Order status updates, approvals needed |
+| #design  | CAD/OnShape      | BOM change notifications               |
+| #travel  | Travel logistics | Flight updates, document reminders     |
+| #budget  | Financial        | Budget warnings, expense tracking      |
+| DMs      | Private          | Personal reminders, escalations        |
 
 **Slash Commands (Phase 2):**
 
@@ -1633,16 +1681,19 @@ communityContributions (
 **Purpose:** Populate public team pages with competition data.
 
 **Data Sources:**
+
 - **FTC Stats** (ftcstats.org) — OPR, awards, match history
 - **FIRST API** — Official event data, team info
 - **The Orange Alliance** — Community-maintained FTC data
 
 **Sync Strategy:**
+
 - Daily scheduled job during competition season
 - On-demand refresh when viewing team page
 - Cache results with 24-hour TTL
 
 **Data Displayed on Public Pages:**
+
 ```
 Team 5064 - Aperture Science
 ├─ Current Season: 2024-2025
@@ -1686,11 +1737,12 @@ interface Skill {
 
 // Example: Vendor Monitor Skill
 const vendorMonitorSkill: Skill = {
-  name: 'vendor-monitor',
-  description: 'Monitors vendor websites for stock changes and price updates',
-  version: '1.0.0',
+  name: "vendor-monitor",
+  description: "Monitors vendor websites for stock changes and price updates",
+  version: "1.0.0",
 
-  canHandle: (intent) => intent.includes('check stock') || intent.includes('price'),
+  canHandle: (intent) =>
+    intent.includes("check stock") || intent.includes("price"),
 
   execute: async ({ vendorId, partNumber }, context) => {
     const status = await checkVendorStock(vendorId, partNumber);
@@ -1701,7 +1753,7 @@ const vendorMonitorSkill: Skill = {
     };
   },
 
-  schedule: '0 */6 * * *', // Every 6 hours
+  schedule: "0 */6 * * *", // Every 6 hours
 
   onSchedule: async (context) => {
     // Check all watched parts for changes
@@ -1710,7 +1762,7 @@ const vendorMonitorSkill: Skill = {
       const status = await checkVendorStock(part.vendorId, part.sku);
       if (status.changed) {
         await notifyTeam(context.teamId, {
-          type: 'stock-change',
+          type: "stock-change",
           part,
           previous: part.lastStatus,
           current: status,
@@ -1727,26 +1779,28 @@ All incoming webhooks are verified:
 
 ```typescript
 // middleware/webhookSecurity.ts
-export function verifyWebhook(source: 'onshape' | 'discord' | 'stripe') {
+export function verifyWebhook(source: "onshape" | "discord" | "stripe") {
   return async (c: Context, next: Next) => {
     const signature = c.req.header(`x-${source}-signature`);
     const body = await c.req.text();
 
     const secret = getWebhookSecret(source);
     const expected = crypto
-      .createHmac('sha256', secret)
+      .createHmac("sha256", secret)
       .update(body)
-      .digest('hex');
+      .digest("hex");
 
-    if (!crypto.timingSafeEqual(
-      Buffer.from(signature || ''),
-      Buffer.from(expected)
-    )) {
-      return c.text('Invalid signature', 401);
+    if (
+      !crypto.timingSafeEqual(
+        Buffer.from(signature || ""),
+        Buffer.from(expected)
+      )
+    ) {
+      return c.text("Invalid signature", 401);
     }
 
     // Parse body and continue
-    c.set('webhookPayload', JSON.parse(body));
+    c.set("webhookPayload", JSON.parse(body));
     await next();
   };
 }
@@ -1760,6 +1814,7 @@ Students typing part numbers manually is error-prone. Mentors waste time looking
 **Solution: Scraped Vendor Catalogs**
 
 Maintain a synchronized catalog of parts from major FTC/FRC vendors:
+
 - **REV Robotics** — Primary FTC vendor
 - **goBILDA** — Popular FTC vendor
 - **AndyMark** — FTC and FRC
@@ -1767,6 +1822,7 @@ Maintain a synchronized catalog of parts from major FTC/FRC vendors:
 - **The Robot Space** — UK/EU vendor (Phase 3)
 
 **What We Track:**
+
 ```
 vendorCatalogItems (
   id,
@@ -1790,6 +1846,7 @@ vendorCatalogItems (
 ```
 
 **Sync Strategy (Temporal Workflow):**
+
 ```
 VendorCatalogSyncWorkflow
 ├─ Schedule: Daily at 3am (low traffic)
@@ -1804,12 +1861,14 @@ VendorCatalogSyncWorkflow
 ```
 
 **UI Integration:**
+
 - **Autocomplete**: When typing a part name or SKU, suggest from catalog
 - **Price display**: Show current price from vendor when adding to inventory
 - **Stock warnings**: "⚠️ REV shows this as out of stock" before ordering
 - **One-click add**: Add catalog item to inventory with all details pre-filled
 
 **Example Autocomplete:**
+
 ```
 User types: "REV-41-13"
 
@@ -1822,6 +1881,7 @@ Suggestions:
 ```
 
 **Note on Scope:**
+
 - We catalog major robotics vendors (REV, goBILDA, AndyMark, etc.)
 - NOT Amazon, McMaster-Carr, Home Depot (catalogs too large)
 - Team-added "generic" parts don't need catalog matching
@@ -1836,6 +1896,7 @@ Anonymized, aggregated insights from across all BuildSeason teams create a share
 **"Teams who buy X also buy Y" (Frequently Bought Together)**
 
 When a team adds a REV Ultraplanetary motor to their BOM, suggest:
+
 - Ultraplanetary cartridges (20:1, 5:1)
 - Motor mounting bracket
 - Encoder cable
@@ -1854,6 +1915,7 @@ frequentlyBoughtTogether (
 ```
 
 **Example Agent Interaction:**
+
 ```
 Student adds "REV-41-1310 HD Hex Motor" to cart
 
@@ -1865,6 +1927,7 @@ Sonic Hub. You have 0 in stock. Add to order? ✅"
 **"Teams using X have upgraded to Y" (Library/Firmware Intelligence)**
 
 For software teams (via GitHub integration):
+
 - "12 teams using FTC SDK 9.0 have issues with the OTOS driver. 8 have already upgraded to the patched version."
 - "Teams using your version of the RoadRunner library have 3 known issues. Latest version fixes all three."
 
@@ -1884,6 +1947,7 @@ libraryVersionIntelligence (
 **Lead Time Intelligence**
 
 Aggregate actual lead times from all teams:
+
 - "Average lead time for REV orders to North Carolina: 4.2 days (based on 127 orders)"
 - "⚠️ goBILDA lead times have increased 40% this week—competition season rush"
 
@@ -1910,12 +1974,14 @@ Want me to compare specs? Or add the REV option to your cart as backup?"
 ```
 
 This combines:
+
 - Community intelligence (what parts are trending)
 - Vendor catalog (real-time stock status)
 - Proactive monitoring (watching parts mentioned in team's OnShape/Discord)
 - Actionable alternatives (not just "out of stock" but actual options)
 
 **Data Anonymization:**
+
 - All community metrics are aggregated (minimum 10 data points)
 - Individual team data never exposed
 - Teams can opt out of contributing (but still receive insights)
@@ -1930,6 +1996,7 @@ Order tracking is fragmented—confirmation emails in Gmail, shipping notificati
 **Solution: Team Email Inbox**
 
 Each team gets a dedicated email address:
+
 ```
 ftc5064@buildseason.org
 frc900@buildseason.org
@@ -1952,6 +2019,7 @@ frc900@buildseason.org
    - Forward to: `ftc5064@buildseason.org`
 
 **Email Processing (Temporal Workflow):**
+
 ```
 EmailProcessingWorkflow
 ├─ Receive email via webhook (SendGrid, Postmark, etc.)
@@ -1967,6 +2035,7 @@ EmailProcessingWorkflow
 ```
 
 **Data Model:**
+
 ```sql
 teamEmailInboxes (
   id,
@@ -1994,13 +2063,14 @@ inboundEmails (
 
 **Vendor Email Patterns:**
 
-| Vendor | Order Confirmation | Shipping Notification |
-|--------|-------------------|----------------------|
-| REV Robotics | orders@revrobotics.com | shipping@revrobotics.com |
-| goBILDA | orders@gobilda.com | Contains "has shipped" |
-| AndyMark | Contains "Order Confirmation" | Contains tracking number pattern |
+| Vendor       | Order Confirmation            | Shipping Notification            |
+| ------------ | ----------------------------- | -------------------------------- |
+| REV Robotics | orders@revrobotics.com        | shipping@revrobotics.com         |
+| goBILDA      | orders@gobilda.com            | Contains "has shipped"           |
+| AndyMark     | Contains "Order Confirmation" | Contains tracking number pattern |
 
 **Agent Integration:**
+
 ```
 Agent (in #orders channel):
 "📬 Just received a shipping notification from REV!
@@ -2018,12 +2088,14 @@ React 📦 when you receive it to update inventory."
 **Phase 2 Enhancement: Gmail/OAuth Integration**
 
 For teams who prefer direct integration:
+
 - OAuth connect to team Gmail account
 - Auto-scan for vendor emails (with consent)
 - No forwarding required
 - Full automation
 
 **Privacy Considerations:**
+
 - Only vendor-related emails are processed
 - Personal emails are ignored (pattern matching)
 - Teams control which vendors are monitored
@@ -2036,27 +2108,30 @@ For teams who prefer direct integration:
 
 ### 7.1 Data Classification
 
-| Category | Examples | Storage | Access |
-|----------|----------|---------|--------|
-| Public | Team name, competition results | Standard | Anyone |
-| Internal | Parts inventory, orders | Standard | Team members |
-| Confidential | Budget details, sponsor info | Standard | Mentors, admins |
-| Sensitive | Student contact, medical | Encrypted | Need-to-know |
-| Restricted | Passport numbers, SSN | Encrypted + audit | Travel coordinator only |
+| Category     | Examples                       | Storage           | Access                  |
+| ------------ | ------------------------------ | ----------------- | ----------------------- |
+| Public       | Team name, competition results | Standard          | Anyone                  |
+| Internal     | Parts inventory, orders        | Standard          | Team members            |
+| Confidential | Budget details, sponsor info   | Standard          | Mentors, admins         |
+| Sensitive    | Student contact, medical       | Encrypted         | Need-to-know            |
+| Restricted   | Passport numbers, SSN          | Encrypted + audit | Travel coordinator only |
 
 ### 7.2 Compliance Considerations
 
 **FERPA (Student Data)**
+
 - Student educational records require parental consent
 - De-identification for analytics
 - Right to access and correct
 
 **COPPA (Children Under 13)**
+
 - FTC teams include students as young as 12
 - Parental consent required
 - Limited data collection
 
 **GDPR (EU Teams)**
+
 - Data minimization
 - Right to erasure
 - Data portability
@@ -2068,15 +2143,15 @@ For teams who prefer direct integration:
 // Role-based access control
 const roles = {
   student: {
-    can: ['read:own-data', 'read:inventory', 'create:order-request'],
-    cannot: ['approve:order', 'access:budget', 'manage:team'],
+    can: ["read:own-data", "read:inventory", "create:order-request"],
+    cannot: ["approve:order", "access:budget", "manage:team"],
   },
   mentor: {
-    can: ['*:inventory', '*:orders', 'read:budget', 'approve:order'],
-    cannot: ['manage:team', 'access:sensitive'],
+    can: ["*:inventory", "*:orders", "read:budget", "approve:order"],
+    cannot: ["manage:team", "access:sensitive"],
   },
   admin: {
-    can: ['*:*'],
+    can: ["*:*"],
     cannot: [],
   },
 };
@@ -2084,11 +2159,11 @@ const roles = {
 // Middleware
 export function requirePermission(permission: string) {
   return async (c: Context, next: Next) => {
-    const user = c.get('user');
-    const teamMember = c.get('teamMember');
+    const user = c.get("user");
+    const teamMember = c.get("teamMember");
 
     if (!hasPermission(teamMember.role, permission)) {
-      return c.json({ error: 'Forbidden' }, 403);
+      return c.json({ error: "Forbidden" }, 403);
     }
 
     await next();
@@ -2103,14 +2178,14 @@ export function auditLog(action: string) {
     const after = Date.now();
 
     await db.insert(auditLogs).values({
-      userId: c.get('user')?.id,
+      userId: c.get("user")?.id,
       action,
-      resourceType: c.req.path.split('/')[2],
-      resourceId: c.req.param('id'),
+      resourceType: c.req.path.split("/")[2],
+      resourceId: c.req.param("id"),
       duration: after - before,
       statusCode: c.res.status,
-      ipAddress: c.req.header('x-forwarded-for'),
-      userAgent: c.req.header('user-agent'),
+      ipAddress: c.req.header("x-forwarded-for"),
+      userAgent: c.req.header("user-agent"),
       createdAt: new Date(),
     });
   };
@@ -2121,45 +2196,49 @@ export function auditLog(action: string) {
 
 ```typescript
 // Sensitive field encryption
-import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY!; // 32 bytes
-const ALGORITHM = 'aes-256-gcm';
+const ALGORITHM = "aes-256-gcm";
 
 export function encryptSensitive(plaintext: string): string {
   const iv = randomBytes(16);
-  const cipher = createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+  const cipher = createCipheriv(
+    ALGORITHM,
+    Buffer.from(ENCRYPTION_KEY, "hex"),
+    iv
+  );
 
-  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
+  let encrypted = cipher.update(plaintext, "utf8", "hex");
+  encrypted += cipher.final("hex");
 
   const authTag = cipher.getAuthTag();
 
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  return `${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted}`;
 }
 
 export function decryptSensitive(ciphertext: string): string {
-  const [ivHex, authTagHex, encrypted] = ciphertext.split(':');
+  const [ivHex, authTagHex, encrypted] = ciphertext.split(":");
 
   const decipher = createDecipheriv(
     ALGORITHM,
-    Buffer.from(ENCRYPTION_KEY, 'hex'),
-    Buffer.from(ivHex, 'hex')
+    Buffer.from(ENCRYPTION_KEY, "hex"),
+    Buffer.from(ivHex, "hex")
   );
 
-  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
 
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
+  let decrypted = decipher.update(encrypted, "hex", "utf8");
+  decrypted += decipher.final("utf8");
 
   return decrypted;
 }
 
 // Usage in schema
-export const travelers = sqliteTable('travelers', {
+export const travelers = sqliteTable("travelers", {
   // ...
-  passportNumber: text('passport_number'), // Encrypted before storage
-  medicalNotes: text('medical_notes'), // Encrypted before storage
+  passportNumber: text("passport_number"), // Encrypted before storage
+  medicalNotes: text("medical_notes"), // Encrypted before storage
 });
 ```
 
@@ -2279,8 +2358,8 @@ primary_region = "iad"
 
 ```typescript
 // db/index.ts (Phase 1)
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL!,
@@ -2290,8 +2369,8 @@ const client = createClient({
 export const db = drizzle(client);
 
 // db/index.ts (Phase 3 - Embedded replicas)
-import { drizzle } from 'drizzle-orm/libsql';
-import { createClient } from '@libsql/client';
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
 
 const client = createClient({
   url: process.env.TURSO_DATABASE_URL!,
@@ -2311,6 +2390,7 @@ export const db = drizzle(client);
 ### 9.1 Phase 1 → Phase 2
 
 **Adding Temporal:**
+
 1. Deploy Temporal (Cloud or self-hosted)
 2. Add Temporal SDK to codebase
 3. Implement workflows for existing flows (order approval, etc.)
@@ -2322,6 +2402,7 @@ export const db = drizzle(client);
    - Remove old flow
 
 **Adding Claude Agent SDK:**
+
 1. Add Claude Agent SDK dependency
 2. Implement basic query tools
 3. Add alongside existing slash commands (not replacing)
@@ -2330,6 +2411,7 @@ export const db = drizzle(client);
 6. Expand capabilities based on usage
 
 **Database migrations:**
+
 ```sql
 -- Add Phase 2 tables (safe, additive)
 CREATE TABLE agent_conversations (...);
@@ -2344,6 +2426,7 @@ CREATE TABLE bom_snapshots (...);
 ### 9.2 Phase 2 → Phase 3
 
 **Multi-region database:**
+
 1. Contact Turso for multi-region setup
 2. Create regional primaries
 3. Update connection logic:
@@ -2356,12 +2439,14 @@ CREATE TABLE bom_snapshots (...);
 5. Add embedded replicas for read performance
 
 **Multi-region Fly:**
+
 1. Update `fly.toml` with regions
 2. Deploy to new regions
 3. Configure routing (Fly handles this automatically)
 4. Monitor latency and adjust
 
 **New features:**
+
 - Add tables for travelers, trips, sponsors, events
 - Implement new workflows (travel monitoring, sponsor nurturing)
 - Add new integrations (FlightAware, restaurant APIs)
@@ -2388,9 +2473,9 @@ POST /api/v1/webhooks/discord-interactions
 type AppType = typeof app;
 
 // Used in apps/web with hc client
-const client = hc<AppType>('/api');
+const client = hc<AppType>("/api");
 await client.teams.$get();
-await client.teams[':id'].parts.$get({ param: { id: 'team-123' } });
+await client.teams[":id"].parts.$get({ param: { id: "team-123" } });
 ```
 
 ### Temporal Workflows
@@ -2439,19 +2524,19 @@ FLIGHTAWARE_API_KEY=xxx
 
 ### Metrics
 
-| Metric | Description | Alert Threshold |
-|--------|-------------|-----------------|
-| api_request_duration_ms | API latency | p99 > 500ms |
-| workflow_duration_s | Temporal workflow time | > 1 hour for approval |
-| discord_message_latency_ms | Bot response time | > 3000ms |
-| db_query_duration_ms | Database query time | p99 > 100ms |
-| error_rate | 5xx responses / total | > 1% |
+| Metric                     | Description            | Alert Threshold       |
+| -------------------------- | ---------------------- | --------------------- |
+| api_request_duration_ms    | API latency            | p99 > 500ms           |
+| workflow_duration_s        | Temporal workflow time | > 1 hour for approval |
+| discord_message_latency_ms | Bot response time      | > 3000ms              |
+| db_query_duration_ms       | Database query time    | p99 > 100ms           |
+| error_rate                 | 5xx responses / total  | > 1%                  |
 
 ### Logging
 
 ```typescript
 // Structured logging
-logger.info('Order created', {
+logger.info("Order created", {
   orderId: order.id,
   teamId: order.teamId,
   total: order.totalCents,
@@ -2459,7 +2544,7 @@ logger.info('Order created', {
 });
 
 // Trace context for distributed tracing
-logger.info('Workflow started', {
+logger.info("Workflow started", {
   workflowId: context.workflowId,
   runId: context.runId,
   traceId: context.traceId,
@@ -2475,4 +2560,4 @@ logger.info('Workflow started', {
 
 ---
 
-*This specification will evolve as we learn from users and the platform grows.*
+_This specification will evolve as we learn from users and the platform grows._
