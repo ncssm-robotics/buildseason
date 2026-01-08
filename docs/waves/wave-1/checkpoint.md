@@ -1,4 +1,4 @@
-# Checkpoint 2: Navigation Review
+# Wave 1 Checkpoint: Navigation Review
 
 **Bead:** buildseason-2zlp
 **Status:** Ready for human review

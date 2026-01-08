@@ -177,8 +177,31 @@ Located in `templates/`:
 | `checkpoint.md`    | Checkpoint doc template      |
 | `retro-summary.md` | Retro output template        |
 
+## Wave Documentation
+
+Wave documentation lives in `docs/waves/`:
+
+```
+docs/waves/
+├── wave-0/
+│   ├── checkpoint.md      # Human review gate document
+│   └── retrospective.md   # After-action analysis
+├── wave-1/
+│   ├── checkpoint.md
+│   └── retrospective.md
+└── wave-N/
+    ├── checkpoint.md
+    └── retrospective.md
+```
+
+**Key conventions:**
+
+- Wave number encoded in folder name, not filename
+- `checkpoint.md` - human review gate (created by `/army prepare-checkpoint N`)
+- `retrospective.md` - after-action analysis (created by `/army retro N`)
+- Optional: `plan.md` for wave planning notes
+
 ## Reference
 
-- Full specification: `docs/army-command-spec.md`
 - Concepts: `army-concepts/SKILL.md`
 - Skill building: `skill-building/SKILL.md`

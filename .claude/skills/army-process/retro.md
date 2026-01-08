@@ -154,6 +154,20 @@ Revert and Retry Flow:
 
 ### 7. Output Retro Summary
 
+Save retrospective documents to:
+
+```
+docs/waves/wave-N/retrospective.md
+```
+
+Create the wave folder if it doesn't exist:
+
+```bash
+mkdir -p docs/waves/wave-N
+```
+
+**Console Summary:**
+
 ```
 ═══════════════════════════════════════════════════════════════
                  WAVE N RETROSPECTIVE

@@ -1,4 +1,4 @@
-# Checkpoint 1: Wave 0 Review Summary
+# Wave 0 Checkpoint: Foundation Review
 
 Generated: 2025-12-30 22:35 UTC
 Updated: 2025-12-31 (Chrome MCP UI verification)

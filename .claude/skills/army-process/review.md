@@ -155,10 +155,24 @@ This deploys targeted fix agents for high-priority issues.
 
 `/army prepare-checkpoint N` generates the checkpoint document.
 
+### File Location
+
+Save checkpoint documents to:
+
+```
+docs/waves/wave-N/checkpoint.md
+```
+
+Create the wave folder if it doesn't exist:
+
+```bash
+mkdir -p docs/waves/wave-N
+```
+
 ### Template
 
 ```markdown
-# Checkpoint N: <Wave Name>
+# Wave N Checkpoint: <Wave Name>
 
 **Bead:** <checkpoint-bead-id>
 **Status:** Ready for human review
