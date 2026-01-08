@@ -37,7 +37,18 @@ const GoogleIcon: FC = () => (
  * 2. Better-Auth returns the OAuth redirect URL in JSON response, not as HTTP redirect
  * 3. Using fetch with credentials: 'include' ensures the OAuth state cookie is saved
  * 4. This approach also bypasses HTMX's hx-boost which would intercept regular links
+ *
+ * CALLBACK URL: In development, we redirect to FRONTEND_URL (localhost:5173).
+ * In production, we use relative '/dashboard' since API serves the frontend.
  */
+const getCallbackURL = () => {
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) {
+    return `${frontendUrl}/dashboard`;
+  }
+  return "/dashboard";
+};
+
 export const SocialAuthButtons: FC = () => (
   <div class="space-y-3">
     <button
@@ -66,7 +77,7 @@ export const SocialAuthButtons: FC = () => (
             const res = await fetch('/api/auth/sign-in/social', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ provider: provider, callbackURL: '/dashboard' }),
+              body: JSON.stringify({ provider: provider, callbackURL: '${getCallbackURL()}' }),
               credentials: 'include'
             });
             const data = await res.json();

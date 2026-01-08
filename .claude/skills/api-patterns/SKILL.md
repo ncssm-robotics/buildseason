@@ -71,12 +71,41 @@ const items = await db.query.parts.findMany({
 });
 ```
 
+## OAuth Callback URLs
+
+**CRITICAL:** In development, OAuth callbacks must redirect to the frontend (port 5173), not the API server (port 3000).
+
+```typescript
+// apps/api/src/components/SocialAuth.tsx
+const getCallbackURL = () => {
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (frontendUrl) {
+    return `${frontendUrl}/dashboard`; // Dev: http://localhost:5173/dashboard
+  }
+  return "/dashboard"; // Prod: relative (API serves frontend)
+};
+```
+
+**Environment variable required in `.env`:**
+
+```bash
+FRONTEND_URL=http://localhost:5173
+```
+
+**Why this matters:**
+
+- After OAuth, Better Auth redirects to the API server's callback endpoint
+- The API then redirects to `callbackURL`
+- If `callbackURL` is relative (`/dashboard`), it goes to `localhost:3000/dashboard`
+- In dev, this shows "React frontend is not built" since frontend is on :5173
+
 ## Anti-Patterns
 
 - **Raw arrays for paginated data** - Always wrap in object with metadata
 - **Inconsistent error shapes** - Use `{ error: string }` or `{ errors: object }`
 - **Missing auth middleware** - All team routes need `requireAuth` and team middleware
 - **N+1 queries** - Use `with:` for relations instead of separate queries
+- **Relative OAuth callback URLs in dev** - Use `FRONTEND_URL` env var for absolute URLs
 
 ## File Locations
 
