@@ -308,6 +308,83 @@ function OrgTeamPicker() {
 }
 ```
 
+## Auth-Aware Pages (GitHub-Style Behavior)
+
+**CRITICAL:** Public pages must check auth state and redirect authenticated users.
+
+### Marketing Page (`/`)
+
+```tsx
+import { useSession } from "@/lib/auth-client";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+
+function LandingPage() {
+  const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
+
+  // Redirect authenticated users to dashboard (GitHub-style behavior)
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [session, isPending, navigate]);
+
+  // Show nothing while checking auth to avoid flash
+  if (isPending) {
+    return null;
+  }
+
+  return (/* marketing content */);
+}
+```
+
+### Login Page (`/login`)
+
+```tsx
+function LoginPage() {
+  const navigate = useNavigate();
+  const { redirect } = useSearch({ from: "/login" });
+  const { data: session, isPending } = useSession();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      navigate({ to: redirect || "/dashboard" });
+    }
+  }, [session, isPending, navigate, redirect]);
+
+  // Show nothing while checking auth to avoid flash
+  if (isPending) {
+    return null;
+  }
+
+  return (/* login form */);
+}
+```
+
+### OAuth Callback Pattern
+
+```tsx
+// Always use absolute URL for OAuth callback to return to frontend
+const callbackPath = redirect || "/dashboard";
+const absoluteCallbackURL = callbackPath.startsWith("http")
+  ? callbackPath
+  : `${window.location.origin}${callbackPath}`;
+
+await signIn.social({
+  provider,
+  callbackURL: absoluteCallbackURL, // e.g., http://localhost:5173/dashboard
+});
+```
+
+**Why this matters:**
+
+- Frontend is at localhost:5173, API at localhost:3000 (in dev)
+- OAuth flow: Frontend → API → Provider → API callback → redirect to callbackURL
+- Relative URLs resolve from API server origin, breaking the redirect
+- Always use `window.location.origin` for absolute callback URLs
+
 ## Anti-Patterns
 
 - **Hardcoded paths** - Always build from `teamPath` + relative path
@@ -315,6 +392,9 @@ function OrgTeamPicker() {
 - **Inline nav items** - Keep nav items in arrays at top of file
 - **No active state** - Every nav item needs active state detection
 - **Forgetting breadcrumbs** - Update segment labels when adding routes
+- **No auth check on public pages** - Marketing/login must redirect authenticated users
+- **Relative OAuth callbacks** - Always use absolute URLs with `window.location.origin`
+- **Flash of unauthenticated content** - Return `null` while `isPending` is true
 
 ## Reference Files
 

@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,12 +8,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
 function LandingPage() {
+  const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
+
+  // Redirect authenticated users to dashboard (GitHub-style behavior)
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [session, isPending, navigate]);
+
+  // Show nothing while checking auth to avoid flash
+  if (isPending) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Marketing Navigation */}

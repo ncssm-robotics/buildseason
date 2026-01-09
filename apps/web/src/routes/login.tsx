@@ -1,5 +1,9 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { signIn } from "@/lib/auth-client";
+import { signIn, useSession } from "@/lib/auth-client";
 
 type LoginSearch = {
   redirect?: string;
@@ -22,21 +26,44 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" });
+  const { data: session, isPending } = useSession();
   const [isLoading, setIsLoading] = useState<"github" | "google" | null>(null);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isPending && session?.user) {
+      navigate({ to: redirect || "/dashboard" });
+    }
+  }, [session, isPending, navigate, redirect]);
 
   const handleOAuthSignIn = async (provider: "github" | "google") => {
     setIsLoading(provider);
     try {
+      // IMPORTANT: Use absolute URL for callback to return to frontend, not API server
+      // After OAuth, Better-Auth redirects from the API server (localhost:3000),
+      // so relative URLs would go to the wrong origin in development.
+      // Go to dashboard by default - it will redirect to onboarding if user has no teams.
+      const callbackPath = redirect || "/dashboard";
+      const absoluteCallbackURL = callbackPath.startsWith("http")
+        ? callbackPath
+        : `${window.location.origin}${callbackPath}`;
+
       await signIn.social({
         provider,
-        callbackURL: redirect || "/onboarding",
+        callbackURL: absoluteCallbackURL,
       });
     } catch (error) {
       console.error("Sign in error:", error);
       setIsLoading(null);
     }
   };
+
+  // Show nothing while checking auth to avoid flash
+  if (isPending) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">

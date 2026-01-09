@@ -73,31 +73,33 @@ const items = await db.query.parts.findMany({
 
 ## OAuth Callback URLs
 
-**CRITICAL:** In development, OAuth callbacks must redirect to the frontend (port 5173), not the API server (port 3000).
+**CRITICAL:** OAuth callback URLs must be absolute to return to the frontend, not the API server.
 
 ```typescript
-// apps/api/src/components/SocialAuth.tsx
-const getCallbackURL = () => {
-  const frontendUrl = process.env.FRONTEND_URL;
-  if (frontendUrl) {
-    return `${frontendUrl}/dashboard`; // Dev: http://localhost:5173/dashboard
-  }
-  return "/dashboard"; // Prod: relative (API serves frontend)
+// apps/web/src/routes/login.tsx
+const handleOAuthSignIn = async (provider: "github" | "google") => {
+  // IMPORTANT: Use absolute URL for callback to return to frontend
+  const callbackPath = redirect || "/onboarding";
+  const absoluteCallbackURL = callbackPath.startsWith("http")
+    ? callbackPath
+    : `${window.location.origin}${callbackPath}`;
+
+  await signIn.social({
+    provider,
+    callbackURL: absoluteCallbackURL, // e.g., http://localhost:5173/onboarding
+  });
 };
-```
-
-**Environment variable required in `.env`:**
-
-```bash
-FRONTEND_URL=http://localhost:5173
 ```
 
 **Why this matters:**
 
-- After OAuth, Better Auth redirects to the API server's callback endpoint
-- The API then redirects to `callbackURL`
-- If `callbackURL` is relative (`/dashboard`), it goes to `localhost:3000/dashboard`
-- In dev, this shows "React frontend is not built" since frontend is on :5173
+- Frontend is at localhost:5173, API at localhost:3000 (in dev)
+- OAuth flow: Frontend → API → GitHub → API callback → redirect to callbackURL
+- If `callbackURL` is relative (`/onboarding`), the redirect comes from the API server
+- User ends up at `localhost:3000/onboarding` instead of `localhost:5173/onboarding`
+- This shows "React frontend is not built" error
+
+**The fix:** Always use `window.location.origin` to build absolute callback URLs
 
 ## Anti-Patterns
 
@@ -105,7 +107,7 @@ FRONTEND_URL=http://localhost:5173
 - **Inconsistent error shapes** - Use `{ error: string }` or `{ errors: object }`
 - **Missing auth middleware** - All team routes need `requireAuth` and team middleware
 - **N+1 queries** - Use `with:` for relations instead of separate queries
-- **Relative OAuth callback URLs in dev** - Use `FRONTEND_URL` env var for absolute URLs
+- **Relative OAuth callback URLs** - Use `window.location.origin` for absolute URLs
 
 ## File Locations
 
