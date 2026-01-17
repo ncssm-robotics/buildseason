@@ -1,0 +1,51 @@
+name: Claude Code Review
+
+on:
+  # Use pull_request_target to enable fork PR reviews with secrets access
+  # This runs in the base repo's context (has secrets) but checks out PR code
+  pull_request_target:
+    types: [opened, synchronize, ready_for_review, reopened]
+  # Allow manual trigger via @claude-review comment on PRs
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-review:
+    # Only run on pull_request_target events OR issue_comments containing @claude-review
+    if: |
+      github.event_name == 'pull_request_target' ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude-review'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # write needed to post review comments
+      issues: write  # write needed to add reaction emoji to trigger comments
+
+    steps:
+      # Checkout the PR's code (not base branch) for review
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Use API key for fork PR compatibility with pull_request_target
+          # OIDC token exchange doesn't work reliably with pull_request_target
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Allow manual trigger via @claude-review comment
+          trigger_phrase: '@claude-review'
+          # Allow trusted external contributors to trigger reviews
+          allowed_non_write_users: 'Prorickey,njfdev,Veratay'
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
+
+            Review this PR for compliance with CLAUDE.md guidelines.
+            Reference these skill files for detailed criteria:
+            - .claude/skills/code-review/SKILL.md (structure, content quality)
+            - .claude/skills/security-review/SKILL.md (security checks)
