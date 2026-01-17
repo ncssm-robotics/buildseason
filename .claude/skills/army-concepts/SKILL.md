@@ -31,10 +31,9 @@ Core concepts from U.S. Army battlespace management adapted for AI agent orchest
 ```markdown
 ## Area of Operations
 
-- apps/api/src/routes/auth/\*\*
-- apps/api/src/routes/teams/\*\*
-- drizzle/schema/users.ts
-- drizzle/schema/teams.ts
+- convex/auth.ts
+- convex/users.ts
+- convex/teams.ts
 ```
 
 **Rules:**
@@ -44,7 +43,7 @@ Core concepts from U.S. Army battlespace management adapted for AI agent orchest
 - AO should be EXCLUSIVE within a wave (overlap = merge complexity)
 - Defined via `ao:<pattern>` labels or bead description
 
-**Bead Label:** `ao:apps/api/src/routes/auth/**`
+**Bead Label:** `ao:convex/auth.ts`
 
 ## Area of Interest (AoI)
 
@@ -53,9 +52,9 @@ Core concepts from U.S. Army battlespace management adapted for AI agent orchest
 ```markdown
 ## Area of Interest
 
-- apps/api/src/lib/db.ts # Understand DB patterns
-- apps/api/src/index.ts # See route registration
-- drizzle/schema/index.ts # Reference schema exports
+- convex/schema.ts # Database schema
+- convex/\_generated/ # Type definitions
+- src/lib/ # Frontend utilities
 ```
 
 **Purpose:**
@@ -71,7 +70,7 @@ Core concepts from U.S. Army battlespace management adapted for AI agent orchest
 - Agent CAN read files outside AoI as needed
 - Agent CANNOT modify files outside AO (restriction is on AO, not AoI)
 
-**Bead Label:** `aoi:apps/api/src/lib/db.ts`
+**Bead Label:** `aoi:convex/schema.ts`
 
 ## Boundaries
 
@@ -107,11 +106,11 @@ When you must modify a file outside your AO:
 **Definition:** A grid showing what every mission owns, revealing conflicts before deployment.
 
 ```
-                      │ auth/** │ teams/** │ vendors/** │ shared/ui/** │
-──────────────────────┼─────────┼──────────┼────────────┼──────────────│
-Mission: Auth+Team    │   AO    │    AO    │     -      │     AoI      │
-Mission: Vendors      │    -    │     -    │     AO     │     AoI      │
-Mission: UI Polish    │    -    │     -    │     -      │      AO      │
+                      │ auth.ts │ teams.ts │ vendors.ts │ src/components │
+──────────────────────┼─────────┼──────────┼────────────┼────────────────│
+Mission: Auth+Team    │   AO    │    AO    │     -      │      AoI       │
+Mission: Vendors      │    -    │     -    │     AO     │      AoI       │
+Mission: UI Polish    │    -    │     -    │     -      │       AO       │
 ```
 
 **Conflict Detection:**
@@ -244,8 +243,8 @@ The army command implements Plan-Do-Check-Act:
 
 ```bash
 # Territory
-bd label <mission> ao:apps/api/src/routes/auth/**
-bd label <mission> aoi:apps/api/src/lib/db.ts
+bd label <mission> ao:convex/auth.ts
+bd label <mission> aoi:convex/schema.ts
 
 # Wave and mission
 bd label <bead> wave:0

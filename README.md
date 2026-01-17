@@ -1,35 +1,49 @@
 # BuildSeason
 
-Open-source team management platform for FTC robotics teams. Track parts, manage orders, coordinate with vendors, and build better robots.
+**Agent-first platform for FTC robotics teams.** GLaDOS handles the operational grind so your team can focus on building robots.
 
-## Features
+> "Machines do machine work so humans can do human work."
 
-- **Team Management** - Create teams, invite members, assign roles
-- **Parts Inventory** - Track parts, quantities, locations, and costs
-- **Vendor Directory** - Browse FTC-approved vendors with contact info
-- **Bill of Materials** - Create BOMs for robot subsystems
-- **Order Management** - Track orders from request to delivery
-- **Dashboard** - Team overview with key metrics
+## The Agent IS the Product
+
+BuildSeason isn't a web app with an AI assistant. The agent IS the interface. Discord is primary, web is secondary.
+
+- **Talk, don't click.** Ask GLaDOS about parts, orders, and team status in Discord.
+- **Proactive, not reactive.** GLaDOS alerts you about low stock, delayed orders, and upcoming deadlines.
+- **Context-aware.** The agent knows your team's state and speaks your language.
+
+## Capabilities
+
+- **Inventory Management** - Track parts through conversation
+- **Order Tracking** - GLaDOS monitors and alerts on order status
+- **BOM Management** - Manage bills of materials for each robot
+- **Team Coordination** - Agent-assisted task and role management
+- **Proactive Monitoring** - Automated alerts before problems become urgent
 
 ## Tech Stack
 
-- **Runtime:** [Bun](https://bun.sh) with Workspaces
-- **Server:** [Hono](https://hono.dev) with Hono RPC for type-safe API
-- **Frontend:** [React](https://react.dev) with [TanStack Router](https://tanstack.com/router) & [TanStack Query](https://tanstack.com/query)
+- **Agent:** [Claude Agent SDK](https://docs.anthropic.com) running in Convex actions
+- **Backend:** [Convex](https://convex.dev) (database, functions, real-time sync)
+- **Runtime:** [Bun](https://bun.sh)
+- **Frontend:** [React](https://react.dev) with [TanStack Router](https://tanstack.com/router) (secondary interface)
 - **UI:** [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com)
-- **Database:** [Turso](https://turso.tech) (libSQL) + [Drizzle ORM](https://orm.drizzle.team)
-- **Auth:** [Better-Auth](https://better-auth.com)
+- **Auth:** [Convex Auth](https://labs.convex.dev/auth) (GitHub, Google OAuth)
 
 ## Project Structure
 
 ```
 buildseason/
-├── apps/
-│   ├── api/           # Hono backend API
-│   └── web/           # React frontend
-├── packages/          # Shared packages (future)
-├── drizzle/           # Database migrations
-└── docs/              # Documentation
+├── convex/            # Convex backend
+│   ├── agent/         # Claude agent (primary interface)
+│   ├── schema.ts      # Database schema
+│   └── http.ts        # HTTP endpoints (Discord webhook)
+├── src/               # React frontend (secondary interface)
+│   ├── routes/        # TanStack Router pages
+│   ├── components/    # UI components
+│   └── lib/           # Utilities
+└── docs/
+    ├── PHILOSOPHY.md  # Agent-first philosophy
+    └── ARCHITECTURE.md # Technical architecture
 ```
 
 ## Quick Start
@@ -38,26 +52,20 @@ buildseason/
 # Install dependencies
 bun install
 
-# Set up environment
-cp .env.example .env
-# Edit .env with your settings
-
-# Initialize database
-bun run db:push
-bun run db:seed  # optional sample data
-
-# Start development (run in separate terminals)
-bun run dev:api   # Terminal 1: API + local Turso DB (port 3000)
-bun run dev:web   # Terminal 2: React frontend with HMR (port 5173)
+# Start development (Vite + Convex dev servers)
+bun run dev
 ```
 
-**Frontend:** http://localhost:5173 (proxies `/api` calls to the API)
-**API directly:** http://localhost:3000
+**Frontend:** http://localhost:5173
+
+On first run, you'll be prompted to log in to Convex and create a project.
 
 ## Documentation
 
-- [Deployment Guide](docs/deployment.md) - Local dev, Turso, Fly.io, domain setup
-- [Agent Instructions](AGENTS.md) - For AI assistants working on this codebase
+- [Philosophy](docs/PHILOSOPHY.md) - Agent-first design philosophy
+- [Architecture](docs/ARCHITECTURE.md) - Technical architecture and patterns
+- [Deployment Guide](docs/deployment.md) - Local dev, Convex, Vercel deployment
+- [Agent Instructions](CLAUDE.md) - For AI assistants working on this codebase
 
 ## Project Management
 
@@ -73,33 +81,25 @@ bd close <id>         # Complete work
 ## Development
 
 ```bash
-# Start servers (use separate terminals)
-bun run dev:api       # API server + embedded Turso dev database
-bun run dev:web       # React frontend with hot reload
+# Start development server
+bun run dev           # Vite + Convex dev servers
 
 # Testing & Linting
-bun run typecheck     # TypeScript type checking (all apps)
-bun run lint          # ESLint (all apps)
-bun run test          # Run all tests
-bun run test:api      # Run API tests only
-
-# Database (runs in apps/api context)
-bun run db:push       # Push schema changes to local DB
-bun run db:generate   # Generate Drizzle migrations
-bun run db:studio     # Open Drizzle Studio GUI
-bun run db:seed       # Seed sample data
+bun run typecheck     # TypeScript type checking
+bun run lint          # ESLint
+bun run test          # Run tests in watch mode
+bun run test:run      # Run tests once
 
 # Build for production
-bun run build         # Build all apps
+bun run build         # Build frontend for production
 ```
 
-### App-specific commands
-
-You can also run commands directly in each app:
+### Convex Commands
 
 ```bash
-cd apps/api && bun run dev:app   # API only (no Turso, uses existing DB)
-cd apps/web && bun run dev       # Frontend only
+npx convex dev        # Start Convex dev server (included in bun run dev)
+npx convex deploy     # Deploy Convex functions to production
+npx convex dashboard  # Open Convex dashboard
 ```
 
 ## License

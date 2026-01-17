@@ -34,37 +34,29 @@ Discord Message
    Haiku Agent    Claude Agent    Temporal
 ```
 
-## Project Structure
+## Project Structure (Future)
+
+> **Note:** The Discord bot is planned future functionality. This skill documents
+> patterns for when it is implemented as a separate service.
 
 ```
-apps/discord/
+discord-bot/                # Future: separate repo/deployment
 ├── src/
 │   ├── index.ts           # Bot entry point
 │   ├── client.ts          # Discord client setup
 │   ├── commands/          # Slash commands
-│   │   ├── index.ts
-│   │   ├── budget.ts
-│   │   └── inventory.ts
 │   ├── events/            # Discord event handlers
-│   │   ├── ready.ts
-│   │   ├── messageCreate.ts
-│   │   └── interactionCreate.ts
 │   ├── handlers/          # Message routing
-│   │   ├── router.ts
-│   │   └── mentions.ts
-│   └── utils/
-│       ├── embeds.ts      # Discord embed builders
-│       └── permissions.ts # Channel/role checks
+│   └── utils/             # Embed builders, permissions
 ├── package.json
 └── tsconfig.json
 ```
 
-## Package Setup
+## Package Setup (Reference)
 
 ```json
-// apps/discord/package.json
 {
-  "name": "@buildseason/discord",
+  "name": "buildseason-discord",
   "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
@@ -72,8 +64,7 @@ apps/discord/
     "start": "bun run dist/index.js"
   },
   "dependencies": {
-    "discord.js": "^14.14.0",
-    "@anthropic-ai/claude-agent-sdk": "^0.1.0"
+    "discord.js": "^14.14.0"
   }
 }
 ```

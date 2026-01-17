@@ -226,12 +226,12 @@ chmod +x scripts/*.sh scripts/*.py
 
 ## Skill Categories
 
-| Category      | Purpose           | Examples                                        |
-| ------------- | ----------------- | ----------------------------------------------- |
-| **Universal** | Any project       | `testing-guide`, `code-review`, `accessibility` |
-| **Framework** | Tech-specific     | `tanstack-query`, `hono-api`, `drizzle-orm`     |
-| **Domain**    | Business-specific | `ftc-robotics`, `bom-management`                |
-| **Process**   | Workflow-specific | `pr-review`, `deployment`, `security-audit`     |
+| Category      | Purpose           | Examples                                          |
+| ------------- | ----------------- | ------------------------------------------------- |
+| **Universal** | Any project       | `testing-guide`, `code-review`, `accessibility`   |
+| **Framework** | Tech-specific     | `tanstack-query`, `convex-api`, `tanstack-router` |
+| **Domain**    | Business-specific | `ftc-robotics`, `bom-management`                  |
+| **Process**   | Workflow-specific | `pr-review`, `deployment`, `security-audit`       |
 
 ## Testing Skills
 

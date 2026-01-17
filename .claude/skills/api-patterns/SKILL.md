@@ -1,117 +1,206 @@
 ---
 name: api-patterns
 description: >-
-  Hono API route patterns, database queries, and backend conventions.
-  Use when creating API endpoints, writing route handlers, querying
-  the database with Drizzle, or implementing backend features.
+  Convex backend patterns, queries, mutations, and backend conventions.
+  Use when creating Convex functions, writing queries and mutations,
+  or implementing backend features.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun:*)
 ---
 
-# API Patterns
+# Convex Backend Patterns
 
-Backend patterns for Hono API routes and Drizzle database queries.
+Backend patterns for Convex queries, mutations, and database operations.
 
-## Adding an API Route
+## Adding a Convex Function
 
-API routes use the chained Hono pattern for RPC type inference:
+### Query (read-only)
 
 ```typescript
-// apps/api/src/routes/api.tsx
-const exampleRoutes = new Hono<{ Variables: AuthVariables }>()
-  .use("*", requireAuth)
-  .get("/", async (c) => {
-    const items = await db.query.items.findMany();
-    return c.json(items);
+// convex/parts.ts
+import { v } from "convex/values";
+import { query } from "./_generated/server";
+import { requireTeamMember } from "./lib/permissions";
+
+export const list = query({
+  args: { teamId: v.id("teams") },
+  handler: async (ctx, { teamId }) => {
+    await requireTeamMember(ctx, teamId);
+
+    return await ctx.db
+      .query("parts")
+      .withIndex("by_team", (q) => q.eq("teamId", teamId))
+      .collect();
+  },
+});
+```
+
+### Mutation (write)
+
+```typescript
+// convex/parts.ts
+import { v } from "convex/values";
+import { mutation } from "./_generated/server";
+import { requireTeamMember } from "./lib/permissions";
+
+export const create = mutation({
+  args: {
+    teamId: v.id("teams"),
+    name: v.string(),
+    quantity: v.number(),
+    reorderPoint: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await requireTeamMember(ctx, args.teamId);
+
+    const partId = await ctx.db.insert("parts", args);
+    return partId;
+  },
+});
+```
+
+## Schema Definition
+
+```typescript
+// convex/schema.ts
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  parts: defineTable({
+    teamId: v.id("teams"),
+    name: v.string(),
+    quantity: v.number(),
+    reorderPoint: v.number(),
+    vendorId: v.optional(v.id("vendors")),
   })
-  .post("/", async (c) => {
-    const body = await c.req.json();
-    // ... create item
-    return c.json({ id: newId });
-  });
-
-// Compose into main apiRoutes
-const apiRoutes = new Hono().route("/api/example", exampleRoutes);
-
-export type ApiRoutes = typeof apiRoutes;
-```
-
-## Response Patterns
-
-### Wrapped responses for lists with metadata
-
-```typescript
-// Return object with array, not raw array
-return c.json({
-  items: results,
-  total: count,
-  page: currentPage,
+    .index("by_team", ["teamId"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["teamId"],
+    }),
 });
 ```
 
-### Error responses
+## Permission Patterns
+
+### Check team membership
 
 ```typescript
-// Consistent error shape
-return c.json({ error: "Not found" }, 404);
-return c.json({ error: "Unauthorized" }, 401);
-return c.json({ errors: validationResult.error.flatten() }, 400);
-```
+import { requireTeamMember } from "./lib/permissions";
 
-## Database Queries
-
-```typescript
-import { db } from "../db";
-import { parts } from "../db/schema";
-import { eq } from "drizzle-orm";
-
-// Query with relations
-const items = await db.query.parts.findMany({
-  where: eq(parts.teamId, teamId),
-  with: { vendor: true },
+export const list = query({
+  args: { teamId: v.id("teams") },
+  handler: async (ctx, { teamId }) => {
+    await requireTeamMember(ctx, teamId); // Throws if not member
+    // ... rest of handler
+  },
 });
 ```
 
-## OAuth Callback URLs
-
-**CRITICAL:** OAuth callback URLs must be absolute to return to the frontend, not the API server.
+### Check role level
 
 ```typescript
-// apps/web/src/routes/login.tsx
-const handleOAuthSignIn = async (provider: "github" | "google") => {
-  // IMPORTANT: Use absolute URL for callback to return to frontend
-  const callbackPath = redirect || "/onboarding";
-  const absoluteCallbackURL = callbackPath.startsWith("http")
-    ? callbackPath
-    : `${window.location.origin}${callbackPath}`;
+import { requireRole } from "./lib/permissions";
 
-  await signIn.social({
-    provider,
-    callbackURL: absoluteCallbackURL, // e.g., http://localhost:5173/onboarding
-  });
-};
+export const update = mutation({
+  args: { vendorId: v.id("vendors"), name: v.string() },
+  handler: async (ctx, { vendorId, name }) => {
+    const vendor = await ctx.db.get(vendorId);
+    if (vendor?.teamId) {
+      await requireRole(ctx, vendor.teamId, "mentor"); // Requires mentor+
+    }
+    await ctx.db.patch(vendorId, { name });
+  },
+});
 ```
 
-**Why this matters:**
+## Query Patterns
 
-- Frontend is at localhost:5173, API at localhost:3000 (in dev)
-- OAuth flow: Frontend → API → GitHub → API callback → redirect to callbackURL
-- If `callbackURL` is relative (`/onboarding`), the redirect comes from the API server
-- User ends up at `localhost:3000/onboarding` instead of `localhost:5173/onboarding`
-- This shows "React frontend is not built" error
+### Filter with index
 
-**The fix:** Always use `window.location.origin` to build absolute callback URLs
+```typescript
+// Efficient: uses index
+const parts = await ctx.db
+  .query("parts")
+  .withIndex("by_team", (q) => q.eq("teamId", teamId))
+  .collect();
+```
 
-## Anti-Patterns
+### Filter without index
 
-- **Raw arrays for paginated data** - Always wrap in object with metadata
-- **Inconsistent error shapes** - Use `{ error: string }` or `{ errors: object }`
-- **Missing auth middleware** - All team routes need `requireAuth` and team middleware
-- **N+1 queries** - Use `with:` for relations instead of separate queries
-- **Relative OAuth callback URLs** - Use `window.location.origin` for absolute URLs
+```typescript
+// Less efficient: scans table
+const globalVendors = await ctx.db
+  .query("vendors")
+  .filter((q) => q.eq(q.field("isGlobal"), true))
+  .collect();
+```
+
+### Get single item
+
+```typescript
+const vendor = await ctx.db.get(vendorId);
+if (!vendor) {
+  throw new Error("Vendor not found");
+}
+```
+
+### Get unique by index
+
+```typescript
+const membership = await ctx.db
+  .query("teamMembers")
+  .withIndex("by_user_team", (q) => q.eq("userId", userId).eq("teamId", teamId))
+  .unique();
+```
 
 ## File Locations
 
-- Routes: `apps/api/src/routes/`
-- Schema: `apps/api/src/db/schema.ts`
-- Middleware: `apps/api/src/middleware/`
-- Types: `apps/api/src/client.ts` (exported for frontend)
+```
+convex/
+├── _generated/          # Auto-generated types (don't edit)
+├── lib/
+│   └── permissions.ts   # Auth helpers
+├── schema.ts            # Database schema
+├── auth.ts              # Auth configuration
+├── auth.config.ts       # OAuth providers
+├── http.ts              # HTTP routes (webhooks)
+├── parts.ts             # Parts queries/mutations
+├── orders.ts            # Orders queries/mutations
+├── teams.ts             # Teams queries/mutations
+├── vendors.ts           # Vendors queries/mutations
+└── ...
+```
+
+## Frontend Usage
+
+```typescript
+// src/routes/team/$teamId/parts.tsx
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+function PartsPage({ teamId }) {
+  const parts = useQuery(api.parts.list, { teamId });
+  const createPart = useMutation(api.parts.create);
+
+  const handleCreate = async () => {
+    await createPart({
+      teamId,
+      name: "New Part",
+      quantity: 0,
+      reorderPoint: 5,
+    });
+  };
+
+  if (!parts) return <Loading />;
+  return <PartsList parts={parts} onCreate={handleCreate} />;
+}
+```
+
+## Anti-Patterns
+
+- **Missing permission checks** - Always verify team membership
+- **Not using indexes** - Use `withIndex` for filtered queries
+- **Returning too much data** - Select only needed fields
+- **N+1 queries** - Batch operations where possible
+- **Editing \_generated/** - Never modify generated files

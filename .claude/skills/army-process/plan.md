@@ -130,7 +130,7 @@ For each skill gap or update:
 bd create --title="Create skill: <technology/pattern>" \
   --label="skill:skill-builder" \
   --label="process-improvement:plan-wave-N" \
-  --description="Technology/Pattern: <e.g., discord-api, drizzle-patterns>
+  --description="Technology/Pattern: <e.g., discord-api, api-patterns>
 
 Why needed:
 - Beads in this wave require <pattern>
@@ -148,7 +148,7 @@ Example beads that will use this:
 
 Launch parallel agents to build/update skills:
 
-- Skills are GENERAL (discord-api, drizzle-patterns) not bead-specific
+- Skills are GENERAL (discord-api, api-patterns) not bead-specific
 - Each agent uses the skill-building skill
 - Wait for completion
 - Commit skill changes
@@ -159,7 +159,7 @@ Now that skills exist, tag each bead:
 
 ```bash
 bd label <bead-id> skill:api-crud
-bd label <bead-id> skill:drizzle-patterns
+bd label <bead-id> skill:api-patterns
 ```
 
 Requirements:
@@ -188,7 +188,7 @@ Merge Order: vendors → parts → auth (in wave bead)
 
 Skills Audit:
   ✓ skill:api-crud (exists, current)
-  ✓ skill:drizzle-patterns (exists, current)
+  ✓ skill:api-patterns (exists, current)
   ⚡ skill:rbac-patterns (created this cycle)
   ✓ skill:testing-patterns (exists, current)
 

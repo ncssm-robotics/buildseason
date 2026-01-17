@@ -266,6 +266,6 @@ Light mode variables are defined but dark is primary.
 
 ## File Reference
 
-- **CSS Source:** `apps/web/src/index.css`
+- **CSS Source:** `src/index.css`
 - **Font Import:** Google Fonts (Oxanium, IBM Plex Sans, JetBrains Mono)
-- **Marketing Page:** `apps/web/src/routes/index.tsx`
+- **Marketing Page:** `src/routes/index.tsx`

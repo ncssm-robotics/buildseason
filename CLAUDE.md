@@ -4,39 +4,44 @@ This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get sta
 
 ## Project Overview
 
-BuildSeason is an open-source team management platform for FTC robotics teams.
+BuildSeason is an **agent-first platform** for FTC robotics teams. The agent IS the product. Discord is primary, web is secondary.
+
+> "Machines do machine work so humans can do human work."
+
+**Philosophy:** See [docs/PHILOSOPHY.md](docs/PHILOSOPHY.md)
+**Architecture:** See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 **Stack:**
 
-- Runtime: Bun with Workspaces
-- API: Hono with Hono RPC for type-safe endpoints
-- Frontend: React with TanStack Router & TanStack Query
+- Runtime: Bun
+- Agent: Claude Agent SDK (runs in Convex actions)
+- Backend: Convex (database, functions, real-time sync)
+- Frontend: React with TanStack Router (secondary interface)
 - UI: shadcn/ui + Tailwind CSS
-- Database: Turso (libSQL) + Drizzle ORM
-- Auth: Better-Auth (GitHub, Google OAuth)
+- Auth: Convex Auth (GitHub, Google OAuth)
 
-**Architecture:** Monorepo with Bun workspaces. API and frontend are separate apps with end-to-end type safety via Hono RPC.
+**Architecture:** Agent-first with Convex backend. Agent in `convex/agent/`, frontend in `src/`, backend in `convex/`.
 
 ## Project Structure
 
 ```
 buildseason/
-├── apps/
-│   ├── api/              # Hono backend API
-│   │   └── src/
-│   │       ├── routes/   # API route handlers
-│   │       ├── db/       # Drizzle schema and queries
-│   │       ├── lib/      # Auth, utilities
-│   │       ├── middleware/
-│   │       └── client.ts # Type exports for RPC
-│   └── web/              # React frontend
-│       └── src/
-│           ├── routes/   # TanStack Router pages
-│           ├── components/
-│           └── lib/      # API client, utilities
-├── packages/             # Shared packages (future)
-├── drizzle/              # Database migrations
+├── convex/               # Convex backend
+│   ├── agent/            # Claude agent (primary interface)
+│   │   ├── handler.ts    # Main agent action
+│   │   ├── context.ts    # Team context loader
+│   │   └── tools/        # Agent tool definitions
+│   ├── schema.ts         # Database schema
+│   ├── http.ts           # HTTP endpoints (Discord webhook)
+│   ├── auth.ts           # Auth configuration
+│   └── _generated/       # Auto-generated types
+├── src/                  # React frontend (secondary interface)
+│   ├── routes/           # TanStack Router pages
+│   ├── components/       # UI components
+│   └── lib/              # Utilities
 └── docs/
+    ├── PHILOSOPHY.md     # Agent-first philosophy
+    └── ARCHITECTURE.md   # Technical architecture
 ```
 
 ## Quick Reference
@@ -79,20 +84,12 @@ This applies to ALL command-line tools. One command per Bash call.
 # Install dependencies
 bun install
 
-# Set up local database
-cp .env.example .env
-bun run db:push
-bun run db:seed
-
 # Verify everything works
 bun run typecheck
 bun run dev
 ```
 
-**Development URLs:**
-
-- Frontend: http://localhost:5173 (Vite dev server)
-- API: http://localhost:3000 (use 5173 for UI testing)
+**Development URL:** http://localhost:5173 (Vite dev server)
 
 ## Core Rules
 
@@ -105,21 +102,23 @@ bun run dev
 
 Detailed patterns and workflows are in `.claude/skills/`:
 
-| Skill                  | Use When                                            |
-| ---------------------- | --------------------------------------------------- |
-| `bead-workflow`        | Working with beads, verification, claiming tasks    |
-| `api-patterns`         | Creating API endpoints, database queries            |
-| `testing-guide`        | Writing tests, test philosophy                      |
-| `chrome-mcp-testing`   | UI validation, browser automation                   |
-| `code-review`          | Code quality audits, patterns, test coverage        |
-| `security-review`      | Security audits, OWASP, auth, injection checks      |
-| `ui-design-review`     | Visual UI reviews with Chrome MCP                   |
-| `brand-guidelines`     | Colors, fonts, design patterns (Workshop Blueprint) |
-| `navigation-patterns`  | TanStack Router, sidebar structure, routes          |
-| `discord-bot-patterns` | Discord.js, GLaDOS agent, message handling          |
-| `session-completion`   | Ending sessions, handoff protocol                   |
-| `parallel-execution`   | Dispatching multiple agents                         |
-| `skill-building`       | Creating new skills                                 |
+| Skill                     | Use When                                            |
+| ------------------------- | --------------------------------------------------- |
+| `agent-first-development` | Planning features, deciding UI vs agent approach    |
+| `convex-agent-patterns`   | Building agent actions, tools, context loaders      |
+| `bead-workflow`           | Working with beads, verification, claiming tasks    |
+| `api-patterns`            | Creating Convex queries and mutations               |
+| `testing-guide`           | Writing tests, test philosophy                      |
+| `chrome-mcp-testing`      | UI validation, browser automation                   |
+| `code-review`             | Code quality audits, patterns, test coverage        |
+| `security-review`         | Security audits, OWASP, auth, injection checks      |
+| `ui-design-review`        | Visual UI reviews with Chrome MCP                   |
+| `brand-guidelines`        | Colors, fonts, design patterns (Workshop Blueprint) |
+| `navigation-patterns`     | TanStack Router, sidebar structure, routes          |
+| `discord-bot-patterns`    | Discord.js, GLaDOS agent, message handling          |
+| `session-completion`      | Ending sessions, handoff protocol                   |
+| `parallel-execution`      | Dispatching multiple agents                         |
+| `skill-building`          | Creating new skills                                 |
 
 Skills load automatically when context matches their description.
 
