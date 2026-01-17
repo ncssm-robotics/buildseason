@@ -133,6 +133,9 @@ export const discordWebhook = httpAction(async (ctx, request) => {
 
       // Schedule the agent response using scheduler (fire and forget)
       // The agent will send a follow-up message
+      // Extract user info from interaction
+      const discordUser = interaction.member?.user || interaction.user;
+
       await ctx.scheduler.runAfter(
         0,
         internal.discord.respond.handleGladosCommand,
@@ -140,8 +143,8 @@ export const discordWebhook = httpAction(async (ctx, request) => {
           interactionToken: interaction.token,
           applicationId: interaction.application_id,
           message,
-          userId:
-            interaction.member?.user?.id || interaction.user?.id || "unknown",
+          userId: discordUser?.id || "unknown",
+          username: discordUser?.username,
           channelId: interaction.channel_id,
           guildId: interaction.guild_id,
         }
@@ -176,6 +179,9 @@ export const discordWebhook = httpAction(async (ctx, request) => {
         { headers: { "Content-Type": "application/json" } }
       );
 
+      // Extract user info from interaction
+      const discordUser = interaction.member?.user || interaction.user;
+
       await ctx.scheduler.runAfter(
         0,
         internal.discord.respond.handleGladosCommand,
@@ -183,8 +189,8 @@ export const discordWebhook = httpAction(async (ctx, request) => {
           interactionToken: interaction.token,
           applicationId: interaction.application_id,
           message,
-          userId:
-            interaction.member?.user?.id || interaction.user?.id || "unknown",
+          userId: discordUser?.id || "unknown",
+          username: discordUser?.username,
           channelId: interaction.channel_id,
           guildId: interaction.guild_id,
         }

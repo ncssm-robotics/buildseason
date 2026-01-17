@@ -11,7 +11,10 @@ export default defineSchema({
     number: v.string(),
     program: v.string(), // ftc, frc, vex, etc.
     activeSeasonId: v.optional(v.id("seasons")),
-  }).index("by_program_number", ["program", "number"]),
+    discordGuildId: v.optional(v.string()), // Discord server ID for bot integration
+  })
+    .index("by_program_number", ["program", "number"])
+    .index("by_discord_guild", ["discordGuildId"]),
 
   // Team members - links users to teams with roles
   teamMembers: defineTable({
@@ -145,4 +148,32 @@ export default defineSchema({
   })
     .index("by_team_channel", ["teamId", "channelId"])
     .index("by_last_activity", ["lastActivity"]),
+
+  // Discord links - maps Discord users to BuildSeason users
+  // For users who sign in via Discord OAuth, this is populated automatically
+  // For users who sign in via Google/GitHub, they can link manually
+  discordLinks: defineTable({
+    userId: v.id("users"), // BuildSeason user
+    discordUserId: v.string(), // Discord user ID
+    discordUsername: v.optional(v.string()), // Discord username for display
+    linkedAt: v.number(),
+    linkedVia: v.string(), // "oauth" | "manual" | "bot_link"
+  })
+    .index("by_user", ["userId"])
+    .index("by_discord_user", ["discordUserId"]),
+
+  // Discord link tokens - for "click here to connect" flow from bot
+  // When an unknown Discord user interacts with bot, we generate a token
+  // They click a link, log in, and the token connects their accounts
+  discordLinkTokens: defineTable({
+    token: v.string(),
+    discordUserId: v.string(),
+    discordUsername: v.optional(v.string()),
+    guildId: v.optional(v.string()),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    usedBy: v.optional(v.id("users")),
+  })
+    .index("by_token", ["token"])
+    .index("by_discord_user", ["discordUserId"]),
 });

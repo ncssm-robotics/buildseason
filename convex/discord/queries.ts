@@ -2,20 +2,23 @@ import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
 
 /**
- * Get team by Discord guild ID
- * In a full implementation, you'd have a discordGuildId field on teams
- * For now, this is a placeholder that returns the first team
+ * Get team by Discord guild ID.
+ * Returns the team linked to this Discord server, or null if not linked.
  */
 export const getTeamByGuild = internalQuery({
   args: {
     guildId: v.string(),
   },
-  handler: async (ctx, { guildId: _guildId }) => {
-    // TODO: Add discordGuildId to teams schema and look up properly
-    // For now, return the first team for testing
-    // In production, you'd query: .filter(q => q.eq(q.field("discordGuildId"), _guildId))
+  handler: async (ctx, { guildId }) => {
+    if (!guildId) {
+      return null;
+    }
 
-    const teams = await ctx.db.query("teams").take(1);
-    return teams[0] || null;
+    const team = await ctx.db
+      .query("teams")
+      .withIndex("by_discord_guild", (q) => q.eq("discordGuildId", guildId))
+      .first();
+
+    return team;
   },
 });

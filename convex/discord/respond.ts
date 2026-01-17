@@ -10,14 +10,14 @@ export const handleGladosCommand = internalAction({
     interactionToken: v.string(),
     applicationId: v.string(),
     message: v.string(),
-    userId: v.string(),
+    userId: v.string(), // Discord user ID
     channelId: v.string(),
     guildId: v.optional(v.string()),
+    username: v.optional(v.string()), // Discord username
   },
   handler: async (ctx, args) => {
     try {
       // Look up the team by Discord guild ID
-      // For now, we'll use a simple lookup - in production you'd have a proper mapping
       const team = await ctx.runQuery(internal.discord.queries.getTeamByGuild, {
         guildId: args.guildId || "",
       });
@@ -31,6 +31,12 @@ export const handleGladosCommand = internalAction({
         return;
       }
 
+      // Look up if this Discord user is linked to a BuildSeason account
+      const linkedUser = await ctx.runQuery(
+        internal.discord.links.getUserByDiscordId,
+        { discordUserId: args.userId }
+      );
+
       // Run the agent
       const response = await ctx.runAction(
         internal.agent.handler.handleMessage,
@@ -42,9 +48,31 @@ export const handleGladosCommand = internalAction({
         }
       );
 
+      // Build the response content
+      const content = response;
+
+      // If user isn't linked and this is their first interaction, suggest linking
+      // (We could track this more sophisticatedly, but for now just check if linked)
+      if (!linkedUser) {
+        // Generate a link token for them
+        const { token } = await ctx.runMutation(
+          internal.discord.links.createLinkToken,
+          {
+            discordUserId: args.userId,
+            discordUsername: args.username,
+            guildId: args.guildId,
+          }
+        );
+
+        // Add a subtle note about linking (only occasionally, not every message)
+        // For now, we'll skip adding this to every message to avoid being annoying
+        // In the future, we could track if we've already prompted this user
+        void token; // We generate it but don't always show it
+      }
+
       // Send the response back to Discord
       await sendFollowUp(args.applicationId, args.interactionToken, {
-        content: response,
+        content,
       });
     } catch (error) {
       console.error("Error handling GLaDOS command:", error);
