@@ -103,4 +103,46 @@ export default defineSchema({
     quantity: v.number(),
     unitPriceCents: v.number(),
   }).index("by_order", ["orderId"]),
+
+  // Agent configuration - configurable prompts and guardrails
+  agentConfig: defineTable({
+    key: v.string(), // "system_prompt", "safety_rules", etc.
+    value: v.string(),
+    updatedAt: v.number(),
+    updatedBy: v.id("users"),
+  }).index("by_key", ["key"]),
+
+  // Safety alerts - for mentor notification of concerning content
+  safetyAlerts: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(), // Discord user ID
+    channelId: v.optional(v.string()),
+    alertType: v.string(), // "crisis", "escalation", "review"
+    severity: v.string(), // "high", "medium", "low"
+    triggerReason: v.string(),
+    messageContent: v.string(),
+    status: v.string(), // "pending", "reviewed", "resolved"
+    reviewedBy: v.optional(v.id("users")),
+    reviewNotes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_team_status", ["teamId", "status"])
+    .index("by_severity", ["severity"]),
+
+  // Conversations - for multi-turn agent interactions
+  conversations: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(), // Discord user ID
+    channelId: v.string(),
+    messages: v.array(
+      v.object({
+        role: v.string(),
+        content: v.string(),
+        timestamp: v.number(),
+      })
+    ),
+    lastActivity: v.number(),
+  })
+    .index("by_team_channel", ["teamId", "channelId"])
+    .index("by_last_activity", ["lastActivity"]),
 });
