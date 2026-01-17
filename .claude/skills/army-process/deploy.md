@@ -52,15 +52,15 @@ Deploying N agents in parallel:
 │ AGENT 1: buildseason-xyz                                    │
 │ Task: <title>                                               │
 │ Model: sonnet                                               │
-│ AO: apps/api/src/routes/auth/**                             │
-│ Skills: skill:api-crud, skill:drizzle-patterns              │
+│ AO: convex/auth.ts, convex/users.ts                          │
+│ Skills: skill:api-crud                                       │
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │ AGENT 2: buildseason-abc                                    │
 │ Task: <title>                                               │
 │ Model: sonnet                                               │
-│ AO: apps/api/src/routes/vendors/**                          │
+│ AO: convex/vendors.ts                                        │
 │ Skills: skill:api-crud                                      │
 └─────────────────────────────────────────────────────────────┘
 ```

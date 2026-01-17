@@ -15,15 +15,20 @@ export const currentUser = query({
 export const getUser = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      return null;
+    }
+
+    const user = await ctx.db.get(userId);
+    if (!user) {
       return null;
     }
 
     return {
-      name: identity.name,
-      email: identity.email,
-      image: identity.pictureUrl,
+      name: user.name,
+      email: user.email,
+      image: user.image,
     };
   },
 });

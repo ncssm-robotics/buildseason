@@ -26,11 +26,5 @@ dist/
 *.log
 npm-debug.log*
 
-# Turso
-.turso/
-
-# Drizzle
-drizzle/meta/
-
 # Bun
 bun.lockb

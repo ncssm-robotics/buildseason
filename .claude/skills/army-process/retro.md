@@ -178,7 +178,7 @@ Defects Found: Y (P0: a, P1: b, P2: c, P3: d)
 
 Skill Effectiveness:
   • skill:api-crud: Used 5 times, 2 defects → Needs improvement
-  • skill:drizzle-patterns: Used 3 times, 0 defects → Effective
+  • skill:api-patterns: Used 3 times, 0 defects → Effective
   • skill:testing-patterns: Used 1 time, 1 defect → Underutilized
 
 Defect Analysis:

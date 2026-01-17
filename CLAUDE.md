@@ -8,34 +8,30 @@ BuildSeason is an open-source team management platform for FTC robotics teams.
 
 **Stack:**
 
-- Runtime: Bun with Workspaces
-- API: Hono with Hono RPC for type-safe endpoints
-- Frontend: React with TanStack Router & TanStack Query
+- Runtime: Bun
+- Backend: Convex (database, functions, real-time sync)
+- Frontend: React with TanStack Router
 - UI: shadcn/ui + Tailwind CSS
-- Database: Turso (libSQL) + Drizzle ORM
-- Auth: Better-Auth (GitHub, Google OAuth)
+- Auth: Convex Auth (GitHub, Google OAuth)
 
-**Architecture:** Monorepo with Bun workspaces. API and frontend are separate apps with end-to-end type safety via Hono RPC.
+**Architecture:** Single-app with Convex backend. Frontend in `src/`, backend in `convex/`.
 
 ## Project Structure
 
 ```
 buildseason/
-├── apps/
-│   ├── api/              # Hono backend API
-│   │   └── src/
-│   │       ├── routes/   # API route handlers
-│   │       ├── db/       # Drizzle schema and queries
-│   │       ├── lib/      # Auth, utilities
-│   │       ├── middleware/
-│   │       └── client.ts # Type exports for RPC
-│   └── web/              # React frontend
-│       └── src/
-│           ├── routes/   # TanStack Router pages
-│           ├── components/
-│           └── lib/      # API client, utilities
-├── packages/             # Shared packages (future)
-├── drizzle/              # Database migrations
+├── convex/               # Convex backend
+│   ├── schema.ts         # Database schema
+│   ├── auth.ts           # Auth configuration
+│   ├── teams.ts          # Team functions
+│   ├── parts.ts          # Parts inventory functions
+│   ├── vendors.ts        # Vendor functions
+│   └── _generated/       # Auto-generated types
+├── src/                  # React frontend
+│   ├── routes/           # TanStack Router pages
+│   ├── components/       # UI components
+│   ├── hooks/            # React hooks
+│   └── lib/              # Utilities
 └── docs/
 ```
 
@@ -79,20 +75,12 @@ This applies to ALL command-line tools. One command per Bash call.
 # Install dependencies
 bun install
 
-# Set up local database
-cp .env.example .env
-bun run db:push
-bun run db:seed
-
 # Verify everything works
 bun run typecheck
 bun run dev
 ```
 
-**Development URLs:**
-
-- Frontend: http://localhost:5173 (Vite dev server)
-- API: http://localhost:3000 (use 5173 for UI testing)
+**Development URL:** http://localhost:5173 (Vite dev server)
 
 ## Core Rules
 

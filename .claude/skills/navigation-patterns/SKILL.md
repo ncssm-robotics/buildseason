@@ -19,7 +19,7 @@ Patterns for TanStack Router file-based routing and sidebar navigation.
 ## Project Structure
 
 ```
-apps/web/src/
+src/
 ├── routes/
 │   ├── __root.tsx           # Root layout (sidebar, header)
 │   ├── index.tsx            # Marketing page (/)
@@ -206,7 +206,7 @@ function formatSegment(segment: string): string {
 
 ```bash
 # Create new route
-touch apps/web/src/routes/team/\$program/\$number/calendar/index.tsx
+touch src/routes/team/\$program/\$number/calendar/index.tsx
 ```
 
 ### 2. Implement Route
@@ -398,7 +398,7 @@ await signIn.social({
 
 ## Reference Files
 
-- `apps/web/src/components/layout/app-sidebar.tsx` - Main sidebar
-- `apps/web/src/components/layout/app-header.tsx` - Header with breadcrumbs
-- `apps/web/src/routeTree.gen.ts` - Auto-generated route tree
+- `src/components/layout/app-sidebar.tsx` - Main sidebar
+- `src/components/layout/app-header.tsx` - Header with breadcrumbs
+- `src/routeTree.gen.ts` - Auto-generated route tree
 - `docs/ui-refocus-spec.md` - Navigation requirements
