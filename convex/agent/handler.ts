@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { action } from "../_generated/server";
+import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { buildTools, executeToolCall } from "./tools";
@@ -12,7 +12,7 @@ const client = new Anthropic();
  * This is the core of the GLaDOS agent - it processes user messages,
  * loads team context, and responds using Claude with access to team tools.
  */
-export const handleMessage = action({
+export const handleMessage = internalAction({
   args: {
     message: v.string(),
     teamId: v.id("teams"),
