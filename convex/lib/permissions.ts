@@ -1,3 +1,4 @@
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 
@@ -7,19 +8,12 @@ export type Role = "admin" | "mentor" | "student";
  * Get the current authenticated user or throw
  */
 export async function requireAuth(ctx: QueryCtx | MutationCtx) {
-  const identity = await ctx.auth.getUserIdentity();
-  if (!identity) {
+  const userId = await getAuthUserId(ctx);
+  if (userId === null) {
     throw new Error("Not authenticated");
   }
 
-  // Get the user from the database
-  const user = await ctx.db
-    .query("users")
-    .withIndex("by_token", (q) =>
-      q.eq("tokenIdentifier", identity.tokenIdentifier)
-    )
-    .unique();
-
+  const user = await ctx.db.get(userId);
   if (!user) {
     throw new Error("User not found");
   }

@@ -5,6 +5,11 @@ import { requireAuth, requireTeamMember, requireRole } from "./lib/permissions";
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+
     const user = await requireAuth(ctx);
 
     // Get all team memberships for this user
