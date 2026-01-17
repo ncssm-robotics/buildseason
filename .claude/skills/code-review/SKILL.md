@@ -15,7 +15,7 @@ Structured approach to code quality audits.
 
 - **security-review** - Security audits (separate from code quality)
 - **testing-guide** - Test philosophy and patterns
-- **api-patterns** - API route patterns
+- **api-patterns** - Convex function patterns
 
 ## Review Philosophy
 
@@ -42,7 +42,7 @@ Structured approach to code quality audits.
 
 ```markdown
 - [ ] `bun run typecheck` passes
-- [ ] `bun test` passes (if tests exist)
+- [ ] `bun run test` passes
 - [ ] Critical paths have test coverage
 - [ ] No skipped tests without reason
 ```
@@ -51,7 +51,7 @@ Structured approach to code quality audits.
 
 ```markdown
 - [ ] No `any` type abuse (use `unknown` or proper types)
-- [ ] Interfaces defined for API responses
+- [ ] Interfaces defined for complex data structures
 - [ ] Props typed for React components
 - [ ] Return types explicit on public functions
 - [ ] No type assertions without justification (`as`)
@@ -97,7 +97,16 @@ Structured approach to code quality audits.
 - [ ] No prop drilling (consider context for deep trees)
 ```
 
-### 7. Performance
+### 7. Convex-Specific
+
+```markdown
+- [ ] Queries/mutations have permission checks
+- [ ] Indexes used for filtered queries
+- [ ] Args validated with v.\* validators
+- [ ] Loading and error states handled in components
+```
+
+### 8. Performance
 
 ```markdown
 - [ ] No N+1 query patterns
@@ -144,12 +153,12 @@ Date: YYYY-MM-DD
 ## Commands Run
 
 - `bun run typecheck`: PASS/FAIL
-- `bun test`: PASS/FAIL (X tests, Y failures)
+- `bun run test`: PASS/FAIL (X tests, Y failures)
 
 ## Files Reviewed
 
-- apps/web/src/routes/team/...
-- apps/api/src/routes/...
+- src/routes/team/...
+- convex/parts.ts
   [list all]
 
 ## Checklist Results
@@ -188,7 +197,7 @@ bd create --title="Code review: [area]" --type=task --priority=2 \
 
 Run first:
 - bun run typecheck
-- bun test
+- bun run test
 
 Areas to check:
 - TypeScript quality

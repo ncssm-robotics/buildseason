@@ -64,6 +64,7 @@
     "@typescript-eslint/parser": "^8.51.0",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.23",
+    "convex-test": "^0.0.41",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
