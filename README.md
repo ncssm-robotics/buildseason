@@ -1,21 +1,31 @@
 # BuildSeason
 
-Open-source team management platform for FTC robotics teams. Track parts, manage orders, coordinate with vendors, and build better robots.
+**Agent-first platform for FTC robotics teams.** GLaDOS handles the operational grind so your team can focus on building robots.
 
-## Features
+> "Machines do machine work so humans can do human work."
 
-- **Team Management** - Create teams, invite members, assign roles
-- **Parts Inventory** - Track parts, quantities, locations, and costs
-- **Vendor Directory** - Browse FTC-approved vendors with contact info
-- **Bill of Materials** - Create BOMs for robot subsystems
-- **Order Management** - Track orders from request to delivery
-- **Dashboard** - Team overview with key metrics
+## The Agent IS the Product
+
+BuildSeason isn't a web app with an AI assistant. The agent IS the interface. Discord is primary, web is secondary.
+
+- **Talk, don't click.** Ask GLaDOS about parts, orders, and team status in Discord.
+- **Proactive, not reactive.** GLaDOS alerts you about low stock, delayed orders, and upcoming deadlines.
+- **Context-aware.** The agent knows your team's state and speaks your language.
+
+## Capabilities
+
+- **Inventory Management** - Track parts through conversation
+- **Order Tracking** - GLaDOS monitors and alerts on order status
+- **BOM Management** - Manage bills of materials for each robot
+- **Team Coordination** - Agent-assisted task and role management
+- **Proactive Monitoring** - Automated alerts before problems become urgent
 
 ## Tech Stack
 
-- **Runtime:** [Bun](https://bun.sh)
+- **Agent:** [Claude Agent SDK](https://docs.anthropic.com) running in Convex actions
 - **Backend:** [Convex](https://convex.dev) (database, functions, real-time sync)
-- **Frontend:** [React](https://react.dev) with [TanStack Router](https://tanstack.com/router)
+- **Runtime:** [Bun](https://bun.sh)
+- **Frontend:** [React](https://react.dev) with [TanStack Router](https://tanstack.com/router) (secondary interface)
 - **UI:** [shadcn/ui](https://ui.shadcn.com) + [Tailwind CSS](https://tailwindcss.com)
 - **Auth:** [Convex Auth](https://labs.convex.dev/auth) (GitHub, Google OAuth)
 
@@ -23,12 +33,17 @@ Open-source team management platform for FTC robotics teams. Track parts, manage
 
 ```
 buildseason/
-├── convex/            # Convex backend (schema, functions, auth)
-├── src/               # React frontend
+├── convex/            # Convex backend
+│   ├── agent/         # Claude agent (primary interface)
+│   ├── schema.ts      # Database schema
+│   └── http.ts        # HTTP endpoints (Discord webhook)
+├── src/               # React frontend (secondary interface)
 │   ├── routes/        # TanStack Router pages
 │   ├── components/    # UI components
 │   └── lib/           # Utilities
-└── docs/              # Documentation
+└── docs/
+    ├── PHILOSOPHY.md  # Agent-first philosophy
+    └── ARCHITECTURE.md # Technical architecture
 ```
 
 ## Quick Start
@@ -47,6 +62,8 @@ On first run, you'll be prompted to log in to Convex and create a project.
 
 ## Documentation
 
+- [Philosophy](docs/PHILOSOPHY.md) - Agent-first design philosophy
+- [Architecture](docs/ARCHITECTURE.md) - Technical architecture and patterns
 - [Deployment Guide](docs/deployment.md) - Local dev, Convex, Vercel deployment
 - [Agent Instructions](CLAUDE.md) - For AI assistants working on this codebase
 
