@@ -4,6 +4,7 @@ import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { buildTools, executeToolCall } from "./tools";
 import { buildSystemPrompt } from "./prompts";
+import { prescreenMessage, RISK_LEVELS } from "./moderation";
 
 const client = new Anthropic();
 
@@ -21,7 +22,57 @@ export const handleMessage = internalAction({
     channelId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<string> => {
-    // Load team context for agent awareness
+    const channelId = args.channelId || "dm";
+
+    // 1. Pre-screen message for YPP compliance
+    const screening = await prescreenMessage(args.message);
+    const behavior = screening.behavior;
+
+    // If message should be blocked, return neutral response and escalate
+    if (behavior.shouldBlock) {
+      // Create safety alert for mentors
+      await ctx.runMutation(internal.agent.mutations.safety.createAlert, {
+        teamId: args.teamId,
+        userId: args.userId,
+        channelId: args.channelId,
+        severity: "high",
+        triggerReason:
+          screening.classification.reasoning ||
+          "Content blocked by pre-screening",
+        messageContent: args.message,
+      });
+
+      // Log the blocked interaction
+      await ctx.runMutation(internal.agent.auditLog.log, {
+        teamId: args.teamId,
+        userId: args.userId,
+        channelId: args.channelId,
+        userMessage: args.message,
+        agentResponse: behavior.neutralResponse || "",
+        containsSafetyAlert: true,
+      });
+
+      return (
+        behavior.neutralResponse ||
+        "I want to make sure you get the right support. Let me check with one of your mentors."
+      );
+    }
+
+    // If message should alert mentor (but still proceed), create alert
+    if (behavior.shouldAlertMentor) {
+      await ctx.runMutation(internal.agent.mutations.safety.createAlert, {
+        teamId: args.teamId,
+        userId: args.userId,
+        channelId: args.channelId,
+        severity: "medium",
+        triggerReason:
+          screening.classification.reasoning ||
+          "Content flagged during pre-screening",
+        messageContent: args.message,
+      });
+    }
+
+    // 2. Load team context for agent awareness
     const context = await ctx.runQuery(internal.agent.context.loadTeamContext, {
       teamId: args.teamId,
     });
@@ -30,21 +81,40 @@ export const handleMessage = internalAction({
       return "I couldn't find that team. Please make sure you're messaging from a registered team channel.";
     }
 
+    // 3. Load conversation history for multi-turn context
+    const history = await ctx.runQuery(internal.agent.conversation.getRecent, {
+      teamId: args.teamId,
+      channelId,
+      limit: 10,
+    });
+
     // Build tools available to the agent
     const tools = buildTools();
 
-    // Build system prompt with team context and YPP guardrails
+    // Build system prompt with team context and safety context
     const systemPrompt = buildSystemPrompt(
       { ...context, userName: args.userName },
-      {} // SafetyContext - will be populated by pre-screening later
+      {
+        seriousMode:
+          screening.classification.riskLevel >= RISK_LEVELS.FLAG_ONLY,
+      }
     );
 
-    // Initial message to Claude
-    const messages: Anthropic.MessageParam[] = [
-      { role: "user", content: args.message },
-    ];
+    // Build messages array with history
+    const messages: Anthropic.MessageParam[] = [];
 
-    // Agent loop - process until we get a final response
+    // Add conversation history
+    for (const msg of history) {
+      messages.push({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      });
+    }
+
+    // Add current message
+    messages.push({ role: "user", content: args.message });
+
+    // 4. Agent loop - process until we get a final response
     let response = await client.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
@@ -52,6 +122,14 @@ export const handleMessage = internalAction({
       tools,
       messages,
     });
+
+    // Track tool calls for audit logging
+    const toolCallLog: Array<{
+      name: string;
+      input: string;
+      output?: string;
+      error?: string;
+    }> = [];
 
     // Process tool calls in a loop (with safety limit)
     const MAX_TOOL_ITERATIONS = 10;
@@ -68,19 +146,40 @@ export const handleMessage = internalAction({
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const block of assistantMessage) {
         if (block.type === "tool_use") {
-          const result = await executeToolCall(
-            ctx,
-            args.teamId,
-            block.name,
-            block.input as Record<string, unknown>,
-            args.userId,
-            args.channelId
-          );
-          toolResults.push({
-            type: "tool_result",
-            tool_use_id: block.id,
-            content: JSON.stringify(result),
-          });
+          try {
+            const result = await executeToolCall(
+              ctx,
+              args.teamId,
+              block.name,
+              block.input as Record<string, unknown>,
+              args.userId,
+              args.channelId
+            );
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: JSON.stringify(result),
+            });
+            toolCallLog.push({
+              name: block.name,
+              input: JSON.stringify(block.input),
+              output: JSON.stringify(result),
+            });
+          } catch (error) {
+            const errorMsg =
+              error instanceof Error ? error.message : "Unknown error";
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: JSON.stringify({ error: errorMsg }),
+              is_error: true,
+            });
+            toolCallLog.push({
+              name: block.name,
+              input: JSON.stringify(block.input),
+              error: errorMsg,
+            });
+          }
         }
       }
 
@@ -108,6 +207,32 @@ export const handleMessage = internalAction({
     const textBlocks = response.content.filter(
       (block): block is Anthropic.TextBlock => block.type === "text"
     );
-    return textBlocks.map((block) => block.text).join("\n");
+    const responseText = textBlocks.map((block) => block.text).join("\n");
+
+    // 5. Save conversation history
+    await ctx.runMutation(internal.agent.conversation.append, {
+      teamId: args.teamId,
+      channelId,
+      userId: args.userId,
+      messages: [
+        { role: "user", content: args.message, timestamp: Date.now() },
+        { role: "assistant", content: responseText, timestamp: Date.now() },
+      ],
+    });
+
+    // 6. Log for audit (if needed based on risk level)
+    if (behavior.shouldLog || toolCallLog.length > 0) {
+      await ctx.runMutation(internal.agent.auditLog.log, {
+        teamId: args.teamId,
+        userId: args.userId,
+        channelId: args.channelId,
+        userMessage: args.message,
+        agentResponse: responseText,
+        toolCalls: toolCallLog.length > 0 ? toolCallLog : undefined,
+        containsSafetyAlert: behavior.shouldAlertMentor,
+      });
+    }
+
+    return responseText;
   },
 });

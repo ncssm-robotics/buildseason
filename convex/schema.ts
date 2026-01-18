@@ -232,6 +232,34 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_provider", ["userId", "provider"]),
 
+  // Events - team calendar and event management
+  events: defineTable({
+    teamId: v.id("teams"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    type: v.string(), // "competition", "outreach", "meeting", "practice", "other"
+    startTime: v.number(), // Unix timestamp
+    endTime: v.optional(v.number()), // Unix timestamp
+    location: v.optional(v.string()), // Location name
+    address: v.optional(v.string()), // Full address
+    createdBy: v.id("users"),
+    maxAttendees: v.optional(v.number()),
+    requiresRSVP: v.boolean(),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_team_date", ["teamId", "startTime"]),
+
+  // Event attendees - RSVP tracking for events
+  eventAttendees: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    status: v.string(), // "going", "maybe", "not_going"
+    rsvpAt: v.number(),
+    notes: v.optional(v.string()),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_user", ["userId"]),
+
   // Audit logs - append-only log of all agent interactions for compliance
   // Separate from conversations table (which is for multi-turn context)
   agentAuditLogs: defineTable({

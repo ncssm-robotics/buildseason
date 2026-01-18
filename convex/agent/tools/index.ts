@@ -5,13 +5,26 @@ import { partsTools, executePartsTool } from "./parts";
 import { ordersTools, executeOrdersTool } from "./orders";
 import { bomTools, executeBomTool } from "./bom";
 import { safetyTools, executeSafetyTool } from "./safety";
+import { membersTools, executeMembersTool } from "./members";
+import { searchTools, executeSearchTool } from "./search";
+import { discordTools, executeDiscordTool } from "./discord";
+import { eventsTools, executeEventsTool } from "./events";
 
 /**
  * Build all tools available to the agent.
  * Tools are thin wrappers around Convex mutations and queries.
  */
 export function buildTools(): Anthropic.Tool[] {
-  return [...partsTools, ...ordersTools, ...bomTools, ...safetyTools];
+  return [
+    ...partsTools,
+    ...ordersTools,
+    ...bomTools,
+    ...safetyTools,
+    ...membersTools,
+    ...searchTools,
+    ...discordTools,
+    ...eventsTools,
+  ];
 }
 
 /**
@@ -51,6 +64,26 @@ export async function executeToolCall(
       userId || "unknown",
       channelId
     );
+  }
+
+  // Members tools
+  if (toolName.startsWith("members_")) {
+    return executeMembersTool(ctx, teamId, toolName, input);
+  }
+
+  // Search tools
+  if (toolName.startsWith("web_")) {
+    return executeSearchTool(ctx, teamId, toolName, input);
+  }
+
+  // Discord tools
+  if (toolName.startsWith("discord_")) {
+    return executeDiscordTool(ctx, teamId, toolName, input);
+  }
+
+  // Events tools
+  if (toolName.startsWith("events_")) {
+    return executeEventsTool(ctx, teamId, toolName, input);
   }
 
   return { error: `Unknown tool: ${toolName}` };
