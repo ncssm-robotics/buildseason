@@ -144,3 +144,88 @@ export const update = mutation({
     return teamId;
   },
 });
+
+/**
+ * Add a user as a YPP contact for a team.
+ * Only lead mentors can manage YPP contacts.
+ * The user must be an adult mentor on the team.
+ */
+export const addYppContact = mutation({
+  args: {
+    teamId: v.id("teams"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { teamId, userId }) => {
+    await requireRole(ctx, teamId, "lead_mentor");
+
+    const team = await ctx.db.get(teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
+    // Check if user is already a YPP contact
+    if (team.yppContacts?.includes(userId)) {
+      return teamId; // Already a contact, no-op
+    }
+
+    // Validate the user is an adult mentor
+    const membership = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_user_team", (q) =>
+        q.eq("userId", userId).eq("teamId", teamId)
+      )
+      .unique();
+
+    if (!membership) {
+      throw new Error("User is not a member of this team");
+    }
+
+    if (membership.role === "student") {
+      throw new Error("Students cannot be YPP contacts");
+    }
+
+    if (membership.birthdate && !isAdult(membership.birthdate)) {
+      throw new Error("YPP contacts must be 18 or older");
+    }
+
+    // Add to yppContacts
+    const currentContacts = team.yppContacts ?? [];
+    await ctx.db.patch(teamId, {
+      yppContacts: [...currentContacts, userId],
+    });
+
+    return teamId;
+  },
+});
+
+/**
+ * Add the current user as a YPP contact (for testing/self-assignment).
+ * User must be a lead mentor on the team.
+ */
+export const addMeAsYppContact = mutation({
+  args: {
+    teamId: v.id("teams"),
+  },
+  handler: async (ctx, { teamId }) => {
+    const user = await requireAuth(ctx);
+    await requireRole(ctx, teamId, "lead_mentor");
+
+    const team = await ctx.db.get(teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
+    // Check if already a YPP contact
+    if (team.yppContacts?.includes(user._id)) {
+      return teamId; // Already a contact
+    }
+
+    // Add to yppContacts
+    const currentContacts = team.yppContacts ?? [];
+    await ctx.db.patch(teamId, {
+      yppContacts: [...currentContacts, user._id],
+    });
+
+    return teamId;
+  },
+});
