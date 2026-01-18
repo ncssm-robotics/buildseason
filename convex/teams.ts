@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAuth, requireTeamMember, requireRole } from "./lib/permissions";
+import { isAdult } from "./lib/ypp";
 
 export const list = query({
   args: {},
@@ -74,9 +75,22 @@ export const create = mutation({
     name: v.string(),
     number: v.string(),
     program: v.string(),
+    creatorBirthdate: v.number(), // Unix timestamp - required for YPP compliance
+    creatorRole: v.optional(v.string()), // "lead_mentor" | "mentor", defaults to lead_mentor
   },
-  handler: async (ctx, { name, number, program }) => {
+  handler: async (
+    ctx,
+    { name, number, program, creatorBirthdate, creatorRole }
+  ) => {
     const user = await requireAuth(ctx);
+
+    // Validate creator is an adult (YPP requirement)
+    if (!isAdult(creatorBirthdate)) {
+      throw new Error("Team creator must be 18 or older");
+    }
+
+    // Default to lead_mentor role
+    const role = creatorRole === "mentor" ? "mentor" : "lead_mentor";
 
     // Check if team already exists
     const existing = await ctx.db
@@ -90,18 +104,21 @@ export const create = mutation({
       throw new Error("A team with this program and number already exists");
     }
 
-    // Create the team
+    // Add the creator as a team member first (we need their membership for YPP contact)
+    // We'll update the team with yppContacts after creating it
     const teamId = await ctx.db.insert("teams", {
       name,
       number,
       program,
+      yppContacts: [user._id], // Creator is the initial YPP contact
     });
 
-    // Add the creator as admin
+    // Add the creator as lead mentor with birthdate
     await ctx.db.insert("teamMembers", {
       userId: user._id,
       teamId,
-      role: "admin",
+      role,
+      birthdate: creatorBirthdate,
     });
 
     return teamId;

@@ -42,6 +42,7 @@ function NewTeamPage() {
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
   const [program, setProgram] = useState("");
+  const [birthdate, setBirthdate] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +58,15 @@ function NewTeamPage() {
     setIsSubmitting(true);
 
     try {
-      const teamId = await createTeam({ name, number, program });
+      // Convert birthdate string to Unix timestamp
+      const birthdateTimestamp = new Date(birthdate).getTime();
+
+      const teamId = await createTeam({
+        name,
+        number,
+        program,
+        creatorBirthdate: birthdateTimestamp,
+      });
       navigate({ to: "/team/$teamId", params: { teamId } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create team");
@@ -136,10 +145,30 @@ function NewTeamPage() {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="birthdate">Your Date of Birth</Label>
+                <Input
+                  id="birthdate"
+                  type="date"
+                  value={birthdate}
+                  onChange={(e) => setBirthdate(e.target.value)}
+                  required
+                  max={new Date().toISOString().split("T")[0]}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Required for Youth Protection Program compliance. Team
+                  creators must be 18 or older and will be designated as a YPP
+                  contact.
+                </p>
+              </div>
+
               {error && <div className="text-sm text-destructive">{error}</div>}
 
               <div className="flex gap-4">
-                <Button type="submit" disabled={isSubmitting || !program}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !program || !birthdate}
+                >
                   {isSubmitting ? "Creating..." : "Create Team"}
                 </Button>
                 <Link to="/dashboard">

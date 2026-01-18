@@ -72,7 +72,9 @@ export const handleMessage = internalAction({
             ctx,
             args.teamId,
             block.name,
-            block.input as Record<string, unknown>
+            block.input as Record<string, unknown>,
+            args.userId,
+            args.channelId
           );
           toolResults.push({
             type: "tool_result",
