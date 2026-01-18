@@ -176,4 +176,18 @@ export default defineSchema({
   })
     .index("by_token", ["token"])
     .index("by_discord_user", ["discordUserId"]),
+
+  // Provider profiles - stores usernames/display names for OAuth providers
+  // This supplements authAccounts (which only stores provider IDs)
+  providerProfiles: defineTable({
+    userId: v.id("users"),
+    provider: v.string(), // "github", "google", "discord"
+    username: v.optional(v.string()), // Provider-specific username
+    displayName: v.optional(v.string()), // Display name from provider
+    avatarUrl: v.optional(v.string()), // Avatar URL from provider
+    email: v.optional(v.string()), // Email from provider (if different)
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_provider", ["userId", "provider"]),
 });

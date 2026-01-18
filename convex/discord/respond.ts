@@ -37,6 +37,11 @@ export const handleGladosCommand = internalAction({
         { discordUserId: args.userId }
       );
 
+      // Determine user's first name (prefer linked account name, fallback to Discord username)
+      // Extract first name from full name like "Carl Ryden" -> "Carl"
+      const fullName = linkedUser?.user?.name || args.username;
+      const userName = fullName?.split(" ")[0] || args.username;
+
       // Run the agent
       const response = await ctx.runAction(
         internal.agent.handler.handleMessage,
@@ -44,35 +49,39 @@ export const handleGladosCommand = internalAction({
           message: args.message,
           teamId: team._id,
           userId: args.userId,
+          userName,
           channelId: args.channelId,
         }
       );
 
-      // Build the response content
-      const content = response;
+      // Build final response content
+      let finalContent = response;
 
-      // If user isn't linked and this is their first interaction, suggest linking
-      // (We could track this more sophisticatedly, but for now just check if linked)
+      // If user isn't linked, add a one-time link suggestion
+      // Check if we've ever created a token for them (means we've prompted before)
       if (!linkedUser) {
-        // Generate a link token for them
-        const { token } = await ctx.runMutation(
-          internal.discord.links.createLinkToken,
-          {
+        const existingToken = await ctx.runQuery(
+          internal.discord.links.hasLinkToken,
+          { discordUserId: args.userId }
+        );
+
+        if (!existingToken) {
+          // First time seeing this user - create a token to mark we've prompted
+          await ctx.runMutation(internal.discord.links.createLinkToken, {
             discordUserId: args.userId,
             discordUsername: args.username,
             guildId: args.guildId,
-          }
-        );
+          });
 
-        // Add a subtle note about linking (only occasionally, not every message)
-        // For now, we'll skip adding this to every message to avoid being annoying
-        // In the future, we could track if we've already prompted this user
-        void token; // We generate it but don't always show it
+          // Add link suggestion to response
+          const siteUrl = process.env.SITE_URL || "http://localhost:5173";
+          finalContent += `\n\n---\n*Tip: Link your Discord account at ${siteUrl}/settings to unlock personalized features!*`;
+        }
       }
 
       // Send the response back to Discord
       await sendFollowUp(args.applicationId, args.interactionToken, {
-        content,
+        content: finalContent,
       });
     } catch (error) {
       console.error("Error handling GLaDOS command:", error);

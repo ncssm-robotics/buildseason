@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
-import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect } from "react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -12,16 +11,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, LogOut, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
+import { UserDropdown } from "@/components/UserDropdown";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -30,8 +22,6 @@ export const Route = createFileRoute("/dashboard")({
 function DashboardPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
-  const { signOut } = useAuthActions();
-  const user = useQuery(api.users.getUser);
   const teams = useQuery(api.teams.list);
 
   // Redirect to login if not authenticated
@@ -40,11 +30,6 @@ function DashboardPage() {
       navigate({ to: "/login" });
     }
   }, [isAuthenticated, authLoading, navigate]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate({ to: "/" });
-  };
 
   if (authLoading) {
     return (
@@ -71,39 +56,7 @@ function DashboardPage() {
               </span>
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-10 w-10 rounded-full"
-                >
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={user?.image ?? undefined}
-                      alt={user?.name ?? "User"}
-                    />
-                    <AvatarFallback>
-                      {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center justify-start gap-2 p-2">
-                  <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{user?.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserDropdown />
           </div>
         </div>
       </header>
