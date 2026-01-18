@@ -5,6 +5,21 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
   ...authTables,
 
+  // Extend the users table with birthdate for YPP compliance
+  // This overrides the authTables users table while keeping auth fields
+  users: defineTable({
+    // Auth fields (from authTables)
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    // Custom fields
+    birthdate: v.optional(v.number()), // Unix timestamp for YPP compliance
+  }),
+
   // Teams - the core organizational unit
   teams: defineTable({
     name: v.string(),

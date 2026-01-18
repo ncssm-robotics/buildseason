@@ -26,17 +26,12 @@ export const getUser = query({
       return null;
     }
 
-    // Cast to access birthdate field (added via patch, not in authTables schema)
-    const userWithBirthdate = user as typeof user & {
-      birthdate?: number;
-    };
-
     return {
       _id: user._id,
       name: user.name,
       email: user.email,
       image: user.image,
-      birthdate: userWithBirthdate.birthdate,
+      birthdate: user.birthdate,
     };
   },
 });
@@ -65,8 +60,7 @@ export const updateBirthdate = mutation({
       throw new Error("Birthdate is too far in the past");
     }
 
-    // Cast to handle birthdate field not being in authTables schema
-    await ctx.db.patch(userId, { birthdate } as Record<string, unknown>);
+    await ctx.db.patch(userId, { birthdate });
     return userId;
   },
 });
