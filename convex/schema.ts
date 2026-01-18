@@ -12,6 +12,7 @@ export default defineSchema({
     program: v.string(), // ftc, frc, vex, etc.
     activeSeasonId: v.optional(v.id("seasons")),
     discordGuildId: v.optional(v.string()), // Discord server ID for bot integration
+    yppContacts: v.optional(v.array(v.id("users"))), // Adult mentors designated as YPP contacts
   })
     .index("by_program_number", ["program", "number"])
     .index("by_discord_guild", ["discordGuildId"]),
@@ -20,11 +21,13 @@ export default defineSchema({
   teamMembers: defineTable({
     userId: v.id("users"),
     teamId: v.id("teams"),
-    role: v.string(), // admin, mentor, student
+    role: v.string(), // "lead_mentor" | "mentor" | "student"
+    birthdate: v.optional(v.number()), // Unix timestamp, required for YPP compliance
   })
     .index("by_user", ["userId"])
     .index("by_team", ["teamId"])
-    .index("by_user_team", ["userId", "teamId"]),
+    .index("by_user_team", ["userId", "teamId"])
+    .index("by_team_role", ["teamId", "role"]),
 
   // Team invites - for inviting new members
   teamInvites: defineTable({
