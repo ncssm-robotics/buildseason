@@ -25,6 +25,7 @@ export const list = query({
           name: user.name,
           email: user.email,
           image: user.image,
+          birthdate: membership.birthdate, // For age display
         };
       })
     );

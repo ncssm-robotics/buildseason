@@ -65,6 +65,20 @@ const ROLES = [
   { value: "student", label: "Student", description: "Can view and request" },
 ];
 
+/**
+ * Calculate age from birthdate timestamp
+ */
+function calculateAge(birthdate: number): number {
+  const today = new Date();
+  const birth = new Date(birthdate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 function MembersPage() {
   const { program, number } = useParams({ from: "/team/$program/$number" });
   const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
@@ -250,6 +264,7 @@ function MembersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Member</TableHead>
+                <TableHead>Age</TableHead>
                 <TableHead>Role</TableHead>
                 {isMentor && <TableHead></TableHead>}
               </TableRow>
@@ -266,6 +281,9 @@ function MembersPage() {
                             <Skeleton className="h-3 w-32 mt-1" />
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-8" />
                       </TableCell>
                       <TableCell>
                         <Skeleton className="h-4 w-16" />
@@ -289,6 +307,15 @@ function MembersPage() {
                             </p>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {member.birthdate ? (
+                          <span className="text-muted-foreground">
+                            {calculateAge(member.birthdate)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/50">—</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="capitalize">

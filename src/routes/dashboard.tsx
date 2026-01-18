@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Users } from "lucide-react";
 import { UserDropdown } from "@/components/UserDropdown";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -23,6 +24,8 @@ function DashboardPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const teams = useQuery(api.teams.list);
+  const user = useQuery(api.users.getUser);
+  const toastShownRef = useRef(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -30,6 +33,26 @@ function DashboardPage() {
       navigate({ to: "/login" });
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  // Show toast if user is missing birthdate
+  useEffect(() => {
+    if (user && !user.birthdate && !toastShownRef.current) {
+      toastShownRef.current = true;
+      toast.warning("Birthdate required", {
+        description:
+          "Please set your birthdate in account settings for youth protection compliance.",
+        action: {
+          label: "Go to Settings",
+          onClick: () =>
+            navigate({
+              to: "/settings",
+              search: { discord_link_token: undefined, error: undefined },
+            }),
+        },
+        duration: 10000,
+      });
+    }
+  }, [user, navigate]);
 
   if (authLoading) {
     return (

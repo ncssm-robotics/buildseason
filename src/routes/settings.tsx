@@ -24,7 +24,10 @@ import {
   Link2,
   Link2Off,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Discord icon component
 function DiscordIcon({ className }: { className?: string }) {
@@ -54,12 +57,27 @@ function SettingsPage() {
     api.discord.linkAccount.completeLinkAccount
   );
   const unlinkDiscord = useMutation(api.discord.links.unlinkDiscord);
+  const updateBirthdate = useMutation(api.users.updateBirthdate);
 
   const [linkStatus, setLinkStatus] = useState<
     "idle" | "linking" | "success" | "error"
   >("idle");
   const [linkError, setLinkError] = useState<string>("");
   const [linkedUsername, setLinkedUsername] = useState<string>("");
+
+  // Birthdate editing state
+  const [birthdateInput, setBirthdateInput] = useState<string>("");
+  const [birthdateSaving, setBirthdateSaving] = useState(false);
+  const [birthdateError, setBirthdateError] = useState<string>("");
+  const [birthdateSuccess, setBirthdateSuccess] = useState(false);
+
+  // Initialize birthdate input when user data loads
+  useEffect(() => {
+    if (user?.birthdate && !birthdateInput) {
+      const date = new Date(user.birthdate);
+      setBirthdateInput(date.toISOString().split("T")[0]);
+    }
+  }, [user?.birthdate, birthdateInput]);
 
   // Handle Discord link token from OAuth callback
   useEffect(() => {
@@ -132,6 +150,30 @@ function SettingsPage() {
   const handleUnlinkDiscord = async () => {
     if (confirm("Are you sure you want to unlink your Discord account?")) {
       await unlinkDiscord({});
+    }
+  };
+
+  const handleSaveBirthdate = async () => {
+    if (!birthdateInput) {
+      setBirthdateError("Birthdate is required");
+      return;
+    }
+
+    setBirthdateSaving(true);
+    setBirthdateError("");
+    setBirthdateSuccess(false);
+
+    try {
+      const timestamp = new Date(birthdateInput).getTime();
+      await updateBirthdate({ birthdate: timestamp });
+      setBirthdateSuccess(true);
+      setTimeout(() => setBirthdateSuccess(false), 3000);
+    } catch (err) {
+      setBirthdateError(
+        err instanceof Error ? err.message : "Failed to save birthdate"
+      );
+    } finally {
+      setBirthdateSaving(false);
     }
   };
 
@@ -225,6 +267,61 @@ function SettingsPage() {
                   <p className="font-medium">{user?.email || "Not set"}</p>
                 </div>
               </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Birthdate Card */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Birthdate
+            </CardTitle>
+            <CardDescription>
+              Required for youth protection compliance. Your age helps us ensure
+              appropriate interactions and verify mentor eligibility.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {user === undefined ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="birthdate">Date of Birth</Label>
+                  <Input
+                    id="birthdate"
+                    type="date"
+                    value={birthdateInput}
+                    onChange={(e) => {
+                      setBirthdateInput(e.target.value);
+                      setBirthdateError("");
+                    }}
+                    max={new Date().toISOString().split("T")[0]}
+                    required
+                  />
+                  {birthdateError && (
+                    <p className="text-sm text-destructive">{birthdateError}</p>
+                  )}
+                  {birthdateSuccess && (
+                    <p className="text-sm text-green-600">
+                      Birthdate saved successfully!
+                    </p>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSaveBirthdate}
+                  disabled={birthdateSaving || !birthdateInput}
+                >
+                  {birthdateSaving ? "Saving..." : "Save Birthdate"}
+                </Button>
+                {user && !user.birthdate && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    Please set your birthdate to complete your profile.
+                  </p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
