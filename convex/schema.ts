@@ -270,6 +270,33 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"]),
 
+  // Inbound emails - for processing forwarded order/shipping emails
+  // Teams can forward emails to ftc-{number}@buildseason.org
+  // Retention: 90 days (cleaned up via scheduled job)
+  inboundEmails: defineTable({
+    teamId: v.optional(v.id("teams")), // Optional until matched to a team
+    resendEmailId: v.string(), // Resend's email ID for fetching body/attachments
+    fromAddress: v.string(),
+    toAddress: v.string(), // e.g., ftc-5064@buildseason.org
+    subject: v.string(),
+    receivedAt: v.number(),
+    // Processing status
+    status: v.string(), // "pending", "processed", "failed", "ignored"
+    emailType: v.optional(v.string()), // "order_confirmation", "shipping", "invoice", "unknown"
+    // Parsed data (populated after processing)
+    parsedVendor: v.optional(v.string()),
+    parsedOrderNumber: v.optional(v.string()),
+    parsedTrackingNumber: v.optional(v.string()),
+    linkedOrderId: v.optional(v.id("orders")),
+    // Error tracking
+    processingError: v.optional(v.string()),
+    processedAt: v.optional(v.number()),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_status", ["status"])
+    .index("by_received", ["receivedAt"])
+    .index("by_resend_id", ["resendEmailId"]),
+
   // Audit logs - append-only log of all agent interactions for compliance
   // Separate from conversations table (which is for multi-turn context)
   agentAuditLogs: defineTable({
