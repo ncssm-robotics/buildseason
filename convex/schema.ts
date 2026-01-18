@@ -135,9 +135,29 @@ export default defineSchema({
     reviewedBy: v.optional(v.id("users")),
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
+    // Mentor acknowledgment tracking
+    notifiedMentorId: v.optional(v.string()), // Discord user ID of mentor who was DM'd
+    ackMethod: v.optional(v.string()), // "emoji", "reply", "link", "dashboard"
+    ackAt: v.optional(v.number()), // When acknowledged
+    ackBy: v.optional(v.string()), // Discord user ID who acknowledged
+    escalatedAt: v.optional(v.number()), // When escalation was triggered
+    escalationCount: v.optional(v.number()), // Number of times escalated
   })
     .index("by_team_status", ["teamId", "status"])
-    .index("by_severity", ["severity"]),
+    .index("by_severity", ["severity"])
+    .index("by_pending_unacked", ["status", "ackAt"]),
+
+  // Alert acknowledgment tokens - for "click to review" links in DMs
+  alertAckTokens: defineTable({
+    token: v.string(),
+    alertId: v.id("safetyAlerts"),
+    teamId: v.id("teams"),
+    mentorDiscordId: v.string(), // Discord user ID of mentor
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_alert", ["alertId"]),
 
   // Conversations - for multi-turn agent interactions
   conversations: defineTable({

@@ -9,8 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
+import { Route as SettingsRouteImport } from "./routes/settings";
 import { Route as LoginRouteImport } from "./routes/login";
+import { Route as DiscordLinkRouteImport } from "./routes/discord-link";
 import { Route as DashboardRouteImport } from "./routes/dashboard";
+import { Route as AlertAckRouteImport } from "./routes/alert-ack";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as TeamsNewRouteImport } from "./routes/teams/new";
 import { Route as TeamsJoinRouteImport } from "./routes/teams/join";
@@ -24,14 +27,29 @@ import { Route as TeamTeamIdOrdersRouteImport } from "./routes/team/$teamId/orde
 import { Route as TeamTeamIdMembersRouteImport } from "./routes/team/$teamId/members";
 import { Route as TeamTeamIdBomRouteImport } from "./routes/team/$teamId/bom";
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: "/settings",
+  path: "/settings",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LoginRoute = LoginRouteImport.update({
   id: "/login",
   path: "/login",
   getParentRoute: () => rootRouteImport,
 } as any);
+const DiscordLinkRoute = DiscordLinkRouteImport.update({
+  id: "/discord-link",
+  path: "/discord-link",
+  getParentRoute: () => rootRouteImport,
+} as any);
 const DashboardRoute = DashboardRouteImport.update({
   id: "/dashboard",
   path: "/dashboard",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const AlertAckRoute = AlertAckRouteImport.update({
+  id: "/alert-ack",
+  path: "/alert-ack",
   getParentRoute: () => rootRouteImport,
 } as any);
 const IndexRoute = IndexRouteImport.update({
@@ -97,8 +115,11 @@ const TeamTeamIdBomRoute = TeamTeamIdBomRouteImport.update({
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
+  "/alert-ack": typeof AlertAckRoute;
   "/dashboard": typeof DashboardRoute;
+  "/discord-link": typeof DiscordLinkRoute;
   "/login": typeof LoginRoute;
+  "/settings": typeof SettingsRoute;
   "/team/$teamId": typeof TeamTeamIdRouteWithChildren;
   "/teams/join": typeof TeamsJoinRoute;
   "/teams/new": typeof TeamsNewRoute;
@@ -113,8 +134,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
+  "/alert-ack": typeof AlertAckRoute;
   "/dashboard": typeof DashboardRoute;
+  "/discord-link": typeof DiscordLinkRoute;
   "/login": typeof LoginRoute;
+  "/settings": typeof SettingsRoute;
   "/teams/join": typeof TeamsJoinRoute;
   "/teams/new": typeof TeamsNewRoute;
   "/team/$teamId/bom": typeof TeamTeamIdBomRoute;
@@ -129,8 +153,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
+  "/alert-ack": typeof AlertAckRoute;
   "/dashboard": typeof DashboardRoute;
+  "/discord-link": typeof DiscordLinkRoute;
   "/login": typeof LoginRoute;
+  "/settings": typeof SettingsRoute;
   "/team/$teamId": typeof TeamTeamIdRouteWithChildren;
   "/teams/join": typeof TeamsJoinRoute;
   "/teams/new": typeof TeamsNewRoute;
@@ -147,8 +174,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | "/"
+    | "/alert-ack"
     | "/dashboard"
+    | "/discord-link"
     | "/login"
+    | "/settings"
     | "/team/$teamId"
     | "/teams/join"
     | "/teams/new"
@@ -163,8 +193,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
+    | "/alert-ack"
     | "/dashboard"
+    | "/discord-link"
     | "/login"
+    | "/settings"
     | "/teams/join"
     | "/teams/new"
     | "/team/$teamId/bom"
@@ -178,8 +211,11 @@ export interface FileRouteTypes {
   id:
     | "__root__"
     | "/"
+    | "/alert-ack"
     | "/dashboard"
+    | "/discord-link"
     | "/login"
+    | "/settings"
     | "/team/$teamId"
     | "/teams/join"
     | "/teams/new"
@@ -195,8 +231,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
+  AlertAckRoute: typeof AlertAckRoute;
   DashboardRoute: typeof DashboardRoute;
+  DiscordLinkRoute: typeof DiscordLinkRoute;
   LoginRoute: typeof LoginRoute;
+  SettingsRoute: typeof SettingsRoute;
   TeamTeamIdRoute: typeof TeamTeamIdRouteWithChildren;
   TeamsJoinRoute: typeof TeamsJoinRoute;
   TeamsNewRoute: typeof TeamsNewRoute;
@@ -204,6 +243,13 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/settings": {
+      id: "/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof SettingsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/login": {
       id: "/login";
       path: "/login";
@@ -211,11 +257,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LoginRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    "/discord-link": {
+      id: "/discord-link";
+      path: "/discord-link";
+      fullPath: "/discord-link";
+      preLoaderRoute: typeof DiscordLinkRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     "/dashboard": {
       id: "/dashboard";
       path: "/dashboard";
       fullPath: "/dashboard";
       preLoaderRoute: typeof DashboardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/alert-ack": {
+      id: "/alert-ack";
+      path: "/alert-ack";
+      fullPath: "/alert-ack";
+      preLoaderRoute: typeof AlertAckRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/": {
@@ -333,8 +393,11 @@ const TeamTeamIdRouteWithChildren = TeamTeamIdRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AlertAckRoute: AlertAckRoute,
   DashboardRoute: DashboardRoute,
+  DiscordLinkRoute: DiscordLinkRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
   TeamTeamIdRoute: TeamTeamIdRouteWithChildren,
   TeamsJoinRoute: TeamsJoinRoute,
   TeamsNewRoute: TeamsNewRoute,
