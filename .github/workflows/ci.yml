@@ -20,8 +20,12 @@ jobs:
         run: bun install
 
       - name: Verify generated files are up-to-date
+        # Requires CONVEX_DEPLOY_KEY secret. To enable:
+        # 1. Go to Convex Dashboard > Project Settings > Deploy Keys
+        # 2. Create a deploy key and add it as CONVEX_DEPLOY_KEY in GitHub repo secrets
+        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         env:
-          CONVEX_DEPLOYMENT: dev:enchanted-mastiff-533
+          CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         run: |
           npx convex codegen
           git diff --exit-code convex/_generated/ || {
