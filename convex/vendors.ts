@@ -109,7 +109,7 @@ export const remove = mutation({
     }
 
     if (vendor.teamId) {
-      await requireRole(ctx, vendor.teamId, "admin");
+      await requireRole(ctx, vendor.teamId, "lead_mentor");
     }
 
     // Check if vendor is used in any parts

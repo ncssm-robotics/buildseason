@@ -1,4 +1,4 @@
-import { createFileRoute, useParams } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
@@ -45,7 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Plus, MoreHorizontal, Copy, Check } from "lucide-react";
+import { Plus, MoreHorizontal, Copy, Check, User } from "lucide-react";
 
 export const Route = createFileRoute("/team/$teamId/members")({
   component: MembersPage,
@@ -53,11 +53,15 @@ export const Route = createFileRoute("/team/$teamId/members")({
 
 const ROLES = [
   {
-    value: "admin",
-    label: "Admin",
-    description: "Full access to all features",
+    value: "lead_mentor",
+    label: "Lead Mentor",
+    description: "Full team management, YPP contact eligible",
   },
-  { value: "mentor", label: "Mentor", description: "Can approve orders" },
+  {
+    value: "mentor",
+    label: "Mentor",
+    description: "Can manage members and approve orders",
+  },
   { value: "student", label: "Student", description: "Can view and request" },
 ];
 
@@ -77,9 +81,12 @@ function MembersPage() {
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  // Check if current user is admin
+  // Check if current user is a mentor (can manage members)
   const currentMember = members?.find((m) => m.userId === user?._id);
-  const isAdmin = currentMember?.role === "admin";
+  const isMentor =
+    currentMember?.role === "lead_mentor" ||
+    currentMember?.role === "mentor" ||
+    currentMember?.role === "admin"; // backwards compat
 
   const handleCreateInvite = async () => {
     const { token } = await createInvite({
@@ -123,93 +130,103 @@ function MembersPage() {
             Manage team members and invites
           </p>
         </div>
-        {isAdmin && (
-          <Dialog
-            open={isInviteOpen}
-            onOpenChange={(open) => {
-              setIsInviteOpen(open);
-              if (!open) {
-                setGeneratedToken(null);
-                setInviteRole("student");
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Invite Member
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite Team Member</DialogTitle>
-                <DialogDescription>
-                  Generate an invite code to share with a new team member
-                </DialogDescription>
-              </DialogHeader>
-              {generatedToken ? (
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Invite Code</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        value={generatedToken}
-                        readOnly
-                        className="font-mono"
-                      />
-                      <Button onClick={handleCopyToken} variant="outline">
-                        {copied ? (
-                          <Check className="h-4 w-4" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+        <div className="flex gap-2">
+          <Link to="/team/$teamId/profile-setup" params={{ teamId }}>
+            <Button variant="outline">
+              <User className="mr-2 h-4 w-4" />
+              Edit My Profile
+            </Button>
+          </Link>
+          {isMentor && (
+            <Dialog
+              open={isInviteOpen}
+              onOpenChange={(open) => {
+                setIsInviteOpen(open);
+                if (!open) {
+                  setGeneratedToken(null);
+                  setInviteRole("student");
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Invite Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite Team Member</DialogTitle>
+                  <DialogDescription>
+                    Generate an invite code to share with a new team member
+                  </DialogDescription>
+                </DialogHeader>
+                {generatedToken ? (
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Invite Code</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={generatedToken}
+                          readOnly
+                          className="font-mono"
+                        />
+                        <Button onClick={handleCopyToken} variant="outline">
+                          {copied ? (
+                            <Check className="h-4 w-4" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Share this code with the person you want to invite. It
+                        expires in 7 days.
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Share this code with the person you want to invite. It
-                      expires in 7 days.
-                    </p>
+                    <Button
+                      onClick={() => {
+                        setIsInviteOpen(false);
+                        setGeneratedToken(null);
+                      }}
+                      className="w-full"
+                    >
+                      Done
+                    </Button>
                   </div>
-                  <Button
-                    onClick={() => {
-                      setIsInviteOpen(false);
-                      setGeneratedToken(null);
-                    }}
-                    className="w-full"
-                  >
-                    Done
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Select value={inviteRole} onValueChange={setInviteRole}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div>
-                              <span className="font-medium">{role.label}</span>
-                              <span className="text-muted-foreground ml-2">
-                                - {role.description}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                ) : (
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Role</Label>
+                      <Select value={inviteRole} onValueChange={setInviteRole}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((role) => (
+                            <SelectItem key={role.value} value={role.value}>
+                              <div>
+                                <span className="font-medium">
+                                  {role.label}
+                                </span>
+                                <span className="text-muted-foreground ml-2">
+                                  - {role.description}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={handleCreateInvite} className="w-full">
+                      Generate Invite Code
+                    </Button>
                   </div>
-                  <Button onClick={handleCreateInvite} className="w-full">
-                    Generate Invite Code
-                  </Button>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
-        )}
+                )}
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {/* Members List */}
@@ -226,7 +243,7 @@ function MembersPage() {
               <TableRow>
                 <TableHead>Member</TableHead>
                 <TableHead>Role</TableHead>
-                {isAdmin && <TableHead></TableHead>}
+                {isMentor && <TableHead></TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -270,7 +287,7 @@ function MembersPage() {
                           {member.role}
                         </Badge>
                       </TableCell>
-                      {isAdmin && (
+                      {isMentor && (
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -308,7 +325,7 @@ function MembersPage() {
       </Card>
 
       {/* Pending Invites */}
-      {isAdmin && invites && invites.length > 0 && (
+      {isMentor && invites && invites.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Pending Invites</CardTitle>

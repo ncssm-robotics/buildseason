@@ -55,7 +55,7 @@ export const linkDiscordServer = mutation({
   },
   handler: async (ctx, { teamId, guildId }) => {
     // Require authenticated user with admin role on this team
-    await requireRole(ctx, teamId, "admin");
+    await requireRole(ctx, teamId, "lead_mentor");
 
     // Check if another team is already linked to this guild
     const existingTeam = await ctx.db

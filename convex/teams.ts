@@ -132,7 +132,8 @@ export const update = mutation({
     activeSeasonId: v.optional(v.id("seasons")),
   },
   handler: async (ctx, { teamId, ...updates }) => {
-    await requireRole(ctx, teamId, "admin");
+    // Lead mentors can update team settings
+    await requireRole(ctx, teamId, "lead_mentor");
 
     // Filter out undefined values
     const filteredUpdates = Object.fromEntries(

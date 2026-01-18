@@ -28,6 +28,7 @@ import type * as agent_tools_index from "../agent/tools/index.js";
 import type * as agent_tools_orders from "../agent/tools/orders.js";
 import type * as agent_tools_parts from "../agent/tools/parts.js";
 import type * as agent_tools_safety from "../agent/tools/safety.js";
+import type * as agentAuditLogs from "../agentAuditLogs.js";
 import type * as auth from "../auth.js";
 import type * as bom from "../bom.js";
 import type * as discord_handler from "../discord/handler.js";
@@ -80,6 +81,7 @@ declare const fullApi: ApiFromModules<{
   "agent/tools/orders": typeof agent_tools_orders;
   "agent/tools/parts": typeof agent_tools_parts;
   "agent/tools/safety": typeof agent_tools_safety;
+  agentAuditLogs: typeof agentAuditLogs;
   auth: typeof auth;
   bom: typeof bom;
   "discord/handler": typeof discord_handler;

@@ -38,7 +38,7 @@ export const create = mutation({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, args.teamId, "admin");
+    await requireRole(ctx, args.teamId, "lead_mentor");
 
     const seasonId = await ctx.db.insert("seasons", {
       ...args,
@@ -63,7 +63,7 @@ export const update = mutation({
       throw new Error("Season not found");
     }
 
-    await requireRole(ctx, season.teamId, "admin");
+    await requireRole(ctx, season.teamId, "lead_mentor");
 
     // Filter out undefined values
     const filteredUpdates = Object.fromEntries(
@@ -83,7 +83,7 @@ export const archive = mutation({
       throw new Error("Season not found");
     }
 
-    await requireRole(ctx, season.teamId, "admin");
+    await requireRole(ctx, season.teamId, "lead_mentor");
 
     // If this is the active season, clear it from the team
     const team = await ctx.db.get(season.teamId);
@@ -104,7 +104,7 @@ export const unarchive = mutation({
       throw new Error("Season not found");
     }
 
-    await requireRole(ctx, season.teamId, "admin");
+    await requireRole(ctx, season.teamId, "lead_mentor");
     await ctx.db.patch(seasonId, { isArchived: false });
 
     return seasonId;
@@ -117,7 +117,7 @@ export const setActive = mutation({
     seasonId: v.id("seasons"),
   },
   handler: async (ctx, { teamId, seasonId }) => {
-    await requireRole(ctx, teamId, "admin");
+    await requireRole(ctx, teamId, "lead_mentor");
 
     const season = await ctx.db.get(seasonId);
     if (!season || season.teamId !== teamId) {

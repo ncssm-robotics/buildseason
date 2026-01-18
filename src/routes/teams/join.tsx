@@ -47,7 +47,8 @@ function JoinTeamPage() {
 
     try {
       const teamId = await acceptInvite({ token });
-      navigate({ to: "/team/$teamId", params: { teamId } });
+      // Redirect to profile setup for new members
+      navigate({ to: "/team/$teamId/profile-setup", params: { teamId } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join team");
     } finally {

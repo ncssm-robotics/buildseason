@@ -2,7 +2,17 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { QueryCtx, MutationCtx } from "../_generated/server";
 import { Id } from "../_generated/dataModel";
 
-export type Role = "admin" | "mentor" | "student";
+// New role structure for YPP compliance
+export type Role = "lead_mentor" | "mentor" | "student";
+
+// For backwards compatibility, map admin -> lead_mentor
+export function normalizeRole(role: string): Role {
+  if (role === "admin") return "lead_mentor";
+  if (role === "lead_mentor" || role === "mentor" || role === "student") {
+    return role;
+  }
+  return "student"; // Default to lowest privilege
+}
 
 /**
  * Get the current authenticated user or throw
@@ -40,14 +50,15 @@ export async function getTeamMembership(
 /**
  * Check if user has a specific role (or higher) in a team
  */
-export function hasRole(memberRole: Role, requiredRole: Role): boolean {
+export function hasRole(memberRole: string, requiredRole: Role): boolean {
   const roleHierarchy: Record<Role, number> = {
-    admin: 3,
+    lead_mentor: 3,
     mentor: 2,
     student: 1,
   };
 
-  return roleHierarchy[memberRole] >= roleHierarchy[requiredRole];
+  const normalizedRole = normalizeRole(memberRole);
+  return roleHierarchy[normalizedRole] >= roleHierarchy[requiredRole];
 }
 
 /**
@@ -77,7 +88,7 @@ export async function requireRole(
 ) {
   const { user, membership } = await requireTeamMember(ctx, teamId);
 
-  if (!hasRole(membership.role as Role, requiredRole)) {
+  if (!hasRole(membership.role, requiredRole)) {
     throw new Error(`Requires ${requiredRole} role or higher`);
   }
 

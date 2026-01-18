@@ -8,272 +8,292 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as TeamsNewRouteImport } from './routes/teams/new'
-import { Route as TeamsJoinRouteImport } from './routes/teams/join'
-import { Route as TeamTeamIdRouteImport } from './routes/team/$teamId'
-import { Route as TeamTeamIdIndexRouteImport } from './routes/team/$teamId/index'
-import { Route as TeamTeamIdSettingsRouteImport } from './routes/team/$teamId/settings'
-import { Route as TeamTeamIdPartsRouteImport } from './routes/team/$teamId/parts'
-import { Route as TeamTeamIdOrdersRouteImport } from './routes/team/$teamId/orders'
-import { Route as TeamTeamIdMembersRouteImport } from './routes/team/$teamId/members'
-import { Route as TeamTeamIdBomRouteImport } from './routes/team/$teamId/bom'
+import { Route as rootRouteImport } from "./routes/__root";
+import { Route as LoginRouteImport } from "./routes/login";
+import { Route as DashboardRouteImport } from "./routes/dashboard";
+import { Route as IndexRouteImport } from "./routes/index";
+import { Route as TeamsNewRouteImport } from "./routes/teams/new";
+import { Route as TeamsJoinRouteImport } from "./routes/teams/join";
+import { Route as TeamTeamIdRouteImport } from "./routes/team/$teamId";
+import { Route as TeamTeamIdIndexRouteImport } from "./routes/team/$teamId/index";
+import { Route as TeamTeamIdSettingsRouteImport } from "./routes/team/$teamId/settings";
+import { Route as TeamTeamIdProfileSetupRouteImport } from "./routes/team/$teamId/profile-setup";
+import { Route as TeamTeamIdPartsRouteImport } from "./routes/team/$teamId/parts";
+import { Route as TeamTeamIdOrdersRouteImport } from "./routes/team/$teamId/orders";
+import { Route as TeamTeamIdMembersRouteImport } from "./routes/team/$teamId/members";
+import { Route as TeamTeamIdBomRouteImport } from "./routes/team/$teamId/bom";
 
 const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+  id: "/login",
+  path: "/login",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+  id: "/dashboard",
+  path: "/dashboard",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TeamsNewRoute = TeamsNewRouteImport.update({
-  id: '/teams/new',
-  path: '/teams/new',
+  id: "/teams/new",
+  path: "/teams/new",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TeamsJoinRoute = TeamsJoinRouteImport.update({
-  id: '/teams/join',
-  path: '/teams/join',
+  id: "/teams/join",
+  path: "/teams/join",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TeamTeamIdRoute = TeamTeamIdRouteImport.update({
-  id: '/team/$teamId',
-  path: '/team/$teamId',
+  id: "/team/$teamId",
+  path: "/team/$teamId",
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any);
 const TeamTeamIdIndexRoute = TeamTeamIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
+  id: "/",
+  path: "/",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
 const TeamTeamIdSettingsRoute = TeamTeamIdSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
+const TeamTeamIdProfileSetupRoute = TeamTeamIdProfileSetupRouteImport.update({
+  id: "/profile-setup",
+  path: "/profile-setup",
+  getParentRoute: () => TeamTeamIdRoute,
+} as any);
 const TeamTeamIdPartsRoute = TeamTeamIdPartsRouteImport.update({
-  id: '/parts',
-  path: '/parts',
+  id: "/parts",
+  path: "/parts",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
 const TeamTeamIdOrdersRoute = TeamTeamIdOrdersRouteImport.update({
-  id: '/orders',
-  path: '/orders',
+  id: "/orders",
+  path: "/orders",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
 const TeamTeamIdMembersRoute = TeamTeamIdMembersRouteImport.update({
-  id: '/members',
-  path: '/members',
+  id: "/members",
+  path: "/members",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
 const TeamTeamIdBomRoute = TeamTeamIdBomRouteImport.update({
-  id: '/bom',
-  path: '/bom',
+  id: "/bom",
+  path: "/bom",
   getParentRoute: () => TeamTeamIdRoute,
-} as any)
+} as any);
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/team/$teamId': typeof TeamTeamIdRouteWithChildren
-  '/teams/join': typeof TeamsJoinRoute
-  '/teams/new': typeof TeamsNewRoute
-  '/team/$teamId/bom': typeof TeamTeamIdBomRoute
-  '/team/$teamId/members': typeof TeamTeamIdMembersRoute
-  '/team/$teamId/orders': typeof TeamTeamIdOrdersRoute
-  '/team/$teamId/parts': typeof TeamTeamIdPartsRoute
-  '/team/$teamId/settings': typeof TeamTeamIdSettingsRoute
-  '/team/$teamId/': typeof TeamTeamIdIndexRoute
+  "/": typeof IndexRoute;
+  "/dashboard": typeof DashboardRoute;
+  "/login": typeof LoginRoute;
+  "/team/$teamId": typeof TeamTeamIdRouteWithChildren;
+  "/teams/join": typeof TeamsJoinRoute;
+  "/teams/new": typeof TeamsNewRoute;
+  "/team/$teamId/bom": typeof TeamTeamIdBomRoute;
+  "/team/$teamId/members": typeof TeamTeamIdMembersRoute;
+  "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
+  "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
+  "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
+  "/team/$teamId/": typeof TeamTeamIdIndexRoute;
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/teams/join': typeof TeamsJoinRoute
-  '/teams/new': typeof TeamsNewRoute
-  '/team/$teamId/bom': typeof TeamTeamIdBomRoute
-  '/team/$teamId/members': typeof TeamTeamIdMembersRoute
-  '/team/$teamId/orders': typeof TeamTeamIdOrdersRoute
-  '/team/$teamId/parts': typeof TeamTeamIdPartsRoute
-  '/team/$teamId/settings': typeof TeamTeamIdSettingsRoute
-  '/team/$teamId': typeof TeamTeamIdIndexRoute
+  "/": typeof IndexRoute;
+  "/dashboard": typeof DashboardRoute;
+  "/login": typeof LoginRoute;
+  "/teams/join": typeof TeamsJoinRoute;
+  "/teams/new": typeof TeamsNewRoute;
+  "/team/$teamId/bom": typeof TeamTeamIdBomRoute;
+  "/team/$teamId/members": typeof TeamTeamIdMembersRoute;
+  "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
+  "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
+  "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
+  "/team/$teamId": typeof TeamTeamIdIndexRoute;
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRoute
-  '/login': typeof LoginRoute
-  '/team/$teamId': typeof TeamTeamIdRouteWithChildren
-  '/teams/join': typeof TeamsJoinRoute
-  '/teams/new': typeof TeamsNewRoute
-  '/team/$teamId/bom': typeof TeamTeamIdBomRoute
-  '/team/$teamId/members': typeof TeamTeamIdMembersRoute
-  '/team/$teamId/orders': typeof TeamTeamIdOrdersRoute
-  '/team/$teamId/parts': typeof TeamTeamIdPartsRoute
-  '/team/$teamId/settings': typeof TeamTeamIdSettingsRoute
-  '/team/$teamId/': typeof TeamTeamIdIndexRoute
+  __root__: typeof rootRouteImport;
+  "/": typeof IndexRoute;
+  "/dashboard": typeof DashboardRoute;
+  "/login": typeof LoginRoute;
+  "/team/$teamId": typeof TeamTeamIdRouteWithChildren;
+  "/teams/join": typeof TeamsJoinRoute;
+  "/teams/new": typeof TeamsNewRoute;
+  "/team/$teamId/bom": typeof TeamTeamIdBomRoute;
+  "/team/$teamId/members": typeof TeamTeamIdMembersRoute;
+  "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
+  "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
+  "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
+  "/team/$teamId/": typeof TeamTeamIdIndexRoute;
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
+  fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/team/$teamId'
-    | '/teams/join'
-    | '/teams/new'
-    | '/team/$teamId/bom'
-    | '/team/$teamId/members'
-    | '/team/$teamId/orders'
-    | '/team/$teamId/parts'
-    | '/team/$teamId/settings'
-    | '/team/$teamId/'
-  fileRoutesByTo: FileRoutesByTo
+    | "/"
+    | "/dashboard"
+    | "/login"
+    | "/team/$teamId"
+    | "/teams/join"
+    | "/teams/new"
+    | "/team/$teamId/bom"
+    | "/team/$teamId/members"
+    | "/team/$teamId/orders"
+    | "/team/$teamId/parts"
+    | "/team/$teamId/profile-setup"
+    | "/team/$teamId/settings"
+    | "/team/$teamId/";
+  fileRoutesByTo: FileRoutesByTo;
   to:
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/teams/join'
-    | '/teams/new'
-    | '/team/$teamId/bom'
-    | '/team/$teamId/members'
-    | '/team/$teamId/orders'
-    | '/team/$teamId/parts'
-    | '/team/$teamId/settings'
-    | '/team/$teamId'
+    | "/"
+    | "/dashboard"
+    | "/login"
+    | "/teams/join"
+    | "/teams/new"
+    | "/team/$teamId/bom"
+    | "/team/$teamId/members"
+    | "/team/$teamId/orders"
+    | "/team/$teamId/parts"
+    | "/team/$teamId/profile-setup"
+    | "/team/$teamId/settings"
+    | "/team/$teamId";
   id:
-    | '__root__'
-    | '/'
-    | '/dashboard'
-    | '/login'
-    | '/team/$teamId'
-    | '/teams/join'
-    | '/teams/new'
-    | '/team/$teamId/bom'
-    | '/team/$teamId/members'
-    | '/team/$teamId/orders'
-    | '/team/$teamId/parts'
-    | '/team/$teamId/settings'
-    | '/team/$teamId/'
-  fileRoutesById: FileRoutesById
+    | "__root__"
+    | "/"
+    | "/dashboard"
+    | "/login"
+    | "/team/$teamId"
+    | "/teams/join"
+    | "/teams/new"
+    | "/team/$teamId/bom"
+    | "/team/$teamId/members"
+    | "/team/$teamId/orders"
+    | "/team/$teamId/parts"
+    | "/team/$teamId/profile-setup"
+    | "/team/$teamId/settings"
+    | "/team/$teamId/";
+  fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  DashboardRoute: typeof DashboardRoute
-  LoginRoute: typeof LoginRoute
-  TeamTeamIdRoute: typeof TeamTeamIdRouteWithChildren
-  TeamsJoinRoute: typeof TeamsJoinRoute
-  TeamsNewRoute: typeof TeamsNewRoute
+  IndexRoute: typeof IndexRoute;
+  DashboardRoute: typeof DashboardRoute;
+  LoginRoute: typeof LoginRoute;
+  TeamTeamIdRoute: typeof TeamTeamIdRouteWithChildren;
+  TeamsJoinRoute: typeof TeamsJoinRoute;
+  TeamsNewRoute: typeof TeamsNewRoute;
 }
 
-declare module '@tanstack/react-router' {
+declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/teams/new': {
-      id: '/teams/new'
-      path: '/teams/new'
-      fullPath: '/teams/new'
-      preLoaderRoute: typeof TeamsNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/teams/join': {
-      id: '/teams/join'
-      path: '/teams/join'
-      fullPath: '/teams/join'
-      preLoaderRoute: typeof TeamsJoinRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/team/$teamId': {
-      id: '/team/$teamId'
-      path: '/team/$teamId'
-      fullPath: '/team/$teamId'
-      preLoaderRoute: typeof TeamTeamIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/team/$teamId/': {
-      id: '/team/$teamId/'
-      path: '/'
-      fullPath: '/team/$teamId/'
-      preLoaderRoute: typeof TeamTeamIdIndexRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
-    '/team/$teamId/settings': {
-      id: '/team/$teamId/settings'
-      path: '/settings'
-      fullPath: '/team/$teamId/settings'
-      preLoaderRoute: typeof TeamTeamIdSettingsRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
-    '/team/$teamId/parts': {
-      id: '/team/$teamId/parts'
-      path: '/parts'
-      fullPath: '/team/$teamId/parts'
-      preLoaderRoute: typeof TeamTeamIdPartsRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
-    '/team/$teamId/orders': {
-      id: '/team/$teamId/orders'
-      path: '/orders'
-      fullPath: '/team/$teamId/orders'
-      preLoaderRoute: typeof TeamTeamIdOrdersRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
-    '/team/$teamId/members': {
-      id: '/team/$teamId/members'
-      path: '/members'
-      fullPath: '/team/$teamId/members'
-      preLoaderRoute: typeof TeamTeamIdMembersRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
-    '/team/$teamId/bom': {
-      id: '/team/$teamId/bom'
-      path: '/bom'
-      fullPath: '/team/$teamId/bom'
-      preLoaderRoute: typeof TeamTeamIdBomRouteImport
-      parentRoute: typeof TeamTeamIdRoute
-    }
+    "/login": {
+      id: "/login";
+      path: "/login";
+      fullPath: "/login";
+      preLoaderRoute: typeof LoginRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/dashboard": {
+      id: "/dashboard";
+      path: "/dashboard";
+      fullPath: "/dashboard";
+      preLoaderRoute: typeof DashboardRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/teams/new": {
+      id: "/teams/new";
+      path: "/teams/new";
+      fullPath: "/teams/new";
+      preLoaderRoute: typeof TeamsNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/teams/join": {
+      id: "/teams/join";
+      path: "/teams/join";
+      fullPath: "/teams/join";
+      preLoaderRoute: typeof TeamsJoinRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/team/$teamId": {
+      id: "/team/$teamId";
+      path: "/team/$teamId";
+      fullPath: "/team/$teamId";
+      preLoaderRoute: typeof TeamTeamIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    "/team/$teamId/": {
+      id: "/team/$teamId/";
+      path: "/";
+      fullPath: "/team/$teamId/";
+      preLoaderRoute: typeof TeamTeamIdIndexRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/settings": {
+      id: "/team/$teamId/settings";
+      path: "/settings";
+      fullPath: "/team/$teamId/settings";
+      preLoaderRoute: typeof TeamTeamIdSettingsRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/profile-setup": {
+      id: "/team/$teamId/profile-setup";
+      path: "/profile-setup";
+      fullPath: "/team/$teamId/profile-setup";
+      preLoaderRoute: typeof TeamTeamIdProfileSetupRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/parts": {
+      id: "/team/$teamId/parts";
+      path: "/parts";
+      fullPath: "/team/$teamId/parts";
+      preLoaderRoute: typeof TeamTeamIdPartsRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/orders": {
+      id: "/team/$teamId/orders";
+      path: "/orders";
+      fullPath: "/team/$teamId/orders";
+      preLoaderRoute: typeof TeamTeamIdOrdersRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/members": {
+      id: "/team/$teamId/members";
+      path: "/members";
+      fullPath: "/team/$teamId/members";
+      preLoaderRoute: typeof TeamTeamIdMembersRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
+    "/team/$teamId/bom": {
+      id: "/team/$teamId/bom";
+      path: "/bom";
+      fullPath: "/team/$teamId/bom";
+      preLoaderRoute: typeof TeamTeamIdBomRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
   }
 }
 
 interface TeamTeamIdRouteChildren {
-  TeamTeamIdBomRoute: typeof TeamTeamIdBomRoute
-  TeamTeamIdMembersRoute: typeof TeamTeamIdMembersRoute
-  TeamTeamIdOrdersRoute: typeof TeamTeamIdOrdersRoute
-  TeamTeamIdPartsRoute: typeof TeamTeamIdPartsRoute
-  TeamTeamIdSettingsRoute: typeof TeamTeamIdSettingsRoute
-  TeamTeamIdIndexRoute: typeof TeamTeamIdIndexRoute
+  TeamTeamIdBomRoute: typeof TeamTeamIdBomRoute;
+  TeamTeamIdMembersRoute: typeof TeamTeamIdMembersRoute;
+  TeamTeamIdOrdersRoute: typeof TeamTeamIdOrdersRoute;
+  TeamTeamIdPartsRoute: typeof TeamTeamIdPartsRoute;
+  TeamTeamIdProfileSetupRoute: typeof TeamTeamIdProfileSetupRoute;
+  TeamTeamIdSettingsRoute: typeof TeamTeamIdSettingsRoute;
+  TeamTeamIdIndexRoute: typeof TeamTeamIdIndexRoute;
 }
 
 const TeamTeamIdRouteChildren: TeamTeamIdRouteChildren = {
@@ -281,13 +301,14 @@ const TeamTeamIdRouteChildren: TeamTeamIdRouteChildren = {
   TeamTeamIdMembersRoute: TeamTeamIdMembersRoute,
   TeamTeamIdOrdersRoute: TeamTeamIdOrdersRoute,
   TeamTeamIdPartsRoute: TeamTeamIdPartsRoute,
+  TeamTeamIdProfileSetupRoute: TeamTeamIdProfileSetupRoute,
   TeamTeamIdSettingsRoute: TeamTeamIdSettingsRoute,
   TeamTeamIdIndexRoute: TeamTeamIdIndexRoute,
-}
+};
 
 const TeamTeamIdRouteWithChildren = TeamTeamIdRoute._addFileChildren(
-  TeamTeamIdRouteChildren,
-)
+  TeamTeamIdRouteChildren
+);
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -296,7 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamTeamIdRoute: TeamTeamIdRouteWithChildren,
   TeamsJoinRoute: TeamsJoinRoute,
   TeamsNewRoute: TeamsNewRoute,
-}
+};
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>()
+  ._addFileTypes<FileRouteTypes>();
