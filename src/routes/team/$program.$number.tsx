@@ -20,6 +20,7 @@ import {
   Settings,
   ChevronLeft,
   LayoutDashboard,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -33,8 +34,9 @@ const NAV_ITEMS = [
   { path: "/orders", label: "Orders", icon: ShoppingCart },
   { path: "/bom", label: "BOM", icon: FileSpreadsheet },
   { path: "/members", label: "Members", icon: Users },
+  { path: "/safety", label: "Safety", icon: Shield, requiresYppContact: true },
   { path: "/settings", label: "Settings", icon: Settings },
-];
+] as const;
 
 function TeamLayout() {
   const navigate = useNavigate();
@@ -42,6 +44,21 @@ function TeamLayout() {
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
 
   const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+
+  // Get current user's membership to check yppContact status
+  const membership = useQuery(
+    api.members.getMyMembership,
+    team?._id ? { teamId: team._id } : "skip"
+  );
+
+  // Check if user is a YPP contact for this team
+  const isYppContact =
+    membership?.userId && team?.yppContacts?.includes(membership.userId);
+
+  // Filter nav items based on user permissions
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !("requiresYppContact" in item) || isYppContact
+  );
 
   // Get current path for active nav highlighting
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -96,7 +113,7 @@ function TeamLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
+          {visibleNavItems.map((item) => {
             const basePath = `/team/${program}/${number}`;
             const fullPath = `${basePath}${item.path}`;
             const isActive =
