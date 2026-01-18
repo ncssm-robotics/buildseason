@@ -1,5 +1,6 @@
 import { internalMutation, mutation } from "../_generated/server";
 import { v } from "convex/values";
+import { requireRole } from "../lib/permissions";
 
 /**
  * Link a team to a Discord server.
@@ -53,9 +54,8 @@ export const linkDiscordServer = mutation({
     guildId: v.string(),
   },
   handler: async (ctx, { teamId, guildId }) => {
-    // TODO: Add auth check - verify user is admin of this team
-    // const identity = await ctx.auth.getUserIdentity();
-    // if (!identity) throw new Error("Not authenticated");
+    // Require authenticated user with admin role on this team
+    await requireRole(ctx, teamId, "admin");
 
     // Check if another team is already linked to this guild
     const existingTeam = await ctx.db

@@ -252,14 +252,9 @@ export const completeLinkAccount = mutation({
 });
 
 /**
- * Generate a secure random token
+ * Generate a secure random token using crypto.randomUUID()
  */
 function generateSecureToken(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  // crypto.randomUUID() provides cryptographically secure random values
+  return crypto.randomUUID().replace(/-/g, "");
 }

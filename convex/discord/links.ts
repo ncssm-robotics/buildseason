@@ -168,14 +168,9 @@ export const unlinkDiscord = mutation({
 });
 
 /**
- * Generate a URL-safe random token
+ * Generate a URL-safe random token using crypto.randomUUID()
  */
 function generateToken(): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  for (let i = 0; i < 32; i++) {
-    token += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return token;
+  // crypto.randomUUID() provides cryptographically secure random values
+  return crypto.randomUUID().replace(/-/g, "");
 }
