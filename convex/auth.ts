@@ -54,13 +54,14 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
         // Schedule an action to fetch GitHub username from public API
         // The providerAccountId from authAccounts is the numeric GitHub user ID
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         const authAccount = await (ctx.db as any)
           .query("authAccounts")
           .withIndex("userIdAndProvider", (q: any) =>
             q.eq("userId", userId).eq("provider", "github")
           )
           .first();
+        /* eslint-enable @typescript-eslint/no-explicit-any */
 
         if (authAccount?.providerAccountId) {
           // Schedule action to fetch username asynchronously (can't use fetch in mutations)
