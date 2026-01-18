@@ -11,22 +11,38 @@ on:
 
 jobs:
   claude-review:
-    # Only run on pull_request_target events OR issue_comments containing @claude-review
+    # Only run on pull_request_target events OR issue_comments containing @claude-review on PRs
     if: |
       github.event_name == 'pull_request_target' ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude-review'))
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude-review'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write  # write needed to post review comments
-      issues: write  # write needed to add reaction emoji to trigger comments
+      pull-requests: write # write needed to post review comments
+      issues: write # write needed to add reaction emoji to trigger comments
 
     steps:
+      # Get PR details for issue_comment events (github.event.pull_request is empty)
+      - name: Get PR head SHA for comment trigger
+        if: github.event_name == 'issue_comment'
+        id: get-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}) || exit 1
+          HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha')
+          if [ "$HEAD_SHA" = "null" ] || [ -z "$HEAD_SHA" ]; then
+            echo "::error::Failed to get PR head SHA"
+            exit 1
+          fi
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+
       # Checkout the PR's code (not base branch) for review
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          # Use PR head SHA from API for issue_comment, or from event for pull_request_target
+          ref: ${{ github.event_name == 'issue_comment' && steps.get-pr.outputs.head_sha || github.event.pull_request.head.sha }}
           fetch-depth: 1
 
       - name: Run Claude Code Review
@@ -37,13 +53,13 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Allow manual trigger via @claude-review comment
-          trigger_phrase: '@claude-review'
+          trigger_phrase: "@claude-review"
           # Allow trusted external contributors to trigger reviews
-          allowed_non_write_users: 'Prorickey,njfdev,Veratay'
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
+          allowed_non_write_users: "Prorickey,njfdev,Veratay"
+          plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
+          plugins: "code-review@claude-code-plugins"
           prompt: |
-            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event_name == 'issue_comment' && github.event.issue.number || github.event.pull_request.number }}
 
             Review this PR for compliance with CLAUDE.md guidelines.
             Reference these skill files for detailed criteria:
