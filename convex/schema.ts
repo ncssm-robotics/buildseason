@@ -37,7 +37,6 @@ export default defineSchema({
     userId: v.id("users"),
     teamId: v.id("teams"),
     role: v.string(), // "lead_mentor" | "mentor" | "student"
-    birthdate: v.optional(v.number()), // Unix timestamp, required for YPP compliance
     // Personal context for GLaDOS personalization
     dietaryNeeds: v.optional(v.array(v.string())), // e.g., ["vegetarian", "nut allergy"]
     observances: v.optional(v.array(v.string())), // e.g., ["Shabbat", "Ramadan fasting"]

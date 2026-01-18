@@ -75,18 +75,26 @@ export const create = mutation({
     name: v.string(),
     number: v.string(),
     program: v.string(),
-    creatorBirthdate: v.number(), // Unix timestamp - required for YPP compliance
+    birthdate: v.optional(v.number()), // Unix timestamp - only needed if user doesn't have one
     creatorRole: v.optional(v.string()), // "lead_mentor" | "mentor", defaults to lead_mentor
   },
-  handler: async (
-    ctx,
-    { name, number, program, creatorBirthdate, creatorRole }
-  ) => {
+  handler: async (ctx, { name, number, program, birthdate, creatorRole }) => {
     const user = await requireAuth(ctx);
 
+    // Determine birthdate: use provided value or existing user birthdate
+    const effectiveBirthdate = birthdate ?? user.birthdate;
+    if (!effectiveBirthdate) {
+      throw new Error("Birthdate is required to create a team");
+    }
+
     // Validate creator is an adult (YPP requirement)
-    if (!isAdult(creatorBirthdate)) {
+    if (!isAdult(effectiveBirthdate)) {
       throw new Error("Team creator must be 18 or older");
+    }
+
+    // Update user's birthdate if provided (single source of truth)
+    if (birthdate && birthdate !== user.birthdate) {
+      await ctx.db.patch(user._id, { birthdate });
     }
 
     // Default to lead_mentor role
@@ -104,21 +112,19 @@ export const create = mutation({
       throw new Error("A team with this program and number already exists");
     }
 
-    // Add the creator as a team member first (we need their membership for YPP contact)
-    // We'll update the team with yppContacts after creating it
+    // Create the team with creator as initial YPP contact
     const teamId = await ctx.db.insert("teams", {
       name,
       number,
       program,
-      yppContacts: [user._id], // Creator is the initial YPP contact
+      yppContacts: [user._id],
     });
 
-    // Add the creator as lead mentor with birthdate
+    // Add the creator as lead mentor
     await ctx.db.insert("teamMembers", {
       userId: user._id,
       teamId,
       role,
-      birthdate: creatorBirthdate,
     });
 
     return teamId;
@@ -168,7 +174,12 @@ export const addYppContact = mutation({
       return teamId; // Already a contact, no-op
     }
 
-    // Validate the user is an adult mentor
+    // Get the user and validate they're an adult mentor
+    const targetUser = await ctx.db.get(userId);
+    if (!targetUser) {
+      throw new Error("User not found");
+    }
+
     const membership = await ctx.db
       .query("teamMembers")
       .withIndex("by_user_team", (q) =>
@@ -184,7 +195,11 @@ export const addYppContact = mutation({
       throw new Error("Students cannot be YPP contacts");
     }
 
-    if (membership.birthdate && !isAdult(membership.birthdate)) {
+    if (!targetUser.birthdate) {
+      throw new Error("User must have a birthdate on file to be a YPP contact");
+    }
+
+    if (!isAdult(targetUser.birthdate)) {
       throw new Error("YPP contacts must be 18 or older");
     }
 

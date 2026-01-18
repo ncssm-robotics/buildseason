@@ -65,6 +65,12 @@ export const validateYppContacts = query({
     }
 
     for (const userId of args.userIds) {
+      const user = await ctx.db.get(userId);
+      if (!user) {
+        errors.push(`User ${userId} not found`);
+        continue;
+      }
+
       const membership = await ctx.db
         .query("teamMembers")
         .withIndex("by_user_team", (q) =>
@@ -82,13 +88,13 @@ export const validateYppContacts = query({
         continue;
       }
 
-      // Check if adult (requires birthdate)
-      if (!membership.birthdate) {
+      // Check if adult (requires birthdate on user record)
+      if (!user.birthdate) {
         errors.push(`User ${userId} has no birthdate on file`);
         continue;
       }
 
-      const age = calculateAge(membership.birthdate);
+      const age = calculateAge(user.birthdate);
       if (age < 18) {
         errors.push(`User ${userId} is under 18 and cannot be a YPP contact`);
       }

@@ -8,375 +8,375 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from "./routes/__root";
-import { Route as SettingsRouteImport } from "./routes/settings";
-import { Route as LoginRouteImport } from "./routes/login";
-import { Route as DiscordLinkRouteImport } from "./routes/discord-link";
-import { Route as DashboardRouteImport } from "./routes/dashboard";
-import { Route as AlertAckRouteImport } from "./routes/alert-ack";
-import { Route as IndexRouteImport } from "./routes/index";
-import { Route as TeamsNewRouteImport } from "./routes/teams/new";
-import { Route as TeamsJoinRouteImport } from "./routes/teams/join";
-import { Route as TeamProgramNumberRouteImport } from "./routes/team/$program.$number";
-import { Route as TeamProgramNumberIndexRouteImport } from "./routes/team/$program.$number/index";
-import { Route as TeamProgramNumberSettingsRouteImport } from "./routes/team/$program.$number/settings";
-import { Route as TeamProgramNumberSafetyRouteImport } from "./routes/team/$program.$number/safety";
-import { Route as TeamProgramNumberProfileSetupRouteImport } from "./routes/team/$program.$number/profile-setup";
-import { Route as TeamProgramNumberPartsRouteImport } from "./routes/team/$program.$number/parts";
-import { Route as TeamProgramNumberOrdersRouteImport } from "./routes/team/$program.$number/orders";
-import { Route as TeamProgramNumberMembersRouteImport } from "./routes/team/$program.$number/members";
-import { Route as TeamProgramNumberBomRouteImport } from "./routes/team/$program.$number/bom";
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DiscordLinkRouteImport } from './routes/discord-link'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AlertAckRouteImport } from './routes/alert-ack'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as TeamsNewRouteImport } from './routes/teams/new'
+import { Route as TeamsJoinRouteImport } from './routes/teams/join'
+import { Route as TeamProgramNumberRouteImport } from './routes/team/$program.$number'
+import { Route as TeamProgramNumberIndexRouteImport } from './routes/team/$program.$number/index'
+import { Route as TeamProgramNumberSettingsRouteImport } from './routes/team/$program.$number/settings'
+import { Route as TeamProgramNumberSafetyRouteImport } from './routes/team/$program.$number/safety'
+import { Route as TeamProgramNumberProfileSetupRouteImport } from './routes/team/$program.$number/profile-setup'
+import { Route as TeamProgramNumberPartsRouteImport } from './routes/team/$program.$number/parts'
+import { Route as TeamProgramNumberOrdersRouteImport } from './routes/team/$program.$number/orders'
+import { Route as TeamProgramNumberMembersRouteImport } from './routes/team/$program.$number/members'
+import { Route as TeamProgramNumberBomRouteImport } from './routes/team/$program.$number/bom'
 
 const SettingsRoute = SettingsRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const LoginRoute = LoginRouteImport.update({
-  id: "/login",
-  path: "/login",
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DiscordLinkRoute = DiscordLinkRouteImport.update({
-  id: "/discord-link",
-  path: "/discord-link",
+  id: '/discord-link',
+  path: '/discord-link',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
-  id: "/dashboard",
-  path: "/dashboard",
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const AlertAckRoute = AlertAckRouteImport.update({
-  id: "/alert-ack",
-  path: "/alert-ack",
+  id: '/alert-ack',
+  path: '/alert-ack',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TeamsNewRoute = TeamsNewRouteImport.update({
-  id: "/teams/new",
-  path: "/teams/new",
+  id: '/teams/new',
+  path: '/teams/new',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TeamsJoinRoute = TeamsJoinRouteImport.update({
-  id: "/teams/join",
-  path: "/teams/join",
+  id: '/teams/join',
+  path: '/teams/join',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TeamProgramNumberRoute = TeamProgramNumberRouteImport.update({
-  id: "/team/$program/$number",
-  path: "/team/$program/$number",
+  id: '/team/$program/$number',
+  path: '/team/$program/$number',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const TeamProgramNumberIndexRoute = TeamProgramNumberIndexRouteImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => TeamProgramNumberRoute,
-} as any);
+} as any)
 const TeamProgramNumberSettingsRoute =
   TeamProgramNumberSettingsRouteImport.update({
-    id: "/settings",
-    path: "/settings",
+    id: '/settings',
+    path: '/settings',
     getParentRoute: () => TeamProgramNumberRoute,
-  } as any);
+  } as any)
 const TeamProgramNumberSafetyRoute = TeamProgramNumberSafetyRouteImport.update({
-  id: "/safety",
-  path: "/safety",
+  id: '/safety',
+  path: '/safety',
   getParentRoute: () => TeamProgramNumberRoute,
-} as any);
+} as any)
 const TeamProgramNumberProfileSetupRoute =
   TeamProgramNumberProfileSetupRouteImport.update({
-    id: "/profile-setup",
-    path: "/profile-setup",
+    id: '/profile-setup',
+    path: '/profile-setup',
     getParentRoute: () => TeamProgramNumberRoute,
-  } as any);
+  } as any)
 const TeamProgramNumberPartsRoute = TeamProgramNumberPartsRouteImport.update({
-  id: "/parts",
-  path: "/parts",
+  id: '/parts',
+  path: '/parts',
   getParentRoute: () => TeamProgramNumberRoute,
-} as any);
+} as any)
 const TeamProgramNumberOrdersRoute = TeamProgramNumberOrdersRouteImport.update({
-  id: "/orders",
-  path: "/orders",
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => TeamProgramNumberRoute,
-} as any);
+} as any)
 const TeamProgramNumberMembersRoute =
   TeamProgramNumberMembersRouteImport.update({
-    id: "/members",
-    path: "/members",
+    id: '/members',
+    path: '/members',
     getParentRoute: () => TeamProgramNumberRoute,
-  } as any);
+  } as any)
 const TeamProgramNumberBomRoute = TeamProgramNumberBomRouteImport.update({
-  id: "/bom",
-  path: "/bom",
+  id: '/bom',
+  path: '/bom',
   getParentRoute: () => TeamProgramNumberRoute,
-} as any);
+} as any)
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/alert-ack": typeof AlertAckRoute;
-  "/dashboard": typeof DashboardRoute;
-  "/discord-link": typeof DiscordLinkRoute;
-  "/login": typeof LoginRoute;
-  "/settings": typeof SettingsRoute;
-  "/teams/join": typeof TeamsJoinRoute;
-  "/teams/new": typeof TeamsNewRoute;
-  "/team/$program/$number": typeof TeamProgramNumberRouteWithChildren;
-  "/team/$program/$number/bom": typeof TeamProgramNumberBomRoute;
-  "/team/$program/$number/members": typeof TeamProgramNumberMembersRoute;
-  "/team/$program/$number/orders": typeof TeamProgramNumberOrdersRoute;
-  "/team/$program/$number/parts": typeof TeamProgramNumberPartsRoute;
-  "/team/$program/$number/profile-setup": typeof TeamProgramNumberProfileSetupRoute;
-  "/team/$program/$number/safety": typeof TeamProgramNumberSafetyRoute;
-  "/team/$program/$number/settings": typeof TeamProgramNumberSettingsRoute;
-  "/team/$program/$number/": typeof TeamProgramNumberIndexRoute;
+  '/': typeof IndexRoute
+  '/alert-ack': typeof AlertAckRoute
+  '/dashboard': typeof DashboardRoute
+  '/discord-link': typeof DiscordLinkRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/teams/join': typeof TeamsJoinRoute
+  '/teams/new': typeof TeamsNewRoute
+  '/team/$program/$number': typeof TeamProgramNumberRouteWithChildren
+  '/team/$program/$number/bom': typeof TeamProgramNumberBomRoute
+  '/team/$program/$number/members': typeof TeamProgramNumberMembersRoute
+  '/team/$program/$number/orders': typeof TeamProgramNumberOrdersRoute
+  '/team/$program/$number/parts': typeof TeamProgramNumberPartsRoute
+  '/team/$program/$number/profile-setup': typeof TeamProgramNumberProfileSetupRoute
+  '/team/$program/$number/safety': typeof TeamProgramNumberSafetyRoute
+  '/team/$program/$number/settings': typeof TeamProgramNumberSettingsRoute
+  '/team/$program/$number/': typeof TeamProgramNumberIndexRoute
 }
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/alert-ack": typeof AlertAckRoute;
-  "/dashboard": typeof DashboardRoute;
-  "/discord-link": typeof DiscordLinkRoute;
-  "/login": typeof LoginRoute;
-  "/settings": typeof SettingsRoute;
-  "/teams/join": typeof TeamsJoinRoute;
-  "/teams/new": typeof TeamsNewRoute;
-  "/team/$program/$number/bom": typeof TeamProgramNumberBomRoute;
-  "/team/$program/$number/members": typeof TeamProgramNumberMembersRoute;
-  "/team/$program/$number/orders": typeof TeamProgramNumberOrdersRoute;
-  "/team/$program/$number/parts": typeof TeamProgramNumberPartsRoute;
-  "/team/$program/$number/profile-setup": typeof TeamProgramNumberProfileSetupRoute;
-  "/team/$program/$number/safety": typeof TeamProgramNumberSafetyRoute;
-  "/team/$program/$number/settings": typeof TeamProgramNumberSettingsRoute;
-  "/team/$program/$number": typeof TeamProgramNumberIndexRoute;
+  '/': typeof IndexRoute
+  '/alert-ack': typeof AlertAckRoute
+  '/dashboard': typeof DashboardRoute
+  '/discord-link': typeof DiscordLinkRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/teams/join': typeof TeamsJoinRoute
+  '/teams/new': typeof TeamsNewRoute
+  '/team/$program/$number/bom': typeof TeamProgramNumberBomRoute
+  '/team/$program/$number/members': typeof TeamProgramNumberMembersRoute
+  '/team/$program/$number/orders': typeof TeamProgramNumberOrdersRoute
+  '/team/$program/$number/parts': typeof TeamProgramNumberPartsRoute
+  '/team/$program/$number/profile-setup': typeof TeamProgramNumberProfileSetupRoute
+  '/team/$program/$number/safety': typeof TeamProgramNumberSafetyRoute
+  '/team/$program/$number/settings': typeof TeamProgramNumberSettingsRoute
+  '/team/$program/$number': typeof TeamProgramNumberIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  "/": typeof IndexRoute;
-  "/alert-ack": typeof AlertAckRoute;
-  "/dashboard": typeof DashboardRoute;
-  "/discord-link": typeof DiscordLinkRoute;
-  "/login": typeof LoginRoute;
-  "/settings": typeof SettingsRoute;
-  "/teams/join": typeof TeamsJoinRoute;
-  "/teams/new": typeof TeamsNewRoute;
-  "/team/$program/$number": typeof TeamProgramNumberRouteWithChildren;
-  "/team/$program/$number/bom": typeof TeamProgramNumberBomRoute;
-  "/team/$program/$number/members": typeof TeamProgramNumberMembersRoute;
-  "/team/$program/$number/orders": typeof TeamProgramNumberOrdersRoute;
-  "/team/$program/$number/parts": typeof TeamProgramNumberPartsRoute;
-  "/team/$program/$number/profile-setup": typeof TeamProgramNumberProfileSetupRoute;
-  "/team/$program/$number/safety": typeof TeamProgramNumberSafetyRoute;
-  "/team/$program/$number/settings": typeof TeamProgramNumberSettingsRoute;
-  "/team/$program/$number/": typeof TeamProgramNumberIndexRoute;
+  __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
+  '/alert-ack': typeof AlertAckRoute
+  '/dashboard': typeof DashboardRoute
+  '/discord-link': typeof DiscordLinkRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/teams/join': typeof TeamsJoinRoute
+  '/teams/new': typeof TeamsNewRoute
+  '/team/$program/$number': typeof TeamProgramNumberRouteWithChildren
+  '/team/$program/$number/bom': typeof TeamProgramNumberBomRoute
+  '/team/$program/$number/members': typeof TeamProgramNumberMembersRoute
+  '/team/$program/$number/orders': typeof TeamProgramNumberOrdersRoute
+  '/team/$program/$number/parts': typeof TeamProgramNumberPartsRoute
+  '/team/$program/$number/profile-setup': typeof TeamProgramNumberProfileSetupRoute
+  '/team/$program/$number/safety': typeof TeamProgramNumberSafetyRoute
+  '/team/$program/$number/settings': typeof TeamProgramNumberSettingsRoute
+  '/team/$program/$number/': typeof TeamProgramNumberIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/alert-ack"
-    | "/dashboard"
-    | "/discord-link"
-    | "/login"
-    | "/settings"
-    | "/teams/join"
-    | "/teams/new"
-    | "/team/$program/$number"
-    | "/team/$program/$number/bom"
-    | "/team/$program/$number/members"
-    | "/team/$program/$number/orders"
-    | "/team/$program/$number/parts"
-    | "/team/$program/$number/profile-setup"
-    | "/team/$program/$number/safety"
-    | "/team/$program/$number/settings"
-    | "/team/$program/$number/";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/alert-ack'
+    | '/dashboard'
+    | '/discord-link'
+    | '/login'
+    | '/settings'
+    | '/teams/join'
+    | '/teams/new'
+    | '/team/$program/$number'
+    | '/team/$program/$number/bom'
+    | '/team/$program/$number/members'
+    | '/team/$program/$number/orders'
+    | '/team/$program/$number/parts'
+    | '/team/$program/$number/profile-setup'
+    | '/team/$program/$number/safety'
+    | '/team/$program/$number/settings'
+    | '/team/$program/$number/'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/alert-ack"
-    | "/dashboard"
-    | "/discord-link"
-    | "/login"
-    | "/settings"
-    | "/teams/join"
-    | "/teams/new"
-    | "/team/$program/$number/bom"
-    | "/team/$program/$number/members"
-    | "/team/$program/$number/orders"
-    | "/team/$program/$number/parts"
-    | "/team/$program/$number/profile-setup"
-    | "/team/$program/$number/safety"
-    | "/team/$program/$number/settings"
-    | "/team/$program/$number";
+    | '/'
+    | '/alert-ack'
+    | '/dashboard'
+    | '/discord-link'
+    | '/login'
+    | '/settings'
+    | '/teams/join'
+    | '/teams/new'
+    | '/team/$program/$number/bom'
+    | '/team/$program/$number/members'
+    | '/team/$program/$number/orders'
+    | '/team/$program/$number/parts'
+    | '/team/$program/$number/profile-setup'
+    | '/team/$program/$number/safety'
+    | '/team/$program/$number/settings'
+    | '/team/$program/$number'
   id:
-    | "__root__"
-    | "/"
-    | "/alert-ack"
-    | "/dashboard"
-    | "/discord-link"
-    | "/login"
-    | "/settings"
-    | "/teams/join"
-    | "/teams/new"
-    | "/team/$program/$number"
-    | "/team/$program/$number/bom"
-    | "/team/$program/$number/members"
-    | "/team/$program/$number/orders"
-    | "/team/$program/$number/parts"
-    | "/team/$program/$number/profile-setup"
-    | "/team/$program/$number/safety"
-    | "/team/$program/$number/settings"
-    | "/team/$program/$number/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/alert-ack'
+    | '/dashboard'
+    | '/discord-link'
+    | '/login'
+    | '/settings'
+    | '/teams/join'
+    | '/teams/new'
+    | '/team/$program/$number'
+    | '/team/$program/$number/bom'
+    | '/team/$program/$number/members'
+    | '/team/$program/$number/orders'
+    | '/team/$program/$number/parts'
+    | '/team/$program/$number/profile-setup'
+    | '/team/$program/$number/safety'
+    | '/team/$program/$number/settings'
+    | '/team/$program/$number/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  AlertAckRoute: typeof AlertAckRoute;
-  DashboardRoute: typeof DashboardRoute;
-  DiscordLinkRoute: typeof DiscordLinkRoute;
-  LoginRoute: typeof LoginRoute;
-  SettingsRoute: typeof SettingsRoute;
-  TeamsJoinRoute: typeof TeamsJoinRoute;
-  TeamsNewRoute: typeof TeamsNewRoute;
-  TeamProgramNumberRoute: typeof TeamProgramNumberRouteWithChildren;
+  IndexRoute: typeof IndexRoute
+  AlertAckRoute: typeof AlertAckRoute
+  DashboardRoute: typeof DashboardRoute
+  DiscordLinkRoute: typeof DiscordLinkRoute
+  LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
+  TeamsJoinRoute: typeof TeamsJoinRoute
+  TeamsNewRoute: typeof TeamsNewRoute
+  TeamProgramNumberRoute: typeof TeamProgramNumberRouteWithChildren
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/settings": {
-      id: "/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof SettingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/login": {
-      id: "/login";
-      path: "/login";
-      fullPath: "/login";
-      preLoaderRoute: typeof LoginRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/discord-link": {
-      id: "/discord-link";
-      path: "/discord-link";
-      fullPath: "/discord-link";
-      preLoaderRoute: typeof DiscordLinkRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/dashboard": {
-      id: "/dashboard";
-      path: "/dashboard";
-      fullPath: "/dashboard";
-      preLoaderRoute: typeof DashboardRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/alert-ack": {
-      id: "/alert-ack";
-      path: "/alert-ack";
-      fullPath: "/alert-ack";
-      preLoaderRoute: typeof AlertAckRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/teams/new": {
-      id: "/teams/new";
-      path: "/teams/new";
-      fullPath: "/teams/new";
-      preLoaderRoute: typeof TeamsNewRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/teams/join": {
-      id: "/teams/join";
-      path: "/teams/join";
-      fullPath: "/teams/join";
-      preLoaderRoute: typeof TeamsJoinRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/team/$program/$number": {
-      id: "/team/$program/$number";
-      path: "/team/$program/$number";
-      fullPath: "/team/$program/$number";
-      preLoaderRoute: typeof TeamProgramNumberRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/team/$program/$number/": {
-      id: "/team/$program/$number/";
-      path: "/";
-      fullPath: "/team/$program/$number/";
-      preLoaderRoute: typeof TeamProgramNumberIndexRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/settings": {
-      id: "/team/$program/$number/settings";
-      path: "/settings";
-      fullPath: "/team/$program/$number/settings";
-      preLoaderRoute: typeof TeamProgramNumberSettingsRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/safety": {
-      id: "/team/$program/$number/safety";
-      path: "/safety";
-      fullPath: "/team/$program/$number/safety";
-      preLoaderRoute: typeof TeamProgramNumberSafetyRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/profile-setup": {
-      id: "/team/$program/$number/profile-setup";
-      path: "/profile-setup";
-      fullPath: "/team/$program/$number/profile-setup";
-      preLoaderRoute: typeof TeamProgramNumberProfileSetupRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/parts": {
-      id: "/team/$program/$number/parts";
-      path: "/parts";
-      fullPath: "/team/$program/$number/parts";
-      preLoaderRoute: typeof TeamProgramNumberPartsRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/orders": {
-      id: "/team/$program/$number/orders";
-      path: "/orders";
-      fullPath: "/team/$program/$number/orders";
-      preLoaderRoute: typeof TeamProgramNumberOrdersRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/members": {
-      id: "/team/$program/$number/members";
-      path: "/members";
-      fullPath: "/team/$program/$number/members";
-      preLoaderRoute: typeof TeamProgramNumberMembersRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
-    "/team/$program/$number/bom": {
-      id: "/team/$program/$number/bom";
-      path: "/bom";
-      fullPath: "/team/$program/$number/bom";
-      preLoaderRoute: typeof TeamProgramNumberBomRouteImport;
-      parentRoute: typeof TeamProgramNumberRoute;
-    };
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discord-link': {
+      id: '/discord-link'
+      path: '/discord-link'
+      fullPath: '/discord-link'
+      preLoaderRoute: typeof DiscordLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alert-ack': {
+      id: '/alert-ack'
+      path: '/alert-ack'
+      fullPath: '/alert-ack'
+      preLoaderRoute: typeof AlertAckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/new': {
+      id: '/teams/new'
+      path: '/teams/new'
+      fullPath: '/teams/new'
+      preLoaderRoute: typeof TeamsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/join': {
+      id: '/teams/join'
+      path: '/teams/join'
+      fullPath: '/teams/join'
+      preLoaderRoute: typeof TeamsJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team/$program/$number': {
+      id: '/team/$program/$number'
+      path: '/team/$program/$number'
+      fullPath: '/team/$program/$number'
+      preLoaderRoute: typeof TeamProgramNumberRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team/$program/$number/': {
+      id: '/team/$program/$number/'
+      path: '/'
+      fullPath: '/team/$program/$number/'
+      preLoaderRoute: typeof TeamProgramNumberIndexRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/settings': {
+      id: '/team/$program/$number/settings'
+      path: '/settings'
+      fullPath: '/team/$program/$number/settings'
+      preLoaderRoute: typeof TeamProgramNumberSettingsRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/safety': {
+      id: '/team/$program/$number/safety'
+      path: '/safety'
+      fullPath: '/team/$program/$number/safety'
+      preLoaderRoute: typeof TeamProgramNumberSafetyRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/profile-setup': {
+      id: '/team/$program/$number/profile-setup'
+      path: '/profile-setup'
+      fullPath: '/team/$program/$number/profile-setup'
+      preLoaderRoute: typeof TeamProgramNumberProfileSetupRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/parts': {
+      id: '/team/$program/$number/parts'
+      path: '/parts'
+      fullPath: '/team/$program/$number/parts'
+      preLoaderRoute: typeof TeamProgramNumberPartsRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/orders': {
+      id: '/team/$program/$number/orders'
+      path: '/orders'
+      fullPath: '/team/$program/$number/orders'
+      preLoaderRoute: typeof TeamProgramNumberOrdersRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/members': {
+      id: '/team/$program/$number/members'
+      path: '/members'
+      fullPath: '/team/$program/$number/members'
+      preLoaderRoute: typeof TeamProgramNumberMembersRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
+    '/team/$program/$number/bom': {
+      id: '/team/$program/$number/bom'
+      path: '/bom'
+      fullPath: '/team/$program/$number/bom'
+      preLoaderRoute: typeof TeamProgramNumberBomRouteImport
+      parentRoute: typeof TeamProgramNumberRoute
+    }
   }
 }
 
 interface TeamProgramNumberRouteChildren {
-  TeamProgramNumberBomRoute: typeof TeamProgramNumberBomRoute;
-  TeamProgramNumberMembersRoute: typeof TeamProgramNumberMembersRoute;
-  TeamProgramNumberOrdersRoute: typeof TeamProgramNumberOrdersRoute;
-  TeamProgramNumberPartsRoute: typeof TeamProgramNumberPartsRoute;
-  TeamProgramNumberProfileSetupRoute: typeof TeamProgramNumberProfileSetupRoute;
-  TeamProgramNumberSafetyRoute: typeof TeamProgramNumberSafetyRoute;
-  TeamProgramNumberSettingsRoute: typeof TeamProgramNumberSettingsRoute;
-  TeamProgramNumberIndexRoute: typeof TeamProgramNumberIndexRoute;
+  TeamProgramNumberBomRoute: typeof TeamProgramNumberBomRoute
+  TeamProgramNumberMembersRoute: typeof TeamProgramNumberMembersRoute
+  TeamProgramNumberOrdersRoute: typeof TeamProgramNumberOrdersRoute
+  TeamProgramNumberPartsRoute: typeof TeamProgramNumberPartsRoute
+  TeamProgramNumberProfileSetupRoute: typeof TeamProgramNumberProfileSetupRoute
+  TeamProgramNumberSafetyRoute: typeof TeamProgramNumberSafetyRoute
+  TeamProgramNumberSettingsRoute: typeof TeamProgramNumberSettingsRoute
+  TeamProgramNumberIndexRoute: typeof TeamProgramNumberIndexRoute
 }
 
 const TeamProgramNumberRouteChildren: TeamProgramNumberRouteChildren = {
@@ -388,10 +388,10 @@ const TeamProgramNumberRouteChildren: TeamProgramNumberRouteChildren = {
   TeamProgramNumberSafetyRoute: TeamProgramNumberSafetyRoute,
   TeamProgramNumberSettingsRoute: TeamProgramNumberSettingsRoute,
   TeamProgramNumberIndexRoute: TeamProgramNumberIndexRoute,
-};
+}
 
 const TeamProgramNumberRouteWithChildren =
-  TeamProgramNumberRoute._addFileChildren(TeamProgramNumberRouteChildren);
+  TeamProgramNumberRoute._addFileChildren(TeamProgramNumberRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -403,7 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamsJoinRoute: TeamsJoinRoute,
   TeamsNewRoute: TeamsNewRoute,
   TeamProgramNumberRoute: TeamProgramNumberRouteWithChildren,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

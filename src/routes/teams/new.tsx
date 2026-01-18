@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useConvexAuth } from "convex/react";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
@@ -38,6 +38,7 @@ function NewTeamPage() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const createTeam = useMutation(api.teams.create);
+  const user = useQuery(api.users.getUser);
 
   const [name, setName] = useState("");
   const [number, setNumber] = useState("");
@@ -46,11 +47,22 @@ function NewTeamPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Pre-fill birthdate from user's existing data
+  useEffect(() => {
+    if (user?.birthdate && !birthdate) {
+      const date = new Date(user.birthdate);
+      setBirthdate(date.toISOString().split("T")[0]);
+    }
+  }, [user?.birthdate, birthdate]);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate({ to: "/login" });
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  // User already has birthdate on file
+  const hasBirthdate = !!user?.birthdate;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,14 +70,16 @@ function NewTeamPage() {
     setIsSubmitting(true);
 
     try {
-      // Convert birthdate string to Unix timestamp
+      // Only pass birthdate if user doesn't have one or if they changed it
       const birthdateTimestamp = new Date(birthdate).getTime();
+      const needsBirthdateUpdate =
+        !hasBirthdate || birthdateTimestamp !== user?.birthdate;
 
       await createTeam({
         name,
         number,
         program,
-        creatorBirthdate: birthdateTimestamp,
+        birthdate: needsBirthdateUpdate ? birthdateTimestamp : undefined,
       });
       navigate({ to: "/team/$program/$number", params: { program, number } });
     } catch (err) {
@@ -156,9 +170,9 @@ function NewTeamPage() {
                   max={new Date().toISOString().split("T")[0]}
                 />
                 <p className="text-sm text-muted-foreground">
-                  Required for Youth Protection Program compliance. Team
-                  creators must be 18 or older and will be designated as a YPP
-                  contact.
+                  {hasBirthdate
+                    ? "Your birthdate is already on file. You can update it if needed."
+                    : "Required for Youth Protection Program compliance. Team creators must be 18 or older and will be designated as a YPP contact."}
                 </p>
               </div>
 
@@ -167,7 +181,9 @@ function NewTeamPage() {
               <div className="flex gap-4">
                 <Button
                   type="submit"
-                  disabled={isSubmitting || !program || !birthdate}
+                  disabled={
+                    isSubmitting || !program || (!hasBirthdate && !birthdate)
+                  }
                 >
                   {isSubmitting ? "Creating..." : "Create Team"}
                 </Button>

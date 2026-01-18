@@ -25,7 +25,7 @@ export const list = query({
           name: user.name,
           email: user.email,
           image: user.image,
-          birthdate: membership.birthdate ?? user.birthdate, // Prefer membership, fall back to user
+          birthdate: user.birthdate,
         };
       })
     );
@@ -138,12 +138,11 @@ export const updateMyProfile = mutation({
   },
 });
 
-// Mentors can update a member's profile (including birthdate for YPP)
+// Mentors can update a member's profile (personal context fields)
 export const updateMemberProfile = mutation({
   args: {
     teamId: v.id("teams"),
     memberId: v.id("teamMembers"),
-    birthdate: v.optional(v.number()),
     dietaryNeeds: v.optional(v.array(v.string())),
     observances: v.optional(v.array(v.string())),
     anythingElse: v.optional(v.string()),
