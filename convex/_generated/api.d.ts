@@ -31,6 +31,7 @@ import type * as discord_queries from "../discord/queries.js";
 import type * as discord_respond from "../discord/respond.js";
 import type * as http from "../http.js";
 import type * as invites from "../invites.js";
+import type * as lib_crypto from "../lib/crypto.js";
 import type * as lib_permissions from "../lib/permissions.js";
 import type * as lib_providers from "../lib/providers.js";
 import type * as members from "../members.js";
@@ -73,6 +74,7 @@ declare const fullApi: ApiFromModules<{
   "discord/respond": typeof discord_respond;
   http: typeof http;
   invites: typeof invites;
+  "lib/crypto": typeof lib_crypto;
   "lib/permissions": typeof lib_permissions;
   "lib/providers": typeof lib_providers;
   members: typeof members;

@@ -19,6 +19,14 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Verify generated files are up-to-date
+        run: |
+          npx convex codegen
+          git diff --exit-code convex/_generated/ || {
+            echo "::error::Generated files are out of date. Run 'npx convex codegen' and commit the changes."
+            exit 1
+          }
+
       - name: Type check
         run: bun run typecheck
 
