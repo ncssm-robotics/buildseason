@@ -36,39 +36,8 @@ const commands = [
       },
     ],
   },
-  {
-    name: "inventory",
-    description: "Check parts inventory status",
-    options: [
-      {
-        name: "filter",
-        description: "Filter inventory results",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "All parts", value: "all" },
-          { name: "Low stock only", value: "low_stock" },
-        ],
-      },
-    ],
-  },
-  {
-    name: "orders",
-    description: "Check order status",
-    options: [
-      {
-        name: "status",
-        description: "Filter by order status",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "All orders", value: "all" },
-          { name: "Pending", value: "pending" },
-          { name: "Approved", value: "approved" },
-        ],
-      },
-    ],
-  },
+  // Note: /inventory and /orders commands can be added once handlers are implemented
+  // in convex/discord/handler.ts
 ];
 
 async function registerCommands() {

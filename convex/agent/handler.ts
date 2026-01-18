@@ -50,8 +50,14 @@ export const handleMessage = internalAction({
       messages,
     });
 
-    // Process tool calls in a loop
-    while (response.stop_reason === "tool_use") {
+    // Process tool calls in a loop (with safety limit)
+    const MAX_TOOL_ITERATIONS = 10;
+    let iterations = 0;
+    while (
+      response.stop_reason === "tool_use" &&
+      iterations < MAX_TOOL_ITERATIONS
+    ) {
+      iterations++;
       const assistantMessage = response.content;
       messages.push({ role: "assistant", content: assistantMessage });
 
@@ -83,6 +89,14 @@ export const handleMessage = internalAction({
         tools,
         messages,
       });
+    }
+
+    // Check if we hit the iteration limit
+    if (
+      iterations >= MAX_TOOL_ITERATIONS &&
+      response.stop_reason === "tool_use"
+    ) {
+      return "I had to stop processing - this request required too many steps. Please try breaking it into smaller questions.";
     }
 
     // Extract text response

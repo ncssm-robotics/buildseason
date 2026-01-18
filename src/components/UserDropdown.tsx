@@ -16,7 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut, Link as LinkIcon, Check } from "lucide-react";
 
 // Convex site URL for Discord linking
+// Prefer explicit env var, fall back to pattern replacement, then hardcoded default
 const CONVEX_SITE_URL =
+  import.meta.env.VITE_CONVEX_SITE_URL ||
   import.meta.env.VITE_CONVEX_URL?.replace(".cloud", ".site") ||
   "https://enchanted-mastiff-533.convex.site";
 
@@ -180,13 +182,6 @@ export function UserDropdown() {
         {/* Show error if any */}
         {linkStatus === "error" && linkError && (
           <p className="px-2 py-1 text-xs text-red-500">{linkError}</p>
-        )}
-
-        {/* Debug info - remove in production */}
-        {connectedAccounts?._debug && (
-          <p className="px-2 py-1 text-xs text-muted-foreground/50">
-            Auth: {connectedAccounts._debug.authProviders.join(", ") || "none"}
-          </p>
         )}
 
         <DropdownMenuSeparator />

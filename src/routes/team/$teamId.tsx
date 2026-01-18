@@ -273,13 +273,6 @@ function TeamLayout() {
                   )}
                 </DropdownMenuItem>
               )}
-              {/* Debug info - remove in production */}
-              {connectedAccounts?._debug && (
-                <p className="px-2 py-1 text-xs text-muted-foreground/50">
-                  Auth:{" "}
-                  {connectedAccounts._debug.authProviders.join(", ") || "none"}
-                </p>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />

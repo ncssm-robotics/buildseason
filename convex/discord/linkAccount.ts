@@ -1,5 +1,8 @@
-import { httpAction } from "../_generated/server";
+import { httpAction, internalMutation, mutation } from "../_generated/server";
 import { internal } from "../_generated/api";
+import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { generateSecureToken } from "../lib/crypto";
 
 /**
  * Initiate Discord OAuth for account linking.
@@ -137,10 +140,6 @@ export const handleLinkCallback = httpAction(async (ctx, request) => {
   }
 });
 
-import { v } from "convex/values";
-import { internalMutation, mutation } from "../_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
-
 /**
  * Create a pending Discord link (internal, called from OAuth callback)
  * This is secure because the Discord ID comes from OAuth, not user input.
@@ -250,11 +249,3 @@ export const completeLinkAccount = mutation({
     };
   },
 });
-
-/**
- * Generate a secure random token using crypto.randomUUID()
- */
-function generateSecureToken(): string {
-  // crypto.randomUUID() provides cryptographically secure random values
-  return crypto.randomUUID().replace(/-/g, "");
-}

@@ -7,6 +7,7 @@ import {
 } from "../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { getUserByDiscordId as getUserByDiscordIdLib } from "../lib/providers";
+import { generateSecureToken } from "../lib/crypto";
 
 /**
  * Get the BuildSeason user linked to a Discord user ID.
@@ -129,7 +130,7 @@ export const createLinkToken = internalMutation({
     }
 
     // Generate a new token (just for tracking, not for linking)
-    const token = generateToken();
+    const token = generateSecureToken();
 
     await ctx.db.insert("discordLinkTokens", {
       token,
@@ -166,11 +167,3 @@ export const unlinkDiscord = mutation({
     return { success: true };
   },
 });
-
-/**
- * Generate a URL-safe random token using crypto.randomUUID()
- */
-function generateToken(): string {
-  // crypto.randomUUID() provides cryptographically secure random values
-  return crypto.randomUUID().replace(/-/g, "");
-}

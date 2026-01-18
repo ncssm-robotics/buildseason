@@ -76,13 +76,12 @@ export const { auth, signIn, signOut, store } = convexAuth({
           );
         }
 
-        // Fallback to display name if we couldn't get username
-        if (!username) {
-          if (email?.endsWith("@users.noreply.github.com")) {
-            username = email.split("@")[0].replace(/^\d+\+/, "");
-          } else {
-            username = displayName;
-          }
+        // Set username from email (GitHub noreply format) or fall back to display name
+        // Note: The async action will update this with the real username later
+        if (email?.endsWith("@users.noreply.github.com")) {
+          username = email.split("@")[0].replace(/^\d+\+/, "");
+        } else {
+          username = displayName;
         }
       } else if (providerId === "discord") {
         // Discord profile has 'username'

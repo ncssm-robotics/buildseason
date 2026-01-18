@@ -85,11 +85,6 @@ export const getConnectedAccounts = query({
                 discordProfile?.username ?? discordLink?.discordUsername,
             }
           : null,
-      // Raw data for debugging
-      _debug: {
-        authProviders: Array.from(providerMap.keys()),
-        hasDiscordLink: !!discordLink,
-      },
     };
   },
 });
