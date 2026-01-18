@@ -1,1 +1,9 @@
+# Regenerate Convex types if convex files (excluding _generated) are staged
+if git diff --cached --name-only | grep '^convex/.*\.ts$' | grep -qv '_generated'; then
+  echo "Convex files changed, regenerating types..."
+  npx convex codegen
+  # Auto-stage any changes to generated files
+  git add convex/_generated/
+fi
+
 bunx lint-staged
