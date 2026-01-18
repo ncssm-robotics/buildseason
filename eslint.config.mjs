@@ -5,7 +5,7 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["node_modules/", "dist/", "convex/_generated/", ".beads/"],
+    ignores: ["node_modules/", "dist/", "convex/_generated/", ".beads/", "src/routeTree.gen.ts"],
   },
   {
     files: ["**/*.{ts,tsx}"],

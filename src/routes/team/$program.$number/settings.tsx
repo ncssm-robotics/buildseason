@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,31 +22,42 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Shield, X, Plus } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/settings")({
+export const Route = createFileRoute("/team/$program/$number/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
 
-  const team = useQuery(api.teams.get, { teamId: teamId as Id<"teams"> });
-  const seasons = useQuery(api.seasons.list, { teamId: teamId as Id<"teams"> });
-  const members = useQuery(api.members.list, { teamId: teamId as Id<"teams"> });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const seasons = useQuery(api.seasons.list, teamId ? { teamId } : "skip");
+  const members = useQuery(api.members.list, teamId ? { teamId } : "skip");
   const user = useQuery(api.users.getUser);
+
+  const yppContacts = useQuery(
+    api.teams.yppContacts.getYppContacts,
+    teamId ? { teamId } : "skip"
+  );
 
   const updateTeam = useMutation(api.teams.update);
   const createSeason = useMutation(api.seasons.create);
   const setActiveSeason = useMutation(api.seasons.setActive);
+  const addYppContact = useMutation(api.teams.addYppContact);
+  const removeYppContact = useMutation(api.teams.removeYppContact);
 
   const [teamName, setTeamName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [newSeasonName, setNewSeasonName] = useState("");
   const [newSeasonYear, setNewSeasonYear] = useState("");
+  const [selectedMentorId, setSelectedMentorId] = useState<string>("");
 
-  // Check if current user is admin
+  // Check if current user is lead_mentor (admin maps to lead_mentor for backwards compat)
   const currentMember = members?.find((m) => m.userId === user?._id);
-  const isAdmin = currentMember?.role === "admin";
+  const isAdmin =
+    currentMember?.role === "admin" || currentMember?.role === "lead_mentor";
 
   // Initialize team name when data loads
   if (team && !teamName && team.name) {
@@ -54,12 +65,12 @@ function SettingsPage() {
   }
 
   const handleSaveTeam = async () => {
-    if (!teamName.trim()) return;
+    if (!teamId || !teamName.trim()) return;
 
     setIsSaving(true);
     try {
       await updateTeam({
-        teamId: teamId as Id<"teams">,
+        teamId,
         name: teamName,
       });
     } finally {
@@ -68,10 +79,10 @@ function SettingsPage() {
   };
 
   const handleCreateSeason = async () => {
-    if (!newSeasonName.trim() || !newSeasonYear.trim()) return;
+    if (!teamId || !newSeasonName.trim() || !newSeasonYear.trim()) return;
 
     await createSeason({
-      teamId: teamId as Id<"teams">,
+      teamId,
       name: newSeasonName,
       year: newSeasonYear,
     });
@@ -81,11 +92,34 @@ function SettingsPage() {
   };
 
   const handleSetActiveSeason = async (seasonId: string) => {
+    if (!teamId) return;
     await setActiveSeason({
-      teamId: teamId as Id<"teams">,
+      teamId,
       seasonId: seasonId as Id<"seasons">,
     });
   };
+
+  const handleAddYppContact = async () => {
+    if (!teamId || !selectedMentorId) return;
+    await addYppContact({
+      teamId,
+      userId: selectedMentorId as Id<"users">,
+    });
+    setSelectedMentorId("");
+  };
+
+  const handleRemoveYppContact = async (userId: Id<"users">) => {
+    if (!teamId) return;
+    await removeYppContact({ teamId, userId });
+  };
+
+  // Get mentors who aren't already YPP contacts for the dropdown
+  const availableMentors =
+    members?.filter(
+      (m) =>
+        (m.role === "mentor" || m.role === "lead_mentor") &&
+        !yppContacts?.some((c) => c.userId === m.userId)
+    ) ?? [];
 
   if (!isAdmin) {
     return (
@@ -249,6 +283,95 @@ function SettingsPage() {
                 Create Season
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* YPP Contacts */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              YPP Contacts
+            </CardTitle>
+            <CardDescription>
+              Adult mentors designated to receive safety alerts and manage youth
+              protection compliance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Current YPP Contacts */}
+            {yppContacts === undefined ? (
+              <Skeleton className="h-20 w-full" />
+            ) : yppContacts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No YPP contacts assigned yet
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {yppContacts.map((contact) => (
+                  <div
+                    key={contact.userId}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border"
+                  >
+                    <div>
+                      <p className="font-medium">{contact.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {contact.email}
+                        {contact.discordUsername && (
+                          <span className="ml-2">
+                            @{contact.discordUsername}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{contact.role}</Badge>
+                      {yppContacts.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveYppContact(contact.userId)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add YPP Contact */}
+            {availableMentors.length > 0 && (
+              <div className="pt-4 border-t border-border">
+                <Label className="mb-4 block">Add YPP Contact</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedMentorId}
+                    onValueChange={setSelectedMentorId}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select a mentor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableMentors.map((mentor) => (
+                        <SelectItem key={mentor.userId} value={mentor.userId}>
+                          {mentor.name} ({mentor.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleAddYppContact}
+                    disabled={!selectedMentorId}
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

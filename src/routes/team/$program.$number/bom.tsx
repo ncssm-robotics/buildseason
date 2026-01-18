@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,22 +40,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, AlertTriangle, Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/bom")({
+export const Route = createFileRoute("/team/$program/$number/bom")({
   component: BomPage,
 });
 
 function BomPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
-  const bomBySubsystem = useQuery(api.bom.listBySubsystem, {
-    teamId: teamId as Id<"teams">,
-  });
-  const subsystems = useQuery(api.bom.getSubsystems, {
-    teamId: teamId as Id<"teams">,
-  });
-  const parts = useQuery(api.parts.list, { teamId: teamId as Id<"teams"> });
-  const shortages = useQuery(api.bom.getShortages, {
-    teamId: teamId as Id<"teams">,
-  });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const bomBySubsystem = useQuery(
+    api.bom.listBySubsystem,
+    teamId ? { teamId } : "skip"
+  );
+  const subsystems = useQuery(
+    api.bom.getSubsystems,
+    teamId ? { teamId } : "skip"
+  );
+  const parts = useQuery(api.parts.list, teamId ? { teamId } : "skip");
+  const shortages = useQuery(
+    api.bom.getShortages,
+    teamId ? { teamId } : "skip"
+  );
 
   const createBomItem = useMutation(api.bom.create);
   const removeBomItem = useMutation(api.bom.remove);
@@ -69,8 +74,9 @@ function BomPage() {
   });
 
   const handleCreate = async () => {
+    if (!teamId) return;
     await createBomItem({
-      teamId: teamId as Id<"teams">,
+      teamId,
       partId: newItem.partId as Id<"parts">,
       subsystem: newItem.subsystem,
       quantityNeeded: newItem.quantityNeeded,

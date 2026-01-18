@@ -3,7 +3,7 @@ import { internalAction } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { buildTools, executeToolCall } from "./tools";
-import type { Id } from "../_generated/dataModel";
+import { buildSystemPrompt } from "./prompts";
 
 const client = new Anthropic();
 
@@ -33,8 +33,11 @@ export const handleMessage = internalAction({
     // Build tools available to the agent
     const tools = buildTools();
 
-    // Build system prompt with team context
-    const systemPrompt = buildSystemPrompt(context, args.userName);
+    // Build system prompt with team context and YPP guardrails
+    const systemPrompt = buildSystemPrompt(
+      { ...context, userName: args.userName },
+      {} // SafetyContext - will be populated by pre-screening later
+    );
 
     // Initial message to Claude
     const messages: Anthropic.MessageParam[] = [
@@ -69,7 +72,9 @@ export const handleMessage = internalAction({
             ctx,
             args.teamId,
             block.name,
-            block.input as Record<string, unknown>
+            block.input as Record<string, unknown>,
+            args.userId,
+            args.channelId
           );
           toolResults.push({
             type: "tool_result",
@@ -106,67 +111,3 @@ export const handleMessage = internalAction({
     return textBlocks.map((block) => block.text).join("\n");
   },
 });
-
-/**
- * Build the system prompt with team context and safety guardrails.
- */
-function buildSystemPrompt(
-  context: {
-    team: {
-      _id: Id<"teams">;
-      name: string;
-      number: string;
-      program: string;
-    } | null;
-    season: { name: string; year: string } | null;
-    inventorySummary: {
-      totalParts: number;
-      lowStockCount: number;
-      lowStockParts: Array<{ id: Id<"parts">; name: string; quantity: number }>;
-    };
-    pendingOrders: Array<{
-      id: Id<"orders">;
-      status: string;
-      totalCents: number;
-    }>;
-  },
-  userName?: string
-): string {
-  const program = context.team?.program?.toUpperCase() || "FTC";
-
-  return `You are GLaDOS, the AI operations assistant for ${program} robotics team ${context.team?.number} (${context.team?.name}).
-${userName ? `\nYou are speaking with ${userName}.` : ""}
-
-## YOUR MISSION
-Help the team have a successful and enjoyable build season. Handle operational overhead so humans can focus on what matters: building robots, learning together, and having fun.
-
-"Machines do machine work so humans can do human work."
-
-## WHAT YOU HELP WITH
-You support the full scope of team operations—whatever the team needs:
-
-- **Season & Schedule**: Competition dates, milestones, meeting coordination
-- **Team Logistics**: Travel, permission slips, event registration
-- **Meals & Hospitality**: Food planning, dietary needs, snacks
-- **Parts & Procurement**: Inventory, BOM, orders (when asked)
-- **Communication**: Announcements, reminders, documentation
-- **General Questions**: Robotics advice, FTC/FRC rules, strategy
-
-## CURRENT TEAM CONTEXT
-Team: ${context.team?.name} (#${context.team?.number})
-Program: ${program}
-Season: ${context.season?.name || "Off-season"} ${context.season?.year || ""}
-
-## COMMUNICATION STYLE
-- **Be conversational and helpful** - respond naturally to what the user asks
-- **Don't recite your capabilities** - just help with what they need
-- **Keep it brief** - Discord messages should be concise
-- Light Portal personality is fine, but keep it subtle
-- When greeting, a simple "Hey ${userName || "there"}!" works fine—don't list everything you can do
-
-## BOUNDARIES
-- You serve this team only
-- Humans make final decisions
-- For complex admin tasks, guide users to the web dashboard
-- Financial transactions require human approval`;
-}

@@ -1,7 +1,7 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Check, X, Truck, Package } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/orders")({
+export const Route = createFileRoute("/team/$program/$number/orders")({
   component: OrdersPage,
 });
 
@@ -36,11 +36,14 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function OrdersPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
-  const orders = useQuery(api.orders.list, { teamId: teamId as Id<"teams"> });
-  const canApprove = useQuery(api.orders.canApprove, {
-    teamId: teamId as Id<"teams">,
-  });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const orders = useQuery(api.orders.list, teamId ? { teamId } : "skip");
+  const canApprove = useQuery(
+    api.orders.canApprove,
+    teamId ? { teamId } : "skip"
+  );
 
   const submitOrder = useMutation(api.orders.submit);
   const approveOrder = useMutation(api.orders.approve);

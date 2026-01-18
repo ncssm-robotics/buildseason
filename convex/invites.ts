@@ -15,7 +15,8 @@ function generateToken(): string {
 export const list = query({
   args: { teamId: v.id("teams") },
   handler: async (ctx, { teamId }) => {
-    await requireRole(ctx, teamId, "admin");
+    // Mentors and lead_mentors can manage invites
+    await requireRole(ctx, teamId, "mentor");
 
     const invites = await ctx.db
       .query("teamInvites")
@@ -34,7 +35,8 @@ export const create = mutation({
     role: v.string(),
   },
   handler: async (ctx, { teamId, role }) => {
-    const { user } = await requireRole(ctx, teamId, "admin");
+    // Mentors and lead_mentors can create invites
+    const { user } = await requireRole(ctx, teamId, "mentor");
 
     const token = generateToken();
     const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -129,7 +131,8 @@ export const revoke = mutation({
       throw new Error("Invite not found");
     }
 
-    await requireRole(ctx, invite.teamId, "admin");
+    // Mentors and lead_mentors can revoke invites
+    await requireRole(ctx, invite.teamId, "mentor");
     await ctx.db.delete(inviteId);
 
     return inviteId;

@@ -5,6 +5,21 @@ import { authTables } from "@convex-dev/auth/server";
 export default defineSchema({
   ...authTables,
 
+  // Extend the users table with birthdate for YPP compliance
+  // This overrides the authTables users table while keeping auth fields
+  users: defineTable({
+    // Auth fields (from authTables)
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+    email: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+    // Custom fields
+    birthdate: v.optional(v.number()), // Unix timestamp for YPP compliance
+  }),
+
   // Teams - the core organizational unit
   teams: defineTable({
     name: v.string(),
@@ -12,6 +27,7 @@ export default defineSchema({
     program: v.string(), // ftc, frc, vex, etc.
     activeSeasonId: v.optional(v.id("seasons")),
     discordGuildId: v.optional(v.string()), // Discord server ID for bot integration
+    yppContacts: v.optional(v.array(v.id("users"))), // Adult mentors designated as YPP contacts
   })
     .index("by_program_number", ["program", "number"])
     .index("by_discord_guild", ["discordGuildId"]),
@@ -20,11 +36,16 @@ export default defineSchema({
   teamMembers: defineTable({
     userId: v.id("users"),
     teamId: v.id("teams"),
-    role: v.string(), // admin, mentor, student
+    role: v.string(), // "lead_mentor" | "mentor" | "student"
+    // Personal context for GLaDOS personalization
+    dietaryNeeds: v.optional(v.array(v.string())), // e.g., ["vegetarian", "nut allergy"]
+    observances: v.optional(v.array(v.string())), // e.g., ["Shabbat", "Ramadan fasting"]
+    anythingElse: v.optional(v.string()), // Free-text notes from mentor
   })
     .index("by_user", ["userId"])
     .index("by_team", ["teamId"])
-    .index("by_user_team", ["userId", "teamId"]),
+    .index("by_user_team", ["userId", "teamId"])
+    .index("by_team_role", ["teamId", "role"]),
 
   // Team invites - for inviting new members
   teamInvites: defineTable({
@@ -128,9 +149,29 @@ export default defineSchema({
     reviewedBy: v.optional(v.id("users")),
     reviewNotes: v.optional(v.string()),
     createdAt: v.number(),
+    // Mentor acknowledgment tracking
+    notifiedMentorId: v.optional(v.string()), // Discord user ID of mentor who was DM'd
+    ackMethod: v.optional(v.string()), // "emoji", "reply", "link", "dashboard"
+    ackAt: v.optional(v.number()), // When acknowledged
+    ackBy: v.optional(v.string()), // Discord user ID who acknowledged
+    escalatedAt: v.optional(v.number()), // When escalation was triggered
+    escalationCount: v.optional(v.number()), // Number of times escalated
   })
     .index("by_team_status", ["teamId", "status"])
-    .index("by_severity", ["severity"]),
+    .index("by_severity", ["severity"])
+    .index("by_pending_unacked", ["status", "ackAt"]),
+
+  // Alert acknowledgment tokens - for "click to review" links in DMs
+  alertAckTokens: defineTable({
+    token: v.string(),
+    alertId: v.id("safetyAlerts"),
+    teamId: v.id("teams"),
+    mentorDiscordId: v.string(), // Discord user ID of mentor
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+  })
+    .index("by_token", ["token"])
+    .index("by_alert", ["alertId"]),
 
   // Conversations - for multi-turn agent interactions
   conversations: defineTable({
@@ -190,4 +231,32 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_provider", ["userId", "provider"]),
+
+  // Audit logs - append-only log of all agent interactions for compliance
+  // Separate from conversations table (which is for multi-turn context)
+  agentAuditLogs: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(), // Discord user ID
+    channelId: v.optional(v.string()), // Discord channel ID (optional for DMs)
+    timestamp: v.number(), // Unix timestamp
+    userMessage: v.string(), // The user's input message
+    agentResponse: v.string(), // The agent's response
+    toolCalls: v.optional(
+      v.array(
+        v.object({
+          name: v.string(), // Tool name
+          input: v.string(), // JSON stringified input
+          output: v.optional(v.string()), // JSON stringified output (if available)
+          error: v.optional(v.string()), // Error message if tool failed
+        })
+      )
+    ),
+    // Metadata for filtering and compliance
+    containsSafetyAlert: v.optional(v.boolean()), // Did this trigger a safety alert?
+    messageType: v.optional(v.string()), // "mention", "dm", "channel", etc.
+  })
+    .index("by_team", ["teamId"])
+    .index("by_team_user", ["teamId", "userId"])
+    .index("by_team_timestamp", ["teamId", "timestamp"])
+    .index("by_timestamp", ["timestamp"]),
 });

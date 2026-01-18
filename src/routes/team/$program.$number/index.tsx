@@ -1,7 +1,6 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
 import {
   Card,
   CardContent,
@@ -12,19 +11,21 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, ShoppingCart, AlertTriangle, Users } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/")({
+export const Route = createFileRoute("/team/$program/$number/")({
   component: TeamOverviewPage,
 });
 
 function TeamOverviewPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
-  const team = useQuery(api.teams.get, { teamId: teamId as Id<"teams"> });
-  const parts = useQuery(api.parts.list, { teamId: teamId as Id<"teams"> });
-  const lowStock = useQuery(api.parts.getLowStock, {
-    teamId: teamId as Id<"teams">,
-  });
-  const members = useQuery(api.members.list, { teamId: teamId as Id<"teams"> });
-  const orders = useQuery(api.orders.list, { teamId: teamId as Id<"teams"> });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const parts = useQuery(api.parts.list, teamId ? { teamId } : "skip");
+  const lowStock = useQuery(
+    api.parts.getLowStock,
+    teamId ? { teamId } : "skip"
+  );
+  const members = useQuery(api.members.list, teamId ? { teamId } : "skip");
+  const orders = useQuery(api.orders.list, teamId ? { teamId } : "skip");
 
   const pendingOrders =
     orders?.filter((o) => o.status === "pending").length ?? 0;

@@ -13,7 +13,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Link as LinkIcon, Check } from "lucide-react";
+import { LogOut, Link as LinkIcon, Check, Settings } from "lucide-react";
 
 // Convex site URL for Discord linking
 // Prefer explicit env var, fall back to pattern replacement, then hardcoded default
@@ -22,7 +22,11 @@ const CONVEX_SITE_URL =
   import.meta.env.VITE_CONVEX_URL?.replace(".cloud", ".site") ||
   "https://enchanted-mastiff-533.convex.site";
 
-export function UserDropdown() {
+interface UserDropdownProps {
+  variant?: "compact" | "sidebar";
+}
+
+export function UserDropdown({ variant = "compact" }: UserDropdownProps) {
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
   const user = useQuery(api.users.getUser);
@@ -89,17 +93,34 @@ export function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage
-              src={user?.image ?? undefined}
-              alt={user?.name ?? "User"}
-            />
-            <AvatarFallback>
-              {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+        {variant === "sidebar" ? (
+          <Button variant="ghost" className="w-full justify-start gap-2 px-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage
+                src={user?.image ?? undefined}
+                alt={user?.name ?? "User"}
+              />
+              <AvatarFallback>
+                {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-left truncate">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+            </div>
+          </Button>
+        ) : (
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Avatar className="h-10 w-10">
+              <AvatarImage
+                src={user?.image ?? undefined}
+                alt={user?.name ?? "User"}
+              />
+              <AvatarFallback>
+                {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         {/* User info */}
@@ -185,6 +206,18 @@ export function UserDropdown() {
         )}
 
         <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() =>
+            navigate({
+              to: "/settings",
+              search: { discord_link_token: undefined, error: undefined },
+            })
+          }
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
+        </DropdownMenuItem>
 
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
