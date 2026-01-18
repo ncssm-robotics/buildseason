@@ -48,6 +48,7 @@ import type * as orders from "../orders.js";
 import type * as parts from "../parts.js";
 import type * as providers from "../providers.js";
 import type * as providers_actions from "../providers/actions.js";
+import type * as safetyAlerts from "../safetyAlerts.js";
 import type * as seasons from "../seasons.js";
 import type * as teams from "../teams.js";
 import type * as teams_yppContacts from "../teams/yppContacts.js";
@@ -101,6 +102,7 @@ declare const fullApi: ApiFromModules<{
   parts: typeof parts;
   providers: typeof providers;
   "providers/actions": typeof providers_actions;
+  safetyAlerts: typeof safetyAlerts;
   seasons: typeof seasons;
   teams: typeof teams;
   "teams/yppContacts": typeof teams_yppContacts;

@@ -17,6 +17,7 @@ import { Route as TeamsJoinRouteImport } from "./routes/teams/join";
 import { Route as TeamTeamIdRouteImport } from "./routes/team/$teamId";
 import { Route as TeamTeamIdIndexRouteImport } from "./routes/team/$teamId/index";
 import { Route as TeamTeamIdSettingsRouteImport } from "./routes/team/$teamId/settings";
+import { Route as TeamTeamIdSafetyRouteImport } from "./routes/team/$teamId/safety";
 import { Route as TeamTeamIdProfileSetupRouteImport } from "./routes/team/$teamId/profile-setup";
 import { Route as TeamTeamIdPartsRouteImport } from "./routes/team/$teamId/parts";
 import { Route as TeamTeamIdOrdersRouteImport } from "./routes/team/$teamId/orders";
@@ -63,6 +64,11 @@ const TeamTeamIdSettingsRoute = TeamTeamIdSettingsRouteImport.update({
   path: "/settings",
   getParentRoute: () => TeamTeamIdRoute,
 } as any);
+const TeamTeamIdSafetyRoute = TeamTeamIdSafetyRouteImport.update({
+  id: "/safety",
+  path: "/safety",
+  getParentRoute: () => TeamTeamIdRoute,
+} as any);
 const TeamTeamIdProfileSetupRoute = TeamTeamIdProfileSetupRouteImport.update({
   id: "/profile-setup",
   path: "/profile-setup",
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
   "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
   "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/safety": typeof TeamTeamIdSafetyRoute;
   "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
   "/team/$teamId/": typeof TeamTeamIdIndexRoute;
 }
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
   "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
   "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/safety": typeof TeamTeamIdSafetyRoute;
   "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
   "/team/$teamId": typeof TeamTeamIdIndexRoute;
 }
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   "/team/$teamId/orders": typeof TeamTeamIdOrdersRoute;
   "/team/$teamId/parts": typeof TeamTeamIdPartsRoute;
   "/team/$teamId/profile-setup": typeof TeamTeamIdProfileSetupRoute;
+  "/team/$teamId/safety": typeof TeamTeamIdSafetyRoute;
   "/team/$teamId/settings": typeof TeamTeamIdSettingsRoute;
   "/team/$teamId/": typeof TeamTeamIdIndexRoute;
 }
@@ -148,6 +157,7 @@ export interface FileRouteTypes {
     | "/team/$teamId/orders"
     | "/team/$teamId/parts"
     | "/team/$teamId/profile-setup"
+    | "/team/$teamId/safety"
     | "/team/$teamId/settings"
     | "/team/$teamId/";
   fileRoutesByTo: FileRoutesByTo;
@@ -162,6 +172,7 @@ export interface FileRouteTypes {
     | "/team/$teamId/orders"
     | "/team/$teamId/parts"
     | "/team/$teamId/profile-setup"
+    | "/team/$teamId/safety"
     | "/team/$teamId/settings"
     | "/team/$teamId";
   id:
@@ -177,6 +188,7 @@ export interface FileRouteTypes {
     | "/team/$teamId/orders"
     | "/team/$teamId/parts"
     | "/team/$teamId/profile-setup"
+    | "/team/$teamId/safety"
     | "/team/$teamId/settings"
     | "/team/$teamId/";
   fileRoutesById: FileRoutesById;
@@ -248,6 +260,13 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof TeamTeamIdSettingsRouteImport;
       parentRoute: typeof TeamTeamIdRoute;
     };
+    "/team/$teamId/safety": {
+      id: "/team/$teamId/safety";
+      path: "/safety";
+      fullPath: "/team/$teamId/safety";
+      preLoaderRoute: typeof TeamTeamIdSafetyRouteImport;
+      parentRoute: typeof TeamTeamIdRoute;
+    };
     "/team/$teamId/profile-setup": {
       id: "/team/$teamId/profile-setup";
       path: "/profile-setup";
@@ -292,6 +311,7 @@ interface TeamTeamIdRouteChildren {
   TeamTeamIdOrdersRoute: typeof TeamTeamIdOrdersRoute;
   TeamTeamIdPartsRoute: typeof TeamTeamIdPartsRoute;
   TeamTeamIdProfileSetupRoute: typeof TeamTeamIdProfileSetupRoute;
+  TeamTeamIdSafetyRoute: typeof TeamTeamIdSafetyRoute;
   TeamTeamIdSettingsRoute: typeof TeamTeamIdSettingsRoute;
   TeamTeamIdIndexRoute: typeof TeamTeamIdIndexRoute;
 }
@@ -302,6 +322,7 @@ const TeamTeamIdRouteChildren: TeamTeamIdRouteChildren = {
   TeamTeamIdOrdersRoute: TeamTeamIdOrdersRoute,
   TeamTeamIdPartsRoute: TeamTeamIdPartsRoute,
   TeamTeamIdProfileSetupRoute: TeamTeamIdProfileSetupRoute,
+  TeamTeamIdSafetyRoute: TeamTeamIdSafetyRoute,
   TeamTeamIdSettingsRoute: TeamTeamIdSettingsRoute,
   TeamTeamIdIndexRoute: TeamTeamIdIndexRoute,
 };
