@@ -13,7 +13,7 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOut, Link as LinkIcon, Check } from "lucide-react";
+import { LogOut, Link as LinkIcon, Check, Settings } from "lucide-react";
 
 // Convex site URL for Discord linking
 // Prefer explicit env var, fall back to pattern replacement, then hardcoded default
@@ -185,6 +185,18 @@ export function UserDropdown() {
         )}
 
         <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() =>
+            navigate({
+              to: "/settings",
+              search: { discord_link_token: undefined, error: undefined },
+            })
+          }
+        >
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
+        </DropdownMenuItem>
 
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
