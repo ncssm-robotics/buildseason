@@ -5,3 +5,5 @@ drizzle/
 bun.lock
 *.db
 *.db-*
+convex/_generated/
+src/routeTree.gen.ts
