@@ -197,3 +197,42 @@ export const addYppContact = mutation({
     return teamId;
   },
 });
+
+/**
+ * Remove a user from YPP contacts for a team.
+ * Only lead mentors can manage YPP contacts.
+ * Cannot remove the last YPP contact.
+ */
+export const removeYppContact = mutation({
+  args: {
+    teamId: v.id("teams"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { teamId, userId }) => {
+    await requireRole(ctx, teamId, "lead_mentor");
+
+    const team = await ctx.db.get(teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
+    const currentContacts = team.yppContacts ?? [];
+
+    // Check if user is a YPP contact
+    if (!currentContacts.includes(userId)) {
+      return teamId; // Not a contact, no-op
+    }
+
+    // Cannot remove the last YPP contact
+    if (currentContacts.length === 1) {
+      throw new Error("Cannot remove the last YPP contact");
+    }
+
+    // Remove from yppContacts
+    await ctx.db.patch(teamId, {
+      yppContacts: currentContacts.filter((id) => id !== userId),
+    });
+
+    return teamId;
+  },
+});
