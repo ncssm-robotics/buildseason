@@ -11,7 +11,10 @@ export default defineSchema({
     number: v.string(),
     program: v.string(), // ftc, frc, vex, etc.
     activeSeasonId: v.optional(v.id("seasons")),
-  }).index("by_program_number", ["program", "number"]),
+    discordGuildId: v.optional(v.string()), // Discord server ID for bot integration
+  })
+    .index("by_program_number", ["program", "number"])
+    .index("by_discord_guild", ["discordGuildId"]),
 
   // Team members - links users to teams with roles
   teamMembers: defineTable({
@@ -103,4 +106,88 @@ export default defineSchema({
     quantity: v.number(),
     unitPriceCents: v.number(),
   }).index("by_order", ["orderId"]),
+
+  // Agent configuration - configurable prompts and guardrails
+  agentConfig: defineTable({
+    key: v.string(), // "system_prompt", "safety_rules", etc.
+    value: v.string(),
+    updatedAt: v.number(),
+    updatedBy: v.id("users"),
+  }).index("by_key", ["key"]),
+
+  // Safety alerts - for mentor notification of concerning content
+  safetyAlerts: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(), // Discord user ID
+    channelId: v.optional(v.string()),
+    alertType: v.string(), // "crisis", "escalation", "review"
+    severity: v.string(), // "high", "medium", "low"
+    triggerReason: v.string(),
+    messageContent: v.string(),
+    status: v.string(), // "pending", "reviewed", "resolved"
+    reviewedBy: v.optional(v.id("users")),
+    reviewNotes: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_team_status", ["teamId", "status"])
+    .index("by_severity", ["severity"]),
+
+  // Conversations - for multi-turn agent interactions
+  conversations: defineTable({
+    teamId: v.id("teams"),
+    userId: v.string(), // Discord user ID
+    channelId: v.string(),
+    messages: v.array(
+      v.object({
+        role: v.string(),
+        content: v.string(),
+        timestamp: v.number(),
+      })
+    ),
+    lastActivity: v.number(),
+  })
+    .index("by_team_channel", ["teamId", "channelId"])
+    .index("by_last_activity", ["lastActivity"]),
+
+  // Discord links - maps Discord users to BuildSeason users
+  // For users who sign in via Discord OAuth, this is populated automatically
+  // For users who sign in via Google/GitHub, they can link manually
+  discordLinks: defineTable({
+    userId: v.id("users"), // BuildSeason user
+    discordUserId: v.string(), // Discord user ID
+    discordUsername: v.optional(v.string()), // Discord username for display
+    linkedAt: v.number(),
+    linkedVia: v.string(), // "oauth" | "manual" | "bot_link"
+  })
+    .index("by_user", ["userId"])
+    .index("by_discord_user", ["discordUserId"]),
+
+  // Discord link tokens - for "click here to connect" flow from bot
+  // When an unknown Discord user interacts with bot, we generate a token
+  // They click a link, log in, and the token connects their accounts
+  discordLinkTokens: defineTable({
+    token: v.string(),
+    discordUserId: v.string(),
+    discordUsername: v.optional(v.string()),
+    guildId: v.optional(v.string()),
+    expiresAt: v.number(),
+    usedAt: v.optional(v.number()),
+    usedBy: v.optional(v.id("users")),
+  })
+    .index("by_token", ["token"])
+    .index("by_discord_user", ["discordUserId"]),
+
+  // Provider profiles - stores usernames/display names for OAuth providers
+  // This supplements authAccounts (which only stores provider IDs)
+  providerProfiles: defineTable({
+    userId: v.id("users"),
+    provider: v.string(), // "github", "google", "discord"
+    username: v.optional(v.string()), // Provider-specific username
+    displayName: v.optional(v.string()), // Display name from provider
+    avatarUrl: v.optional(v.string()), // Avatar URL from provider
+    email: v.optional(v.string()), // Email from provider (if different)
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_provider", ["userId", "provider"]),
 });
