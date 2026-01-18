@@ -42,13 +42,17 @@ function JoinTeamPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!invite?.team) return;
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const teamId = await acceptInvite({ token });
+      await acceptInvite({ token });
       // Redirect to profile setup for new members
-      navigate({ to: "/team/$teamId/profile-setup", params: { teamId } });
+      navigate({
+        to: "/team/$program/$number/profile-setup",
+        params: { program: invite.team.program, number: invite.team.number },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to join team");
     } finally {

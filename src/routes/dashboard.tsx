@@ -113,8 +113,8 @@ function DashboardPage() {
             {teams.map((team) => (
               <Link
                 key={team._id}
-                to="/team/$teamId"
-                params={{ teamId: team._id }}
+                to="/team/$program/$number"
+                params={{ program: team.program, number: team.number }}
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader>

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,7 +47,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Plus, MoreHorizontal, Copy, Check, User } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/members")({
+export const Route = createFileRoute("/team/$program/$number/members")({
   component: MembersPage,
 });
 
@@ -66,9 +66,11 @@ const ROLES = [
 ];
 
 function MembersPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
-  const members = useQuery(api.members.list, { teamId: teamId as Id<"teams"> });
-  const invites = useQuery(api.invites.list, { teamId: teamId as Id<"teams"> });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const members = useQuery(api.members.list, teamId ? { teamId } : "skip");
+  const invites = useQuery(api.invites.list, teamId ? { teamId } : "skip");
   const user = useQuery(api.users.getUser);
 
   const createInvite = useMutation(api.invites.create);
@@ -89,8 +91,9 @@ function MembersPage() {
     currentMember?.role === "admin"; // backwards compat
 
   const handleCreateInvite = async () => {
+    if (!teamId) return;
     const { token } = await createInvite({
-      teamId: teamId as Id<"teams">,
+      teamId,
       role: inviteRole,
     });
     setGeneratedToken(token);
@@ -112,12 +115,14 @@ function MembersPage() {
     memberId: Id<"teamMembers">,
     role: string
   ) => {
-    await updateRole({ teamId: teamId as Id<"teams">, memberId, role });
+    if (!teamId) return;
+    await updateRole({ teamId, memberId, role });
   };
 
   const handleRemoveMember = async (memberId: Id<"teamMembers">) => {
+    if (!teamId) return;
     if (confirm("Remove this member from the team?")) {
-      await removeMember({ teamId: teamId as Id<"teams">, memberId });
+      await removeMember({ teamId, memberId });
     }
   };
 
@@ -131,7 +136,10 @@ function MembersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to="/team/$teamId/profile-setup" params={{ teamId }}>
+          <Link
+            to="/team/$program/$number/profile-setup"
+            params={{ program, number }}
+          >
             <Button variant="outline">
               <User className="mr-2 h-4 w-4" />
               Edit My Profile

@@ -313,10 +313,17 @@ export const getByAckToken = query({
       return { error: "alert_not_found", alert: null };
     }
 
+    const team = await ctx.db.get(tokenDoc.teamId);
+    if (!team) {
+      return { error: "team_not_found", alert: null };
+    }
+
     return {
       error: null,
       alert,
       teamId: tokenDoc.teamId,
+      program: team.program,
+      number: team.number,
     };
   },
 });
@@ -343,9 +350,19 @@ export const acknowledgeByToken = mutation({
       throw new Error("Token has expired");
     }
 
+    const team = await ctx.db.get(tokenDoc.teamId);
+    if (!team) {
+      throw new Error("Team not found");
+    }
+
     if (tokenDoc.usedAt) {
       // Already acknowledged - just return success
-      return { alertId: tokenDoc.alertId, teamId: tokenDoc.teamId };
+      return {
+        alertId: tokenDoc.alertId,
+        teamId: tokenDoc.teamId,
+        program: team.program,
+        number: team.number,
+      };
     }
 
     const alert = await ctx.db.get(tokenDoc.alertId);
@@ -368,7 +385,12 @@ export const acknowledgeByToken = mutation({
       });
     }
 
-    return { alertId: tokenDoc.alertId, teamId: tokenDoc.teamId };
+    return {
+      alertId: tokenDoc.alertId,
+      teamId: tokenDoc.teamId,
+      program: team.program,
+      number: team.number,
+    };
   },
 });
 

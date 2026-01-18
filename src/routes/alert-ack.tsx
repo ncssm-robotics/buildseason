@@ -81,8 +81,8 @@ function AlertAckPage() {
         // Redirect to safety dashboard after a short delay
         setTimeout(() => {
           navigate({
-            to: "/team/$teamId/safety",
-            params: { teamId: result.teamId },
+            to: "/team/$program/$number/safety",
+            params: { program: result.program, number: result.number },
           });
         }, 2000);
       } catch (err) {
@@ -166,10 +166,13 @@ function AlertAckPage() {
                 variant="link"
                 className="p-0 h-auto"
                 onClick={() => {
-                  if (tokenValidation?.teamId) {
+                  if (tokenValidation?.program && tokenValidation?.number) {
                     navigate({
-                      to: "/team/$teamId/safety",
-                      params: { teamId: tokenValidation.teamId },
+                      to: "/team/$program/$number/safety",
+                      params: {
+                        program: tokenValidation.program,
+                        number: tokenValidation.number,
+                      },
                     });
                   }
                 }}

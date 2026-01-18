@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,26 +46,32 @@ import {
   Shield,
 } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/safety")({
+export const Route = createFileRoute("/team/$program/$number/safety")({
   component: SafetyDashboardPage,
 });
 
 type AlertStatus = "pending" | "reviewed" | "resolved" | "all";
 
 function SafetyDashboardPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
   const [statusFilter, setStatusFilter] = useState<AlertStatus>("pending");
   const [selectedAlertId, setSelectedAlertId] =
     useState<Id<"safetyAlerts"> | null>(null);
 
-  const alerts = useQuery(api.safetyAlerts.listByTeam, {
-    teamId: teamId as Id<"teams">,
-    status: statusFilter === "all" ? undefined : statusFilter,
-  });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
 
-  const stats = useQuery(api.safetyAlerts.getStats, {
-    teamId: teamId as Id<"teams">,
-  });
+  const alerts = useQuery(
+    api.safetyAlerts.listByTeam,
+    teamId
+      ? { teamId, status: statusFilter === "all" ? undefined : statusFilter }
+      : "skip"
+  );
+
+  const stats = useQuery(
+    api.safetyAlerts.getStats,
+    teamId ? { teamId } : "skip"
+  );
 
   const selectedAlert = useQuery(
     api.safetyAlerts.get,

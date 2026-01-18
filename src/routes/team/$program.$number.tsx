@@ -11,7 +11,6 @@ import { useConvexAuth } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
-import { Id } from "../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,7 +41,7 @@ const CONVEX_SITE_URL =
   import.meta.env.VITE_CONVEX_URL?.replace(".cloud", ".site") ||
   "https://enchanted-mastiff-533.convex.site";
 
-export const Route = createFileRoute("/team/$teamId")({
+export const Route = createFileRoute("/team/$program/$number")({
   component: TeamLayout,
 });
 
@@ -57,11 +56,11 @@ const NAV_ITEMS = [
 
 function TeamLayout() {
   const navigate = useNavigate();
-  const { teamId } = useParams({ from: "/team/$teamId" });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
   const { isAuthenticated, isLoading: authLoading } = useConvexAuth();
   const { signOut } = useAuthActions();
 
-  const team = useQuery(api.teams.get, { teamId: teamId as Id<"teams"> });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
   const user = useQuery(api.users.getUser);
   const connectedAccounts = useQuery(api.providers.getConnectedAccounts);
   const completeLinkAccount = useMutation(
@@ -159,10 +158,11 @@ function TeamLayout() {
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1">
           {NAV_ITEMS.map((item) => {
-            const fullPath = `/team/${teamId}${item.path}`;
+            const basePath = `/team/${program}/${number}`;
+            const fullPath = `${basePath}${item.path}`;
             const isActive =
               item.path === ""
-                ? pathname === `/team/${teamId}`
+                ? pathname === basePath
                 : pathname.startsWith(fullPath);
 
             return (

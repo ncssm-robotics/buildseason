@@ -61,13 +61,13 @@ function NewTeamPage() {
       // Convert birthdate string to Unix timestamp
       const birthdateTimestamp = new Date(birthdate).getTime();
 
-      const teamId = await createTeam({
+      await createTeam({
         name,
         number,
         program,
         creatorBirthdate: birthdateTimestamp,
       });
-      navigate({ to: "/team/$teamId", params: { teamId } });
+      navigate({ to: "/team/$program/$number", params: { program, number } });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create team");
     } finally {

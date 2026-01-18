@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,14 +34,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Minus, Plus as PlusIcon } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/parts")({
+export const Route = createFileRoute("/team/$program/$number/parts")({
   component: PartsPage,
 });
 
 function PartsPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
-  const parts = useQuery(api.parts.list, { teamId: teamId as Id<"teams"> });
-  const vendors = useQuery(api.vendors.list, { teamId: teamId as Id<"teams"> });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const parts = useQuery(api.parts.list, teamId ? { teamId } : "skip");
+  const vendors = useQuery(api.vendors.list, teamId ? { teamId } : "skip");
   const createPart = useMutation(api.parts.create);
   const adjustQuantity = useMutation(api.parts.adjustQuantity);
 
@@ -64,8 +66,9 @@ function PartsPage() {
   );
 
   const handleCreatePart = async () => {
+    if (!teamId) return;
     await createPart({
-      teamId: teamId as Id<"teams">,
+      teamId,
       name: newPart.name,
       sku: newPart.sku || undefined,
       vendorId: newPart.vendorId

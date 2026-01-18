@@ -6,7 +6,6 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
-export const Route = createFileRoute("/team/$teamId/profile-setup")({
+export const Route = createFileRoute("/team/$program/$number/profile-setup")({
   component: ProfileSetupPage,
 });
 
@@ -45,11 +44,15 @@ const COMMON_OBSERVANCES = [
 
 function ProfileSetupPage() {
   const navigate = useNavigate();
-  const { teamId } = useParams({ from: "/team/$teamId/profile-setup" });
-  const team = useQuery(api.teams.get, { teamId: teamId as Id<"teams"> });
-  const membership = useQuery(api.members.getMyMembership, {
-    teamId: teamId as Id<"teams">,
+  const { program, number } = useParams({
+    from: "/team/$program/$number/profile-setup",
   });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const membership = useQuery(
+    api.members.getMyMembership,
+    teamId ? { teamId } : "skip"
+  );
   const updateProfile = useMutation(api.members.updateMyProfile);
 
   const [dietaryNeeds, setDietaryNeeds] = useState<string[]>([]);
@@ -95,23 +98,24 @@ function ProfileSetupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!teamId) return;
     setIsSubmitting(true);
 
     try {
       await updateProfile({
-        teamId: teamId as Id<"teams">,
+        teamId,
         dietaryNeeds: dietaryNeeds.length > 0 ? dietaryNeeds : undefined,
         observances: observances.length > 0 ? observances : undefined,
         anythingElse: anythingElse.trim() || undefined,
       });
-      navigate({ to: "/team/$teamId", params: { teamId } });
+      navigate({ to: "/team/$program/$number", params: { program, number } });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSkip = () => {
-    navigate({ to: "/team/$teamId", params: { teamId } });
+    navigate({ to: "/team/$program/$number", params: { program, number } });
   };
 
   if (!team || !membership) {

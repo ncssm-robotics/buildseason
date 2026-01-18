@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
-import { Id } from "../../../../convex/_generated/dataModel";
+import type { Id } from "../../../../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,16 +23,17 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
-export const Route = createFileRoute("/team/$teamId/settings")({
+export const Route = createFileRoute("/team/$program/$number/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { teamId } = useParams({ from: "/team/$teamId" });
+  const { program, number } = useParams({ from: "/team/$program/$number" });
 
-  const team = useQuery(api.teams.get, { teamId: teamId as Id<"teams"> });
-  const seasons = useQuery(api.seasons.list, { teamId: teamId as Id<"teams"> });
-  const members = useQuery(api.members.list, { teamId: teamId as Id<"teams"> });
+  const team = useQuery(api.teams.getByProgramAndNumber, { program, number });
+  const teamId = team?._id;
+  const seasons = useQuery(api.seasons.list, teamId ? { teamId } : "skip");
+  const members = useQuery(api.members.list, teamId ? { teamId } : "skip");
   const user = useQuery(api.users.getUser);
 
   const updateTeam = useMutation(api.teams.update);
@@ -54,12 +55,12 @@ function SettingsPage() {
   }
 
   const handleSaveTeam = async () => {
-    if (!teamName.trim()) return;
+    if (!teamId || !teamName.trim()) return;
 
     setIsSaving(true);
     try {
       await updateTeam({
-        teamId: teamId as Id<"teams">,
+        teamId,
         name: teamName,
       });
     } finally {
@@ -68,10 +69,10 @@ function SettingsPage() {
   };
 
   const handleCreateSeason = async () => {
-    if (!newSeasonName.trim() || !newSeasonYear.trim()) return;
+    if (!teamId || !newSeasonName.trim() || !newSeasonYear.trim()) return;
 
     await createSeason({
-      teamId: teamId as Id<"teams">,
+      teamId,
       name: newSeasonName,
       year: newSeasonYear,
     });
@@ -81,8 +82,9 @@ function SettingsPage() {
   };
 
   const handleSetActiveSeason = async (seasonId: string) => {
+    if (!teamId) return;
     await setActiveSeason({
-      teamId: teamId as Id<"teams">,
+      teamId,
       seasonId: seasonId as Id<"seasons">,
     });
   };
