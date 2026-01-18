@@ -22,7 +22,11 @@ const CONVEX_SITE_URL =
   import.meta.env.VITE_CONVEX_URL?.replace(".cloud", ".site") ||
   "https://enchanted-mastiff-533.convex.site";
 
-export function UserDropdown() {
+interface UserDropdownProps {
+  variant?: "compact" | "sidebar";
+}
+
+export function UserDropdown({ variant = "compact" }: UserDropdownProps) {
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
   const user = useQuery(api.users.getUser);
@@ -89,17 +93,34 @@ export function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage
-              src={user?.image ?? undefined}
-              alt={user?.name ?? "User"}
-            />
-            <AvatarFallback>
-              {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
-            </AvatarFallback>
-          </Avatar>
-        </Button>
+        {variant === "sidebar" ? (
+          <Button variant="ghost" className="w-full justify-start gap-2 px-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage
+                src={user?.image ?? undefined}
+                alt={user?.name ?? "User"}
+              />
+              <AvatarFallback>
+                {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-left truncate">
+              <p className="text-sm font-medium truncate">{user?.name}</p>
+            </div>
+          </Button>
+        ) : (
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Avatar className="h-10 w-10">
+              <AvatarImage
+                src={user?.image ?? undefined}
+                alt={user?.name ?? "User"}
+              />
+              <AvatarFallback>
+                {user?.name?.charAt(0)?.toUpperCase() ?? "U"}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         {/* User info */}
