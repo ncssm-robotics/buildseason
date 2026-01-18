@@ -29,9 +29,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }})
-          echo "head_sha=$(echo "$PR_DATA" | jq -r '.head.sha')" >> $GITHUB_OUTPUT
-          echo "pr_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.issue.number }}) || exit 1
+          HEAD_SHA=$(echo "$PR_DATA" | jq -r '.head.sha')
+          if [ "$HEAD_SHA" = "null" ] || [ -z "$HEAD_SHA" ]; then
+            echo "::error::Failed to get PR head SHA"
+            exit 1
+          fi
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
 
       # Checkout the PR's code (not base branch) for review
       - name: Checkout repository
