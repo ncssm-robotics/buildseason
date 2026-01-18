@@ -30,6 +30,10 @@ function AlertAckPage() {
     "loading"
   );
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [successData, setSuccessData] = useState<{
+    program: string;
+    number: string;
+  } | null>(null);
 
   const tokenValidation = useQuery(
     api.safetyAlerts.getByAckToken,
@@ -77,6 +81,7 @@ function AlertAckPage() {
     const acknowledge = async () => {
       try {
         const result = await acknowledgeByToken({ token });
+        setSuccessData({ program: result.program, number: result.number });
         setStatus("success");
         // Redirect to safety dashboard after a short delay
         setTimeout(() => {
@@ -159,22 +164,20 @@ function AlertAckPage() {
               </Button>
             </div>
           )}
-          {status === "success" && (
+          {status === "success" && successData && (
             <div className="text-center text-sm text-muted-foreground">
               <p>If you're not redirected automatically,</p>
               <Button
                 variant="link"
                 className="p-0 h-auto"
                 onClick={() => {
-                  if (tokenValidation?.program && tokenValidation?.number) {
-                    navigate({
-                      to: "/team/$program/$number/safety",
-                      params: {
-                        program: tokenValidation.program,
-                        number: tokenValidation.number,
-                      },
-                    });
-                  }
+                  navigate({
+                    to: "/team/$program/$number/safety",
+                    params: {
+                      program: successData.program,
+                      number: successData.number,
+                    },
+                  });
                 }}
               >
                 click here to continue

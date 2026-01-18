@@ -55,8 +55,11 @@ describe("YPP utilities", () => {
       expect(isMentorRole(TEAM_ROLES.STUDENT)).toBe(false);
     });
 
+    it("returns true for legacy admin role (backwards compat)", () => {
+      expect(isMentorRole("admin")).toBe(true);
+    });
+
     it("returns false for unknown roles", () => {
-      expect(isMentorRole("admin")).toBe(false);
       expect(isMentorRole("unknown")).toBe(false);
     });
   });
@@ -76,6 +79,11 @@ describe("YPP utilities", () => {
 
     it("returns false if no birthdate", () => {
       expect(canBeYppContact(TEAM_ROLES.MENTOR, undefined)).toBe(false);
+    });
+
+    it("allows legacy admin role as YPP contact", () => {
+      const adultBirthdate = new Date("2000-01-01").getTime();
+      expect(canBeYppContact("admin", adultBirthdate)).toBe(true);
     });
   });
 

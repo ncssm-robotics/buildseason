@@ -1,4 +1,4 @@
-import { internalMutation } from "../../_generated/server";
+import { internalMutation, internalAction } from "../../_generated/server";
 import { internal } from "../../_generated/api";
 import { v } from "convex/values";
 
@@ -79,15 +79,15 @@ export const createAlert = internalMutation({
 
     // Schedule DM sending for each contact
     for (const contact of contactsToNotify) {
-      // Create tracking token for acknowledgment
-      const token = await ctx.db.insert("discordLinkTokens", {
-        token: `alert-${alertId}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        discordUserId: contact.discordUserId,
+      // Create tracking token for acknowledgment using the correct table
+      const tokenString = `alert-${alertId}-${Date.now()}-${crypto.randomUUID().replace(/-/g, "")}`;
+      await ctx.db.insert("alertAckTokens", {
+        token: tokenString,
+        alertId,
+        teamId: args.teamId,
+        mentorDiscordId: contact.discordUserId,
         expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
       });
-
-      // Get the token string for the DM
-      const tokenDoc = await ctx.db.get(token);
 
       // Schedule the DM action
       await ctx.scheduler.runAfter(
@@ -101,7 +101,7 @@ export const createAlert = internalMutation({
           severity: args.severity,
           triggerReason: args.triggerReason,
           alertId,
-          trackingToken: tokenDoc?.token || "",
+          trackingToken: tokenString,
         }
       );
     }
@@ -115,9 +115,9 @@ export const createAlert = internalMutation({
 
 /**
  * Send a Discord DM to a YPP contact about an alert.
- * This is scheduled as an action so it can make external HTTP calls.
+ * This is an action so it can make external HTTP calls to Discord's API.
  */
-export const sendAlertDM = internalMutation({
+export const sendAlertDM = internalAction({
   args: {
     discordUserId: v.string(),
     mentorName: v.string(),

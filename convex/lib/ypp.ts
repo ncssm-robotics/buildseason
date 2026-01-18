@@ -44,9 +44,14 @@ export type TeamRole = (typeof TEAM_ROLES)[keyof typeof TEAM_ROLES];
 
 /**
  * Check if role is a mentor role (lead_mentor or mentor)
+ * Also handles legacy "admin" role for backwards compatibility
  */
 export function isMentorRole(role: string): boolean {
-  return role === TEAM_ROLES.LEAD_MENTOR || role === TEAM_ROLES.MENTOR;
+  return (
+    role === TEAM_ROLES.LEAD_MENTOR ||
+    role === TEAM_ROLES.MENTOR ||
+    role === "admin" // backwards compat: admin maps to lead_mentor
+  );
 }
 
 /**
