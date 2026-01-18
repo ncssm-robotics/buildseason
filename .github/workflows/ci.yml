@@ -20,6 +20,8 @@ jobs:
         run: bun install
 
       - name: Verify generated files are up-to-date
+        env:
+          CONVEX_DEPLOYMENT: dev:enchanted-mastiff-533
         run: |
           npx convex codegen
           git diff --exit-code convex/_generated/ || {
