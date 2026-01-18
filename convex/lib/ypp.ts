@@ -66,35 +66,46 @@ export function canBeYppContact(
 }
 
 /**
- * Check if today is someone's birthday
+ * Check if a year is a leap year.
  */
-export function isBirthdayToday(birthdate: number): boolean {
-  const today = new Date();
-  const birth = new Date(birthdate);
-  return (
-    today.getMonth() === birth.getMonth() && today.getDate() === birth.getDate()
-  );
+export function isLeapYear(year: number): boolean {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 /**
- * Get users with birthdays on a given date
- * Handles Feb 29 birthdays by treating them as Mar 1 in non-leap years
+ * Check if today is someone's birthday (uses UTC for server-side consistency)
  */
-export function isBirthdayOnDate(birthdate: number, date: Date): boolean {
+export function isBirthdayToday(birthdate: number): boolean {
+  return isBirthdayOnDate(birthdate, new Date());
+}
+
+/**
+ * Check if a given date is someone's birthday.
+ * Uses UTC for server-side consistency.
+ * Handles Feb 29 birthdays by treating them as Mar 1 in non-leap years.
+ *
+ * @param birthdate - Birthday as Unix timestamp
+ * @param checkDate - The date to check against (defaults to now)
+ */
+export function isBirthdayOnDate(birthdate: number, checkDate?: Date): boolean {
+  const today = checkDate ?? new Date();
   const birth = new Date(birthdate);
-  const birthMonth = birth.getMonth();
-  const birthDay = birth.getDate();
+
+  const todayMonth = today.getUTCMonth();
+  const todayDay = today.getUTCDate();
+  const currentYear = today.getUTCFullYear();
+
+  let birthMonth = birth.getUTCMonth();
+  let birthDay = birth.getUTCDate();
 
   // Handle Feb 29 birthdays in non-leap years
   if (birthMonth === 1 && birthDay === 29) {
-    const isLeapYear =
-      (date.getFullYear() % 4 === 0 && date.getFullYear() % 100 !== 0) ||
-      date.getFullYear() % 400 === 0;
-    if (!isLeapYear) {
+    if (!isLeapYear(currentYear)) {
       // Treat as March 1
-      return date.getMonth() === 2 && date.getDate() === 1;
+      birthMonth = 2;
+      birthDay = 1;
     }
   }
 
-  return date.getMonth() === birthMonth && date.getDate() === birthDay;
+  return todayMonth === birthMonth && todayDay === birthDay;
 }

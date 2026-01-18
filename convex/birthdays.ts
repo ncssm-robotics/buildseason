@@ -6,6 +6,10 @@ import {
 import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
+import { isLeapYear, isBirthdayOnDate } from "./lib/ypp";
+
+// Re-export for tests
+export { isLeapYear, isBirthdayOnDate };
 
 /**
  * Birthday feature for GLaDOS.
@@ -13,13 +17,6 @@ import type { Id } from "./_generated/dataModel";
  * Daily cron job checks for team members with birthdays today and
  * sends personalized messages to their team's Discord channel.
  */
-
-/**
- * Check if a year is a leap year.
- */
-export function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
 
 /**
  * Get the month and day from a Unix timestamp.
@@ -38,7 +35,7 @@ export function getMonthDay(
 
   // Handle leap year birthdays: Feb 29 → Mar 1 in non-leap years
   if (month === 2 && day === 29) {
-    const year = currentYear ?? new Date().getFullYear();
+    const year = currentYear ?? new Date().getUTCFullYear();
     if (!isLeapYear(year)) {
       month = 3;
       day = 1;
@@ -46,23 +43,6 @@ export function getMonthDay(
   }
 
   return { month, day };
-}
-
-/**
- * Check if a given date is someone's birthday.
- *
- * @param birthdate - Birthday as Unix timestamp
- * @param checkDate - The date to check against (defaults to now)
- */
-export function isBirthdayOnDate(birthdate: number, checkDate?: Date): boolean {
-  const today = checkDate ?? new Date();
-  const todayMonth = today.getUTCMonth() + 1;
-  const todayDay = today.getUTCDate();
-  const currentYear = today.getFullYear();
-
-  const { month, day } = getMonthDay(birthdate, currentYear);
-
-  return month === todayMonth && day === todayDay;
 }
 
 /**
@@ -142,7 +122,10 @@ export const findBirthdaysToday = internalQuery({
  * Generate a birthday message in GLaDOS style.
  * Warm but not over-the-top, with a subtle Portal reference.
  */
-function generateBirthdayMessage(names: string[], teamNumber: string): string {
+export function generateBirthdayMessage(
+  names: string[],
+  teamNumber: string
+): string {
   if (names.length === 0) return "";
 
   const isSingle = names.length === 1;
@@ -156,10 +139,10 @@ function generateBirthdayMessage(names: string[], teamNumber: string): string {
   // GLaDOS-style birthday messages - warm but with subtle personality
   const messages = [
     `🎂 Happy birthday, ${nameList}! Team ${teamNumber} is lucky to have ${isSingle ? "you" : "each of you"}.`,
-    `🎂 It's ${nameList}'s birthday! The team couldn't function without ${isSingle ? "you" : "you all"}. Well, it could. But less efficiently.`,
-    `🎂 Happy birthday, ${nameList}! I calculated a 100% chance that today would be excellent for ${isSingle ? "you" : "you all"}.`,
-    `🎂 Birthday detected: ${nameList}. Protocol dictates I wish ${isSingle ? "you" : "you all"} a wonderful day. Consider it wished.`,
-    `🎂 Happy birthday, ${nameList}! Another year of making robots do cool things.`,
+    `🎂 It's ${nameList}'s birthday! Team ${teamNumber} couldn't function without ${isSingle ? "you" : "you all"}. Well, it could. But less efficiently.`,
+    `🎂 Happy birthday, ${nameList}! Team ${teamNumber}'s systems predict a 100% chance that today will be excellent for ${isSingle ? "you" : "you all"}.`,
+    `🎂 Birthday detected: ${nameList} of Team ${teamNumber}. Protocol dictates I wish ${isSingle ? "you" : "you all"} a wonderful day. Consider it wished.`,
+    `🎂 Happy birthday, ${nameList}! Another year of making robots do cool things with Team ${teamNumber}.`,
   ];
 
   // Pick a random message
@@ -168,8 +151,38 @@ function generateBirthdayMessage(names: string[], teamNumber: string): string {
 }
 
 /**
- * Log a birthday message that was sent (or would be sent).
- * This allows us to track what was sent and avoid duplicates.
+ * Get today's date key in YYYY-MM-DD format (UTC).
+ */
+function getDateKey(date?: Date): string {
+  const d = date ?? new Date();
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Check if we already sent a birthday message for this team today.
+ */
+export const hasSentBirthdayToday = internalQuery({
+  args: {
+    teamId: v.id("teams"),
+    dateKey: v.string(),
+  },
+  handler: async (ctx, { teamId, dateKey }) => {
+    const existing = await ctx.db
+      .query("birthdayMessages")
+      .withIndex("by_team_date", (q) =>
+        q.eq("teamId", teamId).eq("dateKey", dateKey)
+      )
+      .first();
+    return existing !== null;
+  },
+});
+
+/**
+ * Log a birthday message that was sent.
+ * Stores in the birthdayMessages table to prevent duplicates.
  */
 export const logBirthdayMessage = internalMutation({
   args: {
@@ -178,12 +191,19 @@ export const logBirthdayMessage = internalMutation({
     message: v.string(),
     sentAt: v.number(),
     discordMessageId: v.optional(v.string()),
+    dateKey: v.string(),
   },
-  handler: async (_ctx, args) => {
-    // For now, we just log to console
-    // In the future, we could add a birthdayMessages table to track sent messages
+  handler: async (ctx, args) => {
+    await ctx.db.insert("birthdayMessages", {
+      teamId: args.teamId,
+      memberIds: args.memberIds,
+      message: args.message,
+      sentAt: args.sentAt,
+      discordMessageId: args.discordMessageId,
+      dateKey: args.dateKey,
+    });
     console.log(
-      `[Birthday] Sent to team ${args.teamId}: ${args.message} (members: ${args.memberIds.join(", ")})`
+      `[Birthday] Logged message for team ${args.teamId}: ${args.message} (members: ${args.memberIds.join(", ")})`
     );
     return { success: true };
   },
@@ -206,7 +226,9 @@ export const sendBirthdayMessages = internalAction({
       return { sent: 0 };
     }
 
+    const dateKey = getDateKey();
     let sentCount = 0;
+    let skippedCount = 0;
 
     for (const teamBirthdays of birthdaysToday) {
       const { teamId, teamNumber, discordGuildId, members } = teamBirthdays;
@@ -215,6 +237,20 @@ export const sendBirthdayMessages = internalAction({
         console.log(
           `[Birthday] Team ${teamNumber} has no Discord guild configured, skipping`
         );
+        continue;
+      }
+
+      // Check if we already sent a message for this team today
+      const alreadySent = await ctx.runQuery(
+        internal.birthdays.hasSentBirthdayToday,
+        { teamId, dateKey }
+      );
+
+      if (alreadySent) {
+        console.log(
+          `[Birthday] Already sent message for team ${teamNumber} today, skipping`
+        );
+        skippedCount++;
         continue;
       }
 
@@ -230,14 +266,17 @@ export const sendBirthdayMessages = internalAction({
           guildId: discordGuildId,
           message,
           memberIds: members.map((m) => m.userId),
+          dateKey,
         }
       );
 
       sentCount++;
     }
 
-    console.log(`[Birthday] Scheduled ${sentCount} birthday messages`);
-    return { sent: sentCount };
+    console.log(
+      `[Birthday] Scheduled ${sentCount} birthday messages (${skippedCount} skipped as duplicates)`
+    );
+    return { sent: sentCount, skipped: skippedCount };
   },
 });
 
@@ -251,6 +290,7 @@ export const sendDiscordBirthdayMessage = internalAction({
     guildId: v.string(),
     message: v.string(),
     memberIds: v.array(v.id("users")),
+    dateKey: v.string(),
   },
   handler: async (ctx, args) => {
     const botToken = process.env.DISCORD_BOT_TOKEN;
@@ -317,13 +357,14 @@ export const sendDiscordBirthdayMessage = internalAction({
 
       const sentMessage = (await messageResponse.json()) as { id: string };
 
-      // Log the sent message
+      // Log the sent message to prevent duplicates
       await ctx.runMutation(internal.birthdays.logBirthdayMessage, {
         teamId: args.teamId,
         memberIds: args.memberIds,
         message: args.message,
         sentAt: Date.now(),
         discordMessageId: sentMessage.id,
+        dateKey: args.dateKey,
       });
 
       console.log(

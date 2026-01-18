@@ -259,4 +259,17 @@ export default defineSchema({
     .index("by_team_user", ["teamId", "userId"])
     .index("by_team_timestamp", ["teamId", "timestamp"])
     .index("by_timestamp", ["timestamp"]),
+
+  // Birthday messages - tracks sent birthday messages to prevent duplicates
+  birthdayMessages: defineTable({
+    teamId: v.id("teams"),
+    memberIds: v.array(v.id("users")), // Users who had birthdays
+    message: v.string(),
+    sentAt: v.number(),
+    discordMessageId: v.optional(v.string()),
+    // Date key for duplicate prevention (YYYY-MM-DD format in UTC)
+    dateKey: v.string(),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_team_date", ["teamId", "dateKey"]),
 });

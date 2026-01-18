@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getMonthDay, isLeapYear, isBirthdayOnDate } from "../birthdays";
+import {
+  getMonthDay,
+  isLeapYear,
+  isBirthdayOnDate,
+  generateBirthdayMessage,
+} from "../birthdays";
 
 /**
  * Tests for birthday feature date logic.
@@ -146,41 +151,65 @@ describe("Birthday date logic", () => {
     });
   });
 
-  describe("birthday message generation", () => {
-    // Test the message format expectations
-    it("single person format", () => {
-      const names = ["Alice"];
-      const nameList = names[0];
-      expect(nameList).toBe("Alice");
+  describe("generateBirthdayMessage", () => {
+    it("returns empty string for empty names array", () => {
+      const message = generateBirthdayMessage([], "12345");
+      expect(message).toBe("");
     });
 
-    it("two people joined with 'and'", () => {
-      const names = ["Alice", "Bob"];
-      const nameList =
-        names.length === 2 ? `${names[0]} and ${names[1]}` : names.join(", ");
-      expect(nameList).toBe("Alice and Bob");
+    it("generates message containing single person's name", () => {
+      const message = generateBirthdayMessage(["Alice"], "12345");
+      expect(message).toContain("Alice");
+      expect(message).toContain("12345");
+      expect(message).toContain("🎂");
     });
 
-    it("three+ people with Oxford comma", () => {
-      const names = ["Alice", "Bob", "Charlie"];
-      const nameList = `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-      expect(nameList).toBe("Alice, Bob, and Charlie");
+    it("generates message containing both names for two people", () => {
+      const message = generateBirthdayMessage(["Alice", "Bob"], "12345");
+      expect(message).toContain("Alice");
+      expect(message).toContain("Bob");
+      expect(message).toContain("and");
     });
 
-    it("four people with Oxford comma", () => {
-      const names = ["Alice", "Bob", "Charlie", "Diana"];
-      const nameList = `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-      expect(nameList).toBe("Alice, Bob, Charlie, and Diana");
+    it("generates message with Oxford comma for three people", () => {
+      const message = generateBirthdayMessage(
+        ["Alice", "Bob", "Charlie"],
+        "12345"
+      );
+      expect(message).toContain("Alice");
+      expect(message).toContain("Bob");
+      expect(message).toContain("Charlie");
+      // Should have Oxford comma style
+      expect(message).toMatch(/Alice.*Bob.*and.*Charlie/);
     });
-  });
-});
 
-describe("Cron schedule", () => {
-  it("documents the intended schedule (9:00 AM UTC daily)", () => {
-    // This is a documentation test - the actual cron is in crons.ts
-    // Verifying the intended schedule
-    const schedule = { hourUTC: 9, minuteUTC: 0 };
-    expect(schedule.hourUTC).toBe(9);
-    expect(schedule.minuteUTC).toBe(0);
+    it("includes team number in message", () => {
+      const message = generateBirthdayMessage(["Alice"], "98765");
+      expect(message).toContain("98765");
+    });
+
+    it("uses singular pronouns for one person", () => {
+      // Run multiple times to check across random selections
+      for (let i = 0; i < 10; i++) {
+        const message = generateBirthdayMessage(["Alice"], "12345");
+        // Should not have plural "you all" or "each of you" for single person
+        expect(message).not.toContain("you all");
+        expect(message).not.toContain("each of you");
+      }
+    });
+
+    it("uses plural pronouns for multiple people", () => {
+      // Run multiple times to check across random selections
+      let foundPlural = false;
+      for (let i = 0; i < 20; i++) {
+        const message = generateBirthdayMessage(["Alice", "Bob"], "12345");
+        if (message.includes("you all") || message.includes("each of you")) {
+          foundPlural = true;
+          break;
+        }
+      }
+      // At least some messages should use plural forms
+      expect(foundPlural).toBe(true);
+    });
   });
 });
