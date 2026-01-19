@@ -1,4 +1,4 @@
-import { components } from "../_generated/api";
+import { components, internal } from "../_generated/api";
 import { Resend } from "@convex-dev/resend";
 import { internalMutation } from "../_generated/server";
 import { v } from "convex/values";
@@ -12,12 +12,11 @@ import { vOnEmailEventArgs } from "@convex-dev/resend";
  * - Mentor safety alerts
  * - Order notifications
  * - Shipping updates
- *
- * Note: onEmailEvent is configured below after the handler is defined
  */
 export const resend: Resend = new Resend(components.resend, {
-  // Disable test mode for production use
   testMode: false,
+  // Wire up delivery status webhook handler
+  onEmailEvent: internal.email.send.handleEmailEvent,
 });
 
 /**
