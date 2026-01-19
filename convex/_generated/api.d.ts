@@ -58,6 +58,7 @@ import type * as email_vendors_gobilda from "../email/vendors/gobilda.js";
 import type * as email_vendors_index from "../email/vendors/index.js";
 import type * as email_vendors_rev from "../email/vendors/rev.js";
 import type * as email_vendors_types from "../email/vendors/types.js";
+import type * as email_vendors_utils from "../email/vendors/utils.js";
 import type * as http from "../http.js";
 import type * as invites from "../invites.js";
 import type * as lib_crypto from "../lib/crypto.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   "email/vendors/index": typeof email_vendors_index;
   "email/vendors/rev": typeof email_vendors_rev;
   "email/vendors/types": typeof email_vendors_types;
+  "email/vendors/utils": typeof email_vendors_utils;
   http: typeof http;
   invites: typeof invites;
   "lib/crypto": typeof lib_crypto;

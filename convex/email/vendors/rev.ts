@@ -15,7 +15,7 @@ import type {
   TrackingInfo,
   VendorParser,
 } from "./types";
-import { isFromDomain } from "./index";
+import { isFromDomain } from "./utils";
 
 /**
  * Extract order number from REV email

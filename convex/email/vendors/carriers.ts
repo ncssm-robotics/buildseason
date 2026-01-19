@@ -16,7 +16,7 @@ import type {
   TrackingInfo,
   VendorParser,
 } from "./types";
-import { isFromDomain } from "./index";
+import { isFromDomain } from "./utils";
 
 /**
  * Extract UPS tracking numbers

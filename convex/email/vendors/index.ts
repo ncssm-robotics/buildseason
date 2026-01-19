@@ -19,6 +19,9 @@ import {
   extractOriginalEmail,
 } from "./forwarded";
 
+// Re-export utils for external use (and backwards compatibility)
+export { getDomainFromEmail, isFromDomain } from "./utils";
+
 /**
  * All registered vendor parsers
  */
@@ -98,20 +101,4 @@ export async function parseEmail(email: EmailContent): Promise<ParsedEmail> {
       confidence: 0,
     };
   }
-}
-
-/**
- * Get domain from email address
- */
-export function getDomainFromEmail(email: string): string {
-  const match = email.match(/@([^>]+)/);
-  return match ? match[1].toLowerCase() : "";
-}
-
-/**
- * Check if email is from a specific domain or subdomain
- */
-export function isFromDomain(email: string, domain: string): boolean {
-  const fromDomain = getDomainFromEmail(email);
-  return fromDomain === domain || fromDomain.endsWith(`.${domain}`);
 }
