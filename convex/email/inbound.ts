@@ -260,9 +260,9 @@ export const processInboundEmail = internalAction({
 
     try {
       // Fetch full email from Resend API
-      // Note: Resend's inbound API endpoint for fetching received emails
+      // Note: Received emails use /emails/receiving/:id endpoint (not /emails/:id)
       const response = await fetch(
-        `https://api.resend.com/emails/${email.resendEmailId}`,
+        `https://api.resend.com/emails/receiving/${email.resendEmailId}`,
         {
           headers: {
             Authorization: `Bearer ${apiKey}`,
