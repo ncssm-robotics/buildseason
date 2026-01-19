@@ -3,6 +3,13 @@ import { v } from "convex/values";
 import { getUserByDiscordId } from "../lib/providers";
 
 /**
+ * Format a role code (e.g., "lead_mentor") to display text (e.g., "lead mentor").
+ */
+function formatRole(role: string): string {
+  return role.replace(/_/g, " ");
+}
+
+/**
  * Load team context for agent awareness.
  * This query assembles the current state of the team so the agent
  * has full context before every interaction.
@@ -135,13 +142,13 @@ export const loadUserTeams = internalQuery({
     const otherTeams = validTeams.filter((t) => !t.isCurrent);
 
     return {
-      userRole: currentTeam?.role ?? null,
+      userRole: currentTeam?.role ? formatRole(currentTeam.role) : null,
       otherTeams: otherTeams.map((t) => ({
         _id: t._id,
         name: t.name,
         number: t.number,
         program: t.program,
-        role: t.role,
+        role: formatRole(t.role),
       })),
     };
   },
