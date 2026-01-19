@@ -30,7 +30,9 @@ export const list = internalQuery({
     const now = Date.now();
     const endTime = now + args.daysAhead * 24 * 60 * 60 * 1000;
 
-    // Get all events for the team in the time range
+    // Get events for the team in the time range
+    // Take extra events when filtering by type to ensure we return the requested limit
+    const fetchLimit = args.type ? args.limit * 3 : args.limit;
     let events = await ctx.db
       .query("events")
       .withIndex("by_team_date", (q) =>
@@ -39,14 +41,15 @@ export const list = internalQuery({
           .gte("startTime", now)
           .lte("startTime", endTime)
       )
-      .take(args.limit);
+      .take(fetchLimit);
 
-    // Filter by type if specified
+    // Filter by type if specified, then apply the actual limit
     if (args.type) {
-      events = events.filter((e) => e.type === args.type);
+      events = events.filter((e) => e.type === args.type).slice(0, args.limit);
     }
 
     // Get attendee counts for each event
+    // TODO: Consider batching or denormalizing counts for optimization
     const result = await Promise.all(
       events.map(async (event) => {
         const attendees = await ctx.db

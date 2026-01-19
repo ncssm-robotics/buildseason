@@ -115,25 +115,32 @@ export const clear = internalMutation({
 /**
  * Cleanup old conversations.
  * Can be called periodically to remove stale conversations.
+ * Limits deletions per invocation to prevent timeout issues.
  */
 export const cleanupStale = internalMutation({
   args: {
     maxAgeMs: v.optional(v.number()),
+    maxDeletePerRun: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Default to 7 days
     const maxAge = args.maxAgeMs ?? 7 * 24 * 60 * 60 * 1000;
     const cutoff = Date.now() - maxAge;
+    // Limit deletions per run to prevent timeout (default 100)
+    const limit = args.maxDeletePerRun ?? 100;
 
     const staleConversations = await ctx.db
       .query("conversations")
       .withIndex("by_last_activity", (q) => q.lt("lastActivity", cutoff))
-      .collect();
+      .take(limit);
 
     for (const conv of staleConversations) {
       await ctx.db.delete(conv._id);
     }
 
-    return { deleted: staleConversations.length };
+    return {
+      deleted: staleConversations.length,
+      hasMore: staleConversations.length === limit,
+    };
   },
 });

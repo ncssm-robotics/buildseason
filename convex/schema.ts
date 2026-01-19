@@ -237,7 +237,13 @@ export default defineSchema({
     teamId: v.id("teams"),
     title: v.string(),
     description: v.optional(v.string()),
-    type: v.string(), // "competition", "outreach", "meeting", "practice", "other"
+    type: v.union(
+      v.literal("competition"),
+      v.literal("outreach"),
+      v.literal("meeting"),
+      v.literal("practice"),
+      v.literal("other")
+    ),
     startTime: v.number(), // Unix timestamp
     endTime: v.optional(v.number()), // Unix timestamp
     location: v.optional(v.string()), // Location name
@@ -253,7 +259,11 @@ export default defineSchema({
   eventAttendees: defineTable({
     eventId: v.id("events"),
     userId: v.id("users"),
-    status: v.string(), // "going", "maybe", "not_going"
+    status: v.union(
+      v.literal("going"),
+      v.literal("maybe"),
+      v.literal("not_going")
+    ),
     rsvpAt: v.number(),
     notes: v.optional(v.string()),
   })

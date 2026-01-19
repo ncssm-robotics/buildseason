@@ -81,6 +81,12 @@ export const handleMessage = internalAction({
       return "I couldn't find that team. Please make sure you're messaging from a registered team channel.";
     }
 
+    // 2b. Load user's other teams for multi-team awareness
+    const userTeams = await ctx.runQuery(internal.agent.context.loadUserTeams, {
+      discordUserId: args.userId,
+      currentTeamId: args.teamId,
+    });
+
     // 3. Load conversation history for multi-turn context
     const history = await ctx.runQuery(internal.agent.conversation.getRecent, {
       teamId: args.teamId,
@@ -89,11 +95,19 @@ export const handleMessage = internalAction({
     });
 
     // Build tools available to the agent
-    const tools = buildTools();
+    // Include native web search as a server tool
+    const customTools = buildTools();
+    // Server tools like web_search have a different schema than regular tools
+    const webSearchTool = {
+      type: "web_search_20250305",
+      name: "web_search",
+      max_uses: 5,
+    };
+    const tools = [...customTools, webSearchTool] as Anthropic.Messages.Tool[];
 
     // Build system prompt with team context and safety context
     const systemPrompt = buildSystemPrompt(
-      { ...context, userName: args.userName },
+      { ...context, userName: args.userName, userTeams },
       {
         seriousMode:
           screening.classification.riskLevel >= RISK_LEVELS.FLAG_ONLY,
@@ -204,33 +218,46 @@ export const handleMessage = internalAction({
     }
 
     // Extract text response
+    // Join with empty string since web search citations split text into fragments
     const textBlocks = response.content.filter(
       (block): block is Anthropic.TextBlock => block.type === "text"
     );
-    const responseText = textBlocks.map((block) => block.text).join("\n");
+    const responseText = textBlocks.map((block) => block.text).join("");
 
     // 5. Save conversation history
-    await ctx.runMutation(internal.agent.conversation.append, {
-      teamId: args.teamId,
-      channelId,
-      userId: args.userId,
-      messages: [
-        { role: "user", content: args.message, timestamp: Date.now() },
-        { role: "assistant", content: responseText, timestamp: Date.now() },
-      ],
-    });
+    // Wrap in try/catch to ensure response is returned even if persistence fails
+    try {
+      await ctx.runMutation(internal.agent.conversation.append, {
+        teamId: args.teamId,
+        channelId,
+        userId: args.userId,
+        messages: [
+          { role: "user", content: args.message, timestamp: Date.now() },
+          { role: "assistant", content: responseText, timestamp: Date.now() },
+        ],
+      });
+    } catch (error) {
+      console.error("Failed to save conversation history:", error);
+      // Continue - don't fail the response due to persistence issues
+    }
 
     // 6. Log for audit (if needed based on risk level)
+    // Also wrapped in try/catch - audit failures shouldn't block responses
     if (behavior.shouldLog || toolCallLog.length > 0) {
-      await ctx.runMutation(internal.agent.auditLog.log, {
-        teamId: args.teamId,
-        userId: args.userId,
-        channelId: args.channelId,
-        userMessage: args.message,
-        agentResponse: responseText,
-        toolCalls: toolCallLog.length > 0 ? toolCallLog : undefined,
-        containsSafetyAlert: behavior.shouldAlertMentor,
-      });
+      try {
+        await ctx.runMutation(internal.agent.auditLog.log, {
+          teamId: args.teamId,
+          userId: args.userId,
+          channelId: args.channelId,
+          userMessage: args.message,
+          agentResponse: responseText,
+          toolCalls: toolCallLog.length > 0 ? toolCallLog : undefined,
+          containsSafetyAlert: behavior.shouldAlertMentor,
+        });
+      } catch (error) {
+        console.error("Failed to write audit log:", error);
+        // Continue - audit failures shouldn't block responses
+      }
     }
 
     return responseText;

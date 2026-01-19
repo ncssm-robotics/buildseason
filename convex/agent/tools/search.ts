@@ -4,11 +4,7 @@ import type { Id } from "../../_generated/dataModel";
 
 /**
  * Web search tool for the agent.
- * Uses Anthropic's built-in web search capability via server-side tools.
- *
- * Note: Anthropic's web search is a "server tool" that gets executed on Anthropic's
- * infrastructure, not via our tool execution. However, we also provide a fallback
- * implementation for cases where built-in search isn't available.
+ * Uses SerpAPI for Google search results.
  */
 export const searchTools: Anthropic.Tool[] = [
   {
@@ -24,8 +20,7 @@ export const searchTools: Anthropic.Tool[] = [
         },
         location: {
           type: "string",
-          description:
-            "Optional location to search near (e.g., 'Indianapolis, IN')",
+          description: "Optional location to search near (e.g., 'Raleigh, NC')",
         },
         type: {
           type: "string",
@@ -39,16 +34,40 @@ export const searchTools: Anthropic.Tool[] = [
 ];
 
 /**
- * Build a Brave Search API request.
- * This is a fallback when Anthropic's built-in search isn't used.
+ * SerpAPI response types
  */
-async function searchBrave(
+interface SerpAPIResult {
+  title: string;
+  link: string;
+  snippet?: string;
+}
+
+interface SerpAPILocalResult {
+  title: string;
+  address?: string;
+  rating?: number;
+  reviews?: number;
+  type?: string;
+  phone?: string;
+}
+
+/**
+ * Search using SerpAPI (Google search results).
+ */
+async function searchSerpAPI(
   query: string,
-  location?: string
+  location?: string,
+  searchType?: string
 ): Promise<{
   results: Array<{ title: string; url: string; snippet: string }>;
+  localResults?: Array<{
+    name: string;
+    address?: string;
+    rating?: number;
+    type?: string;
+  }>;
 }> {
-  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  const apiKey = process.env.SERPAPI_KEY;
 
   if (!apiKey) {
     return {
@@ -57,36 +76,63 @@ async function searchBrave(
           title: "Web search not configured",
           url: "",
           snippet:
-            "Web search API key is not configured. Please ask your mentor to set up the BRAVE_SEARCH_API_KEY environment variable.",
+            "Web search API key is not configured. Please ask your mentor to set up the SERPAPI_KEY environment variable.",
         },
       ],
     };
   }
 
-  const searchQuery = location ? `${query} near ${location}` : query;
-  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(searchQuery)}&count=5`;
+  // Build search parameters
+  const params = new URLSearchParams({
+    q: query,
+    api_key: apiKey,
+    engine: "google",
+    num: "5",
+  });
+
+  // Add location if provided
+  if (location) {
+    params.set("location", location);
+  }
+
+  // Use local search for restaurants/venues
+  if (searchType === "restaurant" || searchType === "venue") {
+    params.set("tbm", "lcl"); // Local search
+  }
+
+  const url = `https://serpapi.com/search.json?${params.toString()}`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-        "X-Subscription-Token": apiKey,
-      },
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       throw new Error(`Search failed: ${response.status}`);
     }
 
     const data = await response.json();
+
+    // Handle local results (for restaurants/venues)
+    if (data.local_results) {
+      const localResults = data.local_results.map((r: SerpAPILocalResult) => ({
+        name: r.title,
+        address: r.address,
+        rating: r.rating,
+        type: r.type,
+      }));
+
+      return {
+        results: [],
+        localResults,
+      };
+    }
+
+    // Handle organic web results
     const results =
-      data.web?.results?.map(
-        (r: { title: string; url: string; description: string }) => ({
-          title: r.title,
-          url: r.url,
-          snippet: r.description,
-        })
-      ) || [];
+      data.organic_results?.map((r: SerpAPIResult) => ({
+        title: r.title,
+        url: r.link,
+        snippet: r.snippet || "",
+      })) || [];
 
     return { results };
   } catch (error) {
@@ -121,22 +167,34 @@ export async function executeSearchTool(
       // Build enhanced query based on type
       let enhancedQuery = query;
       if (type === "restaurant") {
-        enhancedQuery = `${query} restaurant food`;
+        enhancedQuery = `${query} restaurants`;
       } else if (type === "venue") {
         enhancedQuery = `${query} venue event space`;
       } else if (type === "supplier") {
         enhancedQuery = `${query} supplier parts robotics FTC`;
       } else if (type === "product") {
-        enhancedQuery = `${query} product buy purchase`;
+        enhancedQuery = `${query} buy`;
       }
 
-      const results = await searchBrave(enhancedQuery, location);
+      const searchResults = await searchSerpAPI(enhancedQuery, location, type);
+
+      // Format response based on result type
+      if (searchResults.localResults && searchResults.localResults.length > 0) {
+        return {
+          query: enhancedQuery,
+          location: location || "not specified",
+          resultCount: searchResults.localResults.length,
+          type: "local",
+          places: searchResults.localResults,
+        };
+      }
 
       return {
         query: enhancedQuery,
         location: location || "not specified",
-        resultCount: results.results.length,
-        results: results.results,
+        resultCount: searchResults.results.length,
+        type: "web",
+        results: searchResults.results,
       };
     }
 

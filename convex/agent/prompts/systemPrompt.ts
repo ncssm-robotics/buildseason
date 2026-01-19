@@ -20,6 +20,16 @@ export interface SystemPromptContext {
     totalCents: number;
   }>;
   userName?: string;
+  userTeams?: {
+    userRole: string | null;
+    otherTeams: Array<{
+      _id: Id<"teams">;
+      name: string;
+      number: string;
+      program: string;
+      role: string;
+    }>;
+  };
 }
 
 export interface SafetyContext {
@@ -83,7 +93,26 @@ You support the full scope of team operations—whatever the team needs:
   sections.push(`## CURRENT TEAM CONTEXT
 Team: ${context.team?.name} (#${context.team?.number})
 Program: ${program}
-Season: ${context.season?.name || "Off-season"} ${context.season?.year || ""}`);
+Season: ${context.season?.name || "Off-season"} ${context.season?.year || ""}
+${userName ? `${userName}'s role: ${context.userTeams?.userRole || "member"}` : ""}`);
+
+  // Multi-team awareness (if user has other teams)
+  if (
+    context.userTeams?.otherTeams &&
+    context.userTeams.otherTeams.length > 0
+  ) {
+    const otherTeamsText = context.userTeams.otherTeams
+      .map(
+        (t) =>
+          `- ${t.program.toUpperCase()} #${t.number} "${t.name}" (${t.role})`
+      )
+      .join("\n");
+    sections.push(`## USER'S OTHER TEAMS
+${userName || "This user"} is also on these teams:
+${otherTeamsText}
+
+You are currently in ${context.team?.name}'s Discord, so assume questions are about this team unless they specifically mention another team. You can answer general questions about their other teams but don't have access to those teams' data (inventory, orders, etc.) from this Discord.`);
+  }
 
   // Communication style (only in non-serious mode)
   if (!safetyContext.seriousMode) {

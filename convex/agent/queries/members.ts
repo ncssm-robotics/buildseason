@@ -27,6 +27,8 @@ export const list = internalQuery({
     }
 
     // Get user info for each member
+    // Get user info for each member
+    // TODO: Consider batching user lookups for larger teams
     const result = await Promise.all(
       members.map(async (member) => {
         const user = await ctx.db.get(member.userId);
