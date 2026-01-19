@@ -113,6 +113,19 @@ describe("REV Robotics Parser", () => {
       "1Z999AA10123456784"
     );
   });
+
+  it("parses order confirmation with parenthesized order number", async () => {
+    const email: EmailContent = {
+      from: "orders@revrobotics.com",
+      to: "ftc-5064@buildseason.org",
+      subject: "Your REV Robotics Order Confirmation (#202981)",
+      html: `<h1>Order Confirmation</h1><p>Thank you for your order!</p>`,
+    };
+    const result = await parseEmail(email);
+    expect(result.type).toBe("order_confirmation");
+    expect(result.vendor).toBe("rev");
+    expect(result.orderNumber).toBe("202981");
+  });
 });
 
 describe("goBILDA Parser", () => {
@@ -153,6 +166,32 @@ describe("AndyMark Parser", () => {
     expect(result.vendor).toBe("andymark");
     expect(result.orderNumber).toBe("98765");
     expect(result.totalCents).toBe(24500);
+  });
+
+  it("parses order with alphanumeric order number", async () => {
+    const email: EmailContent = {
+      from: "orders@andymark.com",
+      to: "ftc-5064@buildseason.org",
+      subject: "Order ES769H9 Confirmation",
+      html: `<h1>Order Confirmation</h1><p>Your order ES769H9 has been confirmed.</p>`,
+    };
+    const result = await parseEmail(email);
+    expect(result.type).toBe("order_confirmation");
+    expect(result.vendor).toBe("andymark");
+    expect(result.orderNumber).toBe("ES769H9");
+  });
+
+  it("parses shipping notification with alphanumeric order", async () => {
+    const email: EmailContent = {
+      from: "orders@andymark.com",
+      to: "ftc-5064@buildseason.org",
+      subject: "Your AndyMark order ES769H9 just got packed",
+      html: `<p>Your order has shipped!</p><p>Tracking: 392963562592</p>`,
+    };
+    const result = await parseEmail(email);
+    expect(result.type).toBe("shipping_notification");
+    expect(result.vendor).toBe("andymark");
+    expect(result.orderNumber).toBe("ES769H9");
   });
 });
 

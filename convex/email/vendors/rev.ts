@@ -21,6 +21,7 @@ import { isFromDomain } from "./utils";
  * Extract order number from REV email
  * Patterns:
  * - "Order #123456"
+ * - "Order Confirmation (#123456)"
  * - "Order Number: 123456"
  * - "order_id=123456"
  */
@@ -28,12 +29,17 @@ function extractOrderNumber(email: EmailContent): string | undefined {
   const content = email.html || email.text || "";
   const subject = email.subject || "";
 
-  // Try subject first
-  let match = subject.match(/Order\s*#?\s*(\d+)/i);
+  // Try subject first - handle various formats
+  // "Order #123456" or "Order Confirmation (#123456)"
+  let match = subject.match(/(?:Order|Confirmation)\s*[#(]?\s*#?(\d+)\)?/i);
   if (match) return match[1];
 
   // Try body patterns
   match = content.match(/Order\s*(?:#|Number:?)\s*(\d+)/i);
+  if (match) return match[1];
+
+  // Parenthesized order number
+  match = content.match(/\(#(\d+)\)/);
   if (match) return match[1];
 
   match = content.match(/order_id[=:]\s*(\d+)/i);

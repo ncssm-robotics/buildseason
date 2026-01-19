@@ -19,17 +19,26 @@ import { isFromDomain } from "./utils";
 
 /**
  * Extract order number from AndyMark email
- * AndyMark uses numeric order IDs like "12345678"
+ * AndyMark uses alphanumeric order IDs like "ES769H9" or numeric like "12345678"
  */
 function extractOrderNumber(email: EmailContent): string | undefined {
   const content = email.html || email.text || "";
   const subject = email.subject || "";
 
-  // Try subject first
-  let match = subject.match(/Order\s*#?\s*(\d+)/i);
+  // Try subject first - AndyMark uses alphanumeric order IDs like ES769H9
+  // Pattern: "order ES769H9" or "Order #ES769H9" or "Order ES769H9 Confirmation"
+  let match = subject.match(/[Oo]rder\s*#?\s*([A-Z0-9]{6,12})/);
   if (match) return match[1];
 
-  // Try body patterns - AndyMark may use "Order Number" or just "Order #"
+  // Also try pure numeric pattern
+  match = subject.match(/Order\s*#?\s*(\d+)/i);
+  if (match) return match[1];
+
+  // Try body patterns - alphanumeric first
+  match = content.match(/Order\s*(?:#|Number:?)\s*([A-Z0-9]{6,12})/i);
+  if (match) return match[1];
+
+  // Numeric order pattern
   match = content.match(/Order\s*(?:#|Number:?)\s*(\d+)/i);
   if (match) return match[1];
 
