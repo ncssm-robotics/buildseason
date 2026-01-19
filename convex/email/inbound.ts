@@ -8,30 +8,32 @@ import {
 import { v } from "convex/values";
 
 /**
- * Verify Resend webhook signature using HMAC-SHA256
+ * Verify Resend/Svix webhook signature using HMAC-SHA256
  *
- * Resend signs webhooks with the format: t=timestamp,v1=signature
- * We verify by computing HMAC-SHA256(timestamp.payload) with the webhook secret
+ * Svix format:
+ * - Headers: svix-id, svix-timestamp, svix-signature
+ * - Signed content: ${svix_id}.${svix_timestamp}.${body}
+ * - Secret: base64 encoded (after stripping whsec_ prefix)
+ * - Signature header: "v1,<base64-signature>" (may have multiple)
  */
-async function verifyResendSignature(
+async function verifySvixSignature(
   payload: string,
-  signature: string | null,
+  headers: {
+    svixId: string | null;
+    svixTimestamp: string | null;
+    svixSignature: string | null;
+  },
   secret: string
 ): Promise<boolean> {
-  if (!signature) return false;
+  const { svixId, svixTimestamp, svixSignature } = headers;
 
-  // Parse signature header: "t=timestamp,v1=signature"
-  const parts = signature.split(",");
-  const timestampPart = parts.find((p) => p.startsWith("t="));
-  const signaturePart = parts.find((p) => p.startsWith("v1="));
-
-  if (!timestampPart || !signaturePart) return false;
-
-  const timestamp = timestampPart.slice(2);
-  const expectedSignature = signaturePart.slice(3);
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    console.warn("[Email Inbound] Missing Svix headers");
+    return false;
+  }
 
   // Check timestamp is within 5 minutes to prevent replay attacks
-  const timestampMs = parseInt(timestamp) * 1000;
+  const timestampMs = parseInt(svixTimestamp) * 1000;
   const now = Date.now();
   if (Math.abs(now - timestampMs) > 5 * 60 * 1000) {
     console.warn(
@@ -40,12 +42,16 @@ async function verifyResendSignature(
     return false;
   }
 
-  // Compute HMAC-SHA256
-  const signedPayload = `${timestamp}.${payload}`;
+  // Strip whsec_ prefix and base64 decode the secret
+  const secretKey = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  const secretBytes = Uint8Array.from(atob(secretKey), (c) => c.charCodeAt(0));
+
+  // Compute HMAC-SHA256 of: svix_id.svix_timestamp.body
+  const signedPayload = `${svixId}.${svixTimestamp}.${payload}`;
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     "raw",
-    encoder.encode(secret),
+    secretBytes,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
@@ -55,11 +61,24 @@ async function verifyResendSignature(
     key,
     encoder.encode(signedPayload)
   );
-  const computedSignature = Array.from(new Uint8Array(signatureBytes))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
 
-  return computedSignature === expectedSignature;
+  // Convert to base64
+  const computedSignature = btoa(
+    String.fromCharCode(...new Uint8Array(signatureBytes))
+  );
+
+  // The signature header may contain multiple signatures (v1,sig1 v1,sig2)
+  // We need to check if any of them match
+  const signatures = svixSignature.split(" ");
+  for (const sig of signatures) {
+    const [version, sigValue] = sig.split(",");
+    if (version === "v1" && sigValue === computedSignature) {
+      return true;
+    }
+  }
+
+  console.warn("[Email Inbound] No matching signature found");
+  return false;
 }
 
 /**
@@ -89,10 +108,16 @@ export const inboundWebhook = httpAction(async (ctx, request) => {
   }
 
   const body = await request.text();
-  const signature = request.headers.get("svix-signature");
+
+  // Get all Svix headers
+  const svixHeaders = {
+    svixId: request.headers.get("svix-id"),
+    svixTimestamp: request.headers.get("svix-timestamp"),
+    svixSignature: request.headers.get("svix-signature"),
+  };
 
   // Verify webhook signature
-  const isValid = await verifyResendSignature(body, signature, webhookSecret);
+  const isValid = await verifySvixSignature(body, svixHeaders, webhookSecret);
   if (!isValid) {
     console.warn("[Email Inbound] Invalid webhook signature");
     return new Response("Invalid signature", { status: 401 });
