@@ -171,6 +171,9 @@ interface ResendInboundPayload {
 
 /**
  * Store an inbound email in the database
+ *
+ * Includes deduplication check to handle webhook retries from Resend.
+ * If an email with the same resendEmailId already exists, returns early.
  */
 export const storeInboundEmail = internalMutation({
   args: {
@@ -181,6 +184,21 @@ export const storeInboundEmail = internalMutation({
     receivedAt: v.number(),
   },
   handler: async (ctx, args) => {
+    // Check for duplicate webhook delivery (Resend may retry on failures)
+    const existing = await ctx.db
+      .query("inboundEmails")
+      .withIndex("by_resend_id", (q) =>
+        q.eq("resendEmailId", args.resendEmailId)
+      )
+      .first();
+
+    if (existing) {
+      console.log(
+        `[Email Inbound] Duplicate webhook for ${args.resendEmailId}, skipping`
+      );
+      return existing._id;
+    }
+
     // Parse team from the "to" address
     const teamInfo = parseTeamFromEmail(args.toAddress);
     let teamId = undefined;

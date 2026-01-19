@@ -5,6 +5,19 @@ import { v } from "convex/values";
 import { vOnEmailEventArgs } from "@convex-dev/resend";
 
 /**
+ * Escape HTML special characters to prevent injection attacks
+ * Used for all user-provided values in email templates
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
  * Resend client instance for BuildSeason
  *
  * Used for:
@@ -53,14 +66,19 @@ export const sendTeamInvite = internalMutation({
     invitedBy: v.string(),
   },
   handler: async (ctx, args) => {
+    // Escape user-provided values to prevent HTML injection
+    const teamName = escapeHtml(args.teamName);
+    const teamNumber = escapeHtml(args.teamNumber);
+    const invitedBy = escapeHtml(args.invitedBy);
+
     const emailId = await resend.sendEmail(ctx, {
       from: "BuildSeason <noreply@buildseason.org>",
       to: args.to,
-      subject: `You're invited to join ${args.teamName} on BuildSeason`,
+      subject: `You're invited to join ${teamName} on BuildSeason`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #1a1a1a;">Join ${args.teamName}</h1>
-          <p>${args.invitedBy} has invited you to join <strong>Team ${args.teamNumber} - ${args.teamName}</strong> on BuildSeason.</p>
+          <h1 style="color: #1a1a1a;">Join ${teamName}</h1>
+          <p>${invitedBy} has invited you to join <strong>Team ${teamNumber} - ${teamName}</strong> on BuildSeason.</p>
           <p>BuildSeason helps FTC teams manage their inventory, orders, and team coordination through an AI-powered assistant.</p>
           <a href="${args.inviteUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 16px 0;">
             Accept Invitation
@@ -89,6 +107,13 @@ export const sendMentorAlert = internalMutation({
     reviewUrl: v.string(),
   },
   handler: async (ctx, args) => {
+    // Escape user-provided values to prevent HTML injection
+    const mentorName = escapeHtml(args.mentorName);
+    const teamName = escapeHtml(args.teamName);
+    const alertType = escapeHtml(args.alertType);
+    const triggerReason = escapeHtml(args.triggerReason);
+    const severity = escapeHtml(args.severity);
+
     const severityColors: Record<string, string> = {
       high: "#dc2626",
       medium: "#f59e0b",
@@ -99,17 +124,17 @@ export const sendMentorAlert = internalMutation({
     const emailId = await resend.sendEmail(ctx, {
       from: "BuildSeason Safety <safety@buildseason.org>",
       to: args.to,
-      subject: `[${args.severity.toUpperCase()}] Safety Alert for ${args.teamName}`,
+      subject: `[${severity.toUpperCase()}] Safety Alert for ${teamName}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: ${severityColor}; color: white; padding: 12px 16px; border-radius: 6px 6px 0 0;">
-            <strong>${args.severity.toUpperCase()} SEVERITY ALERT</strong>
+            <strong>${severity.toUpperCase()} SEVERITY ALERT</strong>
           </div>
           <div style="border: 1px solid #e5e5e5; border-top: none; padding: 16px; border-radius: 0 0 6px 6px;">
-            <p>Hi ${args.mentorName},</p>
-            <p>A safety alert has been triggered for <strong>${args.teamName}</strong>.</p>
-            <p><strong>Alert Type:</strong> ${args.alertType}</p>
-            <p><strong>Reason:</strong> ${args.triggerReason}</p>
+            <p>Hi ${mentorName},</p>
+            <p>A safety alert has been triggered for <strong>${teamName}</strong>.</p>
+            <p><strong>Alert Type:</strong> ${alertType}</p>
+            <p><strong>Reason:</strong> ${triggerReason}</p>
             <a href="${args.reviewUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; margin: 16px 0;">
               Review Alert
             </a>
@@ -140,6 +165,11 @@ export const sendOrderNotification = internalMutation({
     viewUrl: v.string(),
   },
   handler: async (ctx, args) => {
+    // Escape user-provided values to prevent HTML injection
+    const teamName = escapeHtml(args.teamName);
+    const orderNumber = escapeHtml(args.orderNumber);
+    const vendorName = escapeHtml(args.vendorName);
+
     const statusMessages: Record<string, string> = {
       approved: "has been approved",
       rejected: "has been rejected",
@@ -151,13 +181,13 @@ export const sendOrderNotification = internalMutation({
     const emailId = await resend.sendEmail(ctx, {
       from: "BuildSeason <orders@buildseason.org>",
       to: args.to,
-      subject: `Order ${args.orderNumber} ${statusMessage}`,
+      subject: `Order ${orderNumber} ${statusMessage}`,
       html: `
         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #1a1a1a;">Order Update</h1>
-          <p>Order <strong>#${args.orderNumber}</strong> for <strong>${args.teamName}</strong> ${statusMessage}.</p>
+          <p>Order <strong>#${orderNumber}</strong> for <strong>${teamName}</strong> ${statusMessage}.</p>
           <div style="background: #f5f5f5; padding: 16px; border-radius: 6px; margin: 16px 0;">
-            <p style="margin: 0;"><strong>Vendor:</strong> ${args.vendorName}</p>
+            <p style="margin: 0;"><strong>Vendor:</strong> ${vendorName}</p>
             <p style="margin: 8px 0 0 0;"><strong>Total:</strong> $${(args.totalCents / 100).toFixed(2)}</p>
           </div>
           <a href="${args.viewUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none;">

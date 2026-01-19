@@ -1,9 +1,11 @@
 /**
  * Debug utilities for email parsing
- * Temporary file for testing - can be removed after validation
+ *
+ * All functions are internal-only to prevent unauthorized access.
+ * Call these from the Convex dashboard or other internal functions.
  */
 
-import { query, mutation } from "../_generated/server";
+import { internalQuery, internalMutation } from "../_generated/server";
 import { internal } from "../_generated/api";
 import { v } from "convex/values";
 import { Id } from "../_generated/dataModel";
@@ -11,7 +13,7 @@ import { Id } from "../_generated/dataModel";
 /**
  * List recent inbound emails with their parsed data
  */
-export const listRecentEmails = query({
+export const listRecentEmails = internalQuery({
   args: {},
   handler: async (ctx) => {
     const emails = await ctx.db.query("inboundEmails").order("desc").take(20);
@@ -39,7 +41,7 @@ export const listRecentEmails = query({
 /**
  * Reprocess a failed email
  */
-export const reprocessEmail = mutation({
+export const reprocessEmail = internalMutation({
   args: {
     emailId: v.id("inboundEmails"),
   },
@@ -80,7 +82,7 @@ export const reprocessEmail = mutation({
 /**
  * Reprocess all failed emails
  */
-export const reprocessAllFailed = mutation({
+export const reprocessAllFailed = internalMutation({
   args: {},
   handler: async (ctx) => {
     const failedEmails = await ctx.db
@@ -124,7 +126,7 @@ export const reprocessAllFailed = mutation({
 /**
  * List all global vendors with contact info (for debugging vendor extraction)
  */
-export const listVendors = query({
+export const listVendors = internalQuery({
   args: {},
   handler: async (ctx) => {
     const vendors = await ctx.db.query("vendors").collect();
@@ -145,7 +147,7 @@ export const listVendors = query({
 /**
  * List team-vendor links with team-specific data (for debugging)
  */
-export const listTeamVendors = query({
+export const listTeamVendors = internalQuery({
   args: {},
   handler: async (ctx) => {
     const teamVendors = await ctx.db.query("teamVendors").collect();
@@ -167,7 +169,7 @@ export const listTeamVendors = query({
  * Account numbers now live in teamVendors junction table.
  * Run this once to clean up existing vendor documents.
  */
-export const migrateVendorsRemoveLegacyFields = mutation({
+export const migrateVendorsRemoveLegacyFields = internalMutation({
   args: {},
   handler: async (ctx) => {
     const vendors = await ctx.db.query("vendors").collect();
@@ -232,7 +234,7 @@ export const migrateVendorsRemoveLegacyFields = mutation({
 /**
  * Get full details of a specific email including parsed items
  */
-export const getEmailDetails = query({
+export const getEmailDetails = internalQuery({
   args: {
     emailId: v.id("inboundEmails"),
   },
