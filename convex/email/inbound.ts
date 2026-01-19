@@ -280,12 +280,42 @@ export const processInboundEmail = internalAction({
         `[Email Inbound] Fetched email body for ${args.emailId}, has html: ${!!emailData.html}`
       );
 
-      // For now, just mark as processed - vendor parsing will be implemented later
-      // TODO: Implement vendor-specific parsers (REV, goBILDA, AndyMark)
+      // Parse the email using vendor-specific parsers
+      const { parseEmail } = await import("./vendors/index");
+      const parsed = await parseEmail({
+        from: email.fromAddress,
+        to: email.toAddress,
+        subject: email.subject,
+        html: emailData.html,
+        text: emailData.text,
+      });
+
+      console.log(
+        `[Email Inbound] Parsed email ${args.emailId}: type=${parsed.type}, vendor=${parsed.vendor}, order=${parsed.orderNumber || "none"}, confidence=${parsed.confidence}`
+      );
+
+      // Extract first tracking number if present
+      const firstTracking = parsed.trackingNumbers?.[0];
+
+      // Mark as processed with parsed data
       await ctx.runMutation(internal.email.inbound.markEmailProcessed, {
         emailId: args.emailId,
-        emailType: "unknown",
+        emailType: parsed.type,
+        parsedVendor: parsed.vendor,
+        parsedOrderNumber: parsed.orderNumber,
+        parsedTrackingNumber: firstTracking?.trackingNumber,
       });
+
+      // If we have an order number or tracking, try to link to existing orders
+      if (email.teamId && (parsed.orderNumber || firstTracking)) {
+        await ctx.runMutation(internal.email.inbound.tryLinkToOrder, {
+          emailId: args.emailId,
+          teamId: email.teamId,
+          vendor: parsed.vendor,
+          orderNumber: parsed.orderNumber,
+          trackingNumber: firstTracking?.trackingNumber,
+        });
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       console.error(
@@ -350,5 +380,36 @@ export const markEmailFailed = internalMutation({
       processingError: args.error,
       processedAt: Date.now(),
     });
+  },
+});
+
+/**
+ * Try to link a parsed email to an existing order
+ *
+ * TODO: Orders schema needs vendorOrderNumber and trackingNumber fields
+ * to enable automatic linking. For now, this just logs the parsed data.
+ */
+export const tryLinkToOrder = internalMutation({
+  args: {
+    emailId: v.id("inboundEmails"),
+    teamId: v.id("teams"),
+    vendor: v.string(),
+    orderNumber: v.optional(v.string()),
+    trackingNumber: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    // For now, just log the parsed data
+    // Automatic order linking requires schema updates to the orders table
+    console.log(
+      `[Email Inbound] Parsed order data for email ${args.emailId}: ` +
+        `vendor=${args.vendor}, orderNumber=${args.orderNumber || "none"}, ` +
+        `tracking=${args.trackingNumber || "none"}`
+    );
+
+    // TODO: When orders schema has vendorOrderNumber and trackingNumber:
+    // 1. Find order by vendorId + vendorOrderNumber
+    // 2. Link email to order via linkedOrderId
+    // 3. Update order with tracking number if present
+    // 4. Trigger Discord notification about shipping update
   },
 });
