@@ -1,5 +1,13 @@
 import { internalQuery } from "../_generated/server";
 import { v } from "convex/values";
+import { getUserByDiscordId } from "../lib/providers";
+
+/**
+ * Format a role code (e.g., "lead_mentor") to display text (e.g., "lead mentor").
+ */
+function formatRole(role: string): string {
+  return role.replace(/_/g, " ");
+}
 
 /**
  * Load team context for agent awareness.
@@ -82,6 +90,65 @@ export const loadTeamContext = internalQuery({
         id: o._id,
         status: o.status,
         totalCents: o.totalCents,
+      })),
+    };
+  },
+});
+
+/**
+ * Load all teams a user is a member of, given their Discord ID.
+ * Used to provide multi-team awareness in the agent.
+ */
+export const loadUserTeams = internalQuery({
+  args: {
+    discordUserId: v.string(),
+    currentTeamId: v.id("teams"),
+  },
+  handler: async (ctx, args) => {
+    // Get the Convex user ID from Discord ID
+    const userId = await getUserByDiscordId(ctx, args.discordUserId);
+    if (!userId) {
+      return { otherTeams: [], userRole: null };
+    }
+
+    // Get all team memberships for this user
+    const memberships = await ctx.db
+      .query("teamMembers")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Get team details for each membership
+    const teams = await Promise.all(
+      memberships.map(async (membership) => {
+        const team = await ctx.db.get(membership.teamId);
+        return team
+          ? {
+              _id: team._id,
+              name: team.name,
+              number: team.number,
+              program: team.program,
+              role: membership.role,
+              isCurrent: team._id === args.currentTeamId,
+            }
+          : null;
+      })
+    );
+
+    // Filter out nulls and separate current team from others
+    const validTeams = teams.filter(
+      (t): t is NonNullable<typeof t> => t !== null
+    );
+    const currentTeam = validTeams.find((t) => t.isCurrent);
+    const otherTeams = validTeams.filter((t) => !t.isCurrent);
+
+    return {
+      userRole: currentTeam?.role ? formatRole(currentTeam.role) : null,
+      otherTeams: otherTeams.map((t) => ({
+        _id: t._id,
+        name: t.name,
+        number: t.number,
+        program: t.program,
+        role: formatRole(t.role),
       })),
     };
   },

@@ -5,13 +5,25 @@ import { partsTools, executePartsTool } from "./parts";
 import { ordersTools, executeOrdersTool } from "./orders";
 import { bomTools, executeBomTool } from "./bom";
 import { safetyTools, executeSafetyTool } from "./safety";
+import { membersTools, executeMembersTool } from "./members";
+import { discordTools, executeDiscordTool } from "./discord";
+import { eventsTools, executeEventsTool } from "./events";
 
 /**
  * Build all tools available to the agent.
  * Tools are thin wrappers around Convex mutations and queries.
+ * Note: Web search uses Claude's native server tool, not a custom implementation.
  */
 export function buildTools(): Anthropic.Tool[] {
-  return [...partsTools, ...ordersTools, ...bomTools, ...safetyTools];
+  return [
+    ...partsTools,
+    ...ordersTools,
+    ...bomTools,
+    ...safetyTools,
+    ...membersTools,
+    ...discordTools,
+    ...eventsTools,
+  ];
 }
 
 /**
@@ -51,6 +63,23 @@ export async function executeToolCall(
       userId || "unknown",
       channelId
     );
+  }
+
+  // Members tools
+  if (toolName.startsWith("members_")) {
+    return executeMembersTool(ctx, teamId, toolName, input);
+  }
+
+  // Note: web_search is a server tool handled by Claude, not executed here
+
+  // Discord tools
+  if (toolName.startsWith("discord_")) {
+    return executeDiscordTool(ctx, teamId, toolName, input);
+  }
+
+  // Events tools
+  if (toolName.startsWith("events_")) {
+    return executeEventsTool(ctx, teamId, toolName, input);
   }
 
   return { error: `Unknown tool: ${toolName}` };
