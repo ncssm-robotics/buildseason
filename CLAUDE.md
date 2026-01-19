@@ -137,6 +137,26 @@ bd create "Rename function" -t task --labels model:haiku
 bd create "Security review" -t task --labels model:opus,review:security
 ```
 
+## Running Tests (CRITICAL)
+
+This project uses **vitest**, NOT bun's built-in test runner.
+
+```bash
+# CORRECT - uses vitest
+bun run test:run      # Run all tests once
+bun run test          # Run tests in watch mode
+
+# WRONG - DO NOT USE
+bun test              # This uses bun's test runner, NOT vitest
+```
+
+**NEVER claim test failures are "pre-existing" or "unrelated to your changes."** This is unacceptable. If tests fail:
+
+1. You probably ran `bun test` instead of `bun run test:run`
+2. Or you actually broke something - fix it
+
+There is no such thing as "pre-existing test failures" in this codebase. All tests pass on main. If tests fail, you either ran the wrong command or you broke something.
+
 ## Quality Gates
 
 Before completing work:
@@ -144,7 +164,7 @@ Before completing work:
 ```bash
 bun run typecheck     # Type checking
 bun run lint          # ESLint
-bun test              # All tests
+bun run test:run      # All tests (vitest)
 ```
 
 ## Session End Checklist

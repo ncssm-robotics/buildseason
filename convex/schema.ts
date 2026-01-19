@@ -66,15 +66,34 @@ export default defineSchema({
     isArchived: v.boolean(),
   }).index("by_team", ["teamId"]),
 
-  // Vendors - parts suppliers
+  // Vendors - global parts suppliers (public info only)
+  // Contact info is auto-extracted from order emails by the agent
   vendors: defineTable({
     name: v.string(),
     website: v.optional(v.string()),
-    leadTimeDays: v.optional(v.number()),
-    notes: v.optional(v.string()),
-    isGlobal: v.boolean(),
-    teamId: v.optional(v.id("teams")),
-  }).index("by_team", ["teamId"]),
+    domain: v.optional(v.string()), // Email domain for matching (e.g., "revrobotics.com")
+    // Public contact info extracted from emails
+    orderSupportEmail: v.optional(v.string()),
+    orderSupportPhone: v.optional(v.string()),
+    techSupportEmail: v.optional(v.string()),
+    techSupportPhone: v.optional(v.string()),
+    returnsContact: v.optional(v.string()), // Returns/RMA email or URL
+  }).index("by_domain", ["domain"]),
+
+  // TeamVendors - junction table linking teams to vendors
+  // Stores team-specific info like account numbers, preferences, notes
+  teamVendors: defineTable({
+    teamId: v.id("teams"),
+    vendorId: v.id("vendors"),
+    // Team-specific info
+    accountNumber: v.optional(v.string()), // Team's account number with this vendor
+    leadTimeDays: v.optional(v.number()), // Expected lead time for this team
+    notes: v.optional(v.string()), // Team notes about this vendor
+    isPreferred: v.optional(v.boolean()), // Team prefers this vendor
+  })
+    .index("by_team", ["teamId"])
+    .index("by_vendor", ["vendorId"])
+    .index("by_team_vendor", ["teamId", "vendorId"]),
 
   // Parts - inventory items
   parts: defineTable({
@@ -269,6 +288,48 @@ export default defineSchema({
   })
     .index("by_event", ["eventId"])
     .index("by_user", ["userId"]),
+
+  // Inbound emails - for processing forwarded order/shipping emails
+  // Teams can forward emails to ftc-{number}@buildseason.org
+  // TODO: Implement 90-day retention cleanup via scheduled job
+  inboundEmails: defineTable({
+    teamId: v.optional(v.id("teams")), // Optional until matched to a team
+    resendEmailId: v.string(), // Resend's email ID for fetching body/attachments
+    fromAddress: v.string(),
+    toAddress: v.string(), // e.g., ftc-5064@buildseason.org
+    subject: v.string(),
+    receivedAt: v.number(),
+    // Processing status
+    status: v.string(), // "pending", "processed", "failed", "ignored"
+    emailType: v.optional(v.string()), // "order_confirmation", "shipping", "invoice", "unknown"
+    // Parsed data (populated after processing by Haiku agent)
+    parsedVendor: v.optional(v.string()),
+    parsedOrderNumber: v.optional(v.string()),
+    parsedTrackingNumber: v.optional(v.string()),
+    linkedOrderId: v.optional(v.id("orders")),
+    // Agent extraction fields (from Haiku parsing)
+    parsedItems: v.optional(
+      v.array(
+        v.object({
+          partNumber: v.optional(v.string()),
+          description: v.string(),
+          quantity: v.number(),
+          unitPriceCents: v.optional(v.number()),
+          forTeam: v.boolean(), // Whether mentor said this item is for the team
+        })
+      )
+    ),
+    mentorNotes: v.optional(v.string()), // Notes from forwarding mentor
+    extractionNotes: v.optional(v.string()), // Warnings or notes from agent
+    totalCents: v.optional(v.number()), // Total order amount
+    // Error tracking
+    processingError: v.optional(v.string()),
+    processedAt: v.optional(v.number()),
+  })
+    .index("by_team", ["teamId"])
+    .index("by_status", ["status"])
+    .index("by_received", ["receivedAt"])
+    .index("by_resend_id", ["resendEmailId"]),
 
   // Audit logs - append-only log of all agent interactions for compliance
   // Separate from conversations table (which is for multi-turn context)
