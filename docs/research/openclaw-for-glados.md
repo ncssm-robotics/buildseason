@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-01
 **Status:** Completed
-**Conclusion:** Not recommended as a replacement; browser automation via Playwright MCP is the real opportunity
+**Conclusion:** Not recommended as a replacement; adopt memory, workflow, and Discord patterns
 
 ## What is OpenClaw?
 
@@ -24,179 +24,262 @@ OpenClaw (formerly Clawdbot, then Moltbot) is an open-source autonomous AI perso
 ### Current State (Feb 2026)
 
 - Hosted platform launched Jan 31, 2026 (OpenClawd.ai)
+- Cloudflare published [Moltworker](https://github.com/cloudflare/moltworker) — deploys OpenClaw on Workers + Sandbox + Browser Rendering
 - 700+ community skills
 - Significant security concerns (Cisco: 26% of skills have vulnerabilities)
 - Cost: $30-70/month typical, power users $3,600+/month
-- Active development, massive community
 
-## Cloudflare Moltworker
+## Why OpenClaw Does NOT Fit as a Replacement
 
-[cloudflare/moltworker](https://github.com/cloudflare/moltworker) is a Cloudflare proof-of-concept that deploys OpenClaw on Cloudflare's edge platform instead of dedicated hardware.
-
-### Architecture
-
-Two-tier system:
-1. **Worker Layer** — Cloudflare Worker managing sandbox lifecycle, proxying HTTP/WebSocket, passing secrets
-2. **Container Layer** — Cloudflare Sandbox running the full OpenClaw gateway (Node 22 + OpenClaw, port 18789)
-
-### Key Cloudflare Services Used
-
-| Service | Role |
-|---|---|
-| **Workers** ($5/month paid) | Entrypoint, request routing, sandbox lifecycle |
-| **Sandbox** | Containerized runtime for the OpenClaw gateway |
-| **R2 Storage** | Automatic backups every 5 min, device sync, conversation persistence |
-| **Browser Rendering** | CDP shim for headless browser — web scraping, screenshots, automation |
-| **Access** | Auth layer protecting admin routes |
-| **AI Gateway** (optional) | Cache, rate-limit, analyze API requests; unified billing |
-
-### Browser Rendering Is the Interesting Part
-
-Moltworker integrates **Cloudflare Browser Rendering** via a CDP (Chrome DevTools Protocol) shim. This gives the agent headless browser capabilities at the edge: web scraping, screenshot capture, form filling, and page interaction — all without requiring a local machine.
-
-This is the capability most relevant to BuildSeason's ordering gap.
-
-## How OpenClaw Does Browser Automation
-
-OpenClaw uses **Playwright on CDP** for browser automation:
-
-- Connects to Chromium via Chrome DevTools Protocol
-- Runs a dedicated, isolated browser instance (separate profile)
-- Uses **accessibility tree snapshots** with numbered element refs (not CSS selectors)
-- Actions: `click`, `type`, `drag`, `select`, `evaluate` (JS execution)
-- Must re-snapshot after each navigation (refs are not stable across page loads)
-
-### How OpenClaw Does NOT Do Ordering
-
-Despite the browser capabilities, OpenClaw's ordering skill (`food-order` / `ordercli`) does **not** use browser automation. It wraps vendor APIs via a dedicated CLI tool. The browser is only used for authentication when API login is blocked by Cloudflare/bot protection.
-
-There is no general-purpose "order from any website" skill in ClawHub.
-
-## GLaDOS Ordering Gap
-
-### Current Workflow
-
-1. **Create** — Team creates order in draft with vendor + line items
-2. **Submit** — Student submits for review (`draft` → `pending`)
-3. **Approve** — Mentor approves (`pending` → `approved`)
-4. **??? GAP ???** — No mechanism to actually place the order on vendor websites
-5. **Receive** — Email forwarded to `ftc-{number}@buildseason.org`, Haiku parses confirmation
-6. **Link** — `tryLinkToOrder` in `inbound.ts` is a stub (logs but doesn't link)
-
-### What's Missing
-
-- **No automated order placement** after approval
-- **No `vendorOrderNumber`** field on orders (can't link confirmation emails)
-- **No `trackingNumber`** field on orders
-- **No vendor credential storage**
-- **No browser automation tools** in GLaDOS
-
-## Browser Automation Options for GLaDOS
-
-### Option A: Playwright MCP Server (Recommended)
-
-The official [Microsoft Playwright MCP server](https://github.com/microsoft/playwright-mcp) (`@playwright/mcp`) integrates directly with the Claude Agent SDK via MCP:
-
-```json
-{
-  "mcpServers": {
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
-```
-
-- Uses **accessibility tree** (not screenshots) — fast, lightweight, no vision model needed
-- Works within existing agent framework
-- Auth: show login page, user logs in manually, cookies persist for session
-- Human-in-the-loop at the Convex layer (agent pauses, asks mentor to confirm in Discord before clicking "Place Order")
-
-**Challenge:** Convex actions are serverless/ephemeral (10-min max). Browser sessions need persistence. Would likely need a sidecar process or external browser service.
-
-### Option B: Cloudflare Browser Rendering (Serverless Browser)
-
-Call Cloudflare Browser Rendering from a Convex HTTP action:
-
-- Headless Chrome at the edge, no infrastructure to manage
-- $5/month on Workers Paid plan
-- CDP-compatible — can use Playwright or Puppeteer client libraries
-- Sessions are ephemeral per request (no persistent login without cookie management)
-
-**Fits well** for: price checking, availability lookups, screenshot capture
-**Less ideal** for: multi-step checkout flows requiring persistent auth
-
-### Option C: Claude Computer Use API (Screenshot-Based)
-
-Anthropic's Computer Use API (beta) provides full visual browser control:
-
-- Screenshot → Claude determines coordinates → sends click/type actions
-- Only available on Sonnet models (not Opus)
-- Higher latency and cost per interaction
-- Requires dedicated VM/container
-- Cannot circumvent CAPTCHAs per Anthropic policy
-
-### Option D: Hybrid API + Browser Fallback
-
-Follow OpenClaw's actual pattern: use vendor APIs where available (REV Robotics, AndyMark, goBILDA may have B2B APIs), fall back to browser automation only when no API exists.
-
-### Anti-Bot Reality Check
-
-Modern e-commerce sites use aggressive anti-bot measures:
-- **Cloudflare Turnstile** — proof-of-work + fingerprinting + behavioral heuristics
-- **reCAPTCHA v3** — background behavioral scoring
-- **Playwright detection** — automation flags in browser fingerprint
-- **Behavioral analysis** — mouse movements, scroll patterns, typing speed
-
-Browser automation for checkout will have a meaningful failure rate. The most reliable approach is a **mentor-assisted flow**: agent fills the cart, mentor clicks through checkout manually, agent captures the confirmation.
-
-## Fit Assessment: OpenClaw/Moltworker for GLaDOS
-
-### Why OpenClaw Still Does NOT Fit
-
-| Dimension | GLaDOS (Current) | OpenClaw/Moltworker |
+| Dimension | GLaDOS (Current) | OpenClaw |
 |---|---|---|
-| **Integration** | Deeply embedded in Convex backend | Standalone Gateway daemon (Worker or local) |
+| **Integration** | Deeply embedded in Convex backend | Standalone Gateway daemon |
 | **Data access** | Direct Convex queries/mutations | MCP/skill-based, external APIs |
 | **Tool control** | Controlled, audited tool set | 700+ community skills, self-installs |
 | **Security** | Team-scoped, YPP-compliant, audit-logged | User-configured, documented gaps |
 | **Multi-tenancy** | One agent serving N teams | One container per deployment |
 | **Context** | Full team state injected per request | Generic memory (daily logs + MEMORY.md) |
 
-Moltworker reinforces the mismatch: it deploys one container per user. BuildSeason needs a single agent serving multiple FTC teams with team-scoped data isolation.
+---
 
-### What IS Worth Taking
+## Patterns Worth Adopting
 
-1. **Cloudflare Browser Rendering** — Callable from Convex HTTP actions without managing browser infrastructure. Best option for adding browser capabilities to GLaDOS.
-2. **Memory patterns** — Two-layer memory (daily logs + curated long-term + vector search) for improving GLaDOS conversation persistence.
-3. **Lobster workflows** — Typed pipelines with approval gates for order placement flows.
-4. **Discord patterns** — DM pairing, channel isolation, mention policies.
-5. **CDP shim pattern** — How Moltworker wraps Browser Rendering with a CDP interface.
+### 1. Two-Layer Durable Memory
 
-## Recommendation
+**OpenClaw pattern:** Daily append-only logs + curated long-term `MEMORY.md` + hybrid BM25/vector search. Before session compaction, a silent agentic turn flushes important context to durable memory.
 
-**Do not replace** the Claude Agent SDK with OpenClaw for GLaDOS. The architectures serve fundamentally different purposes.
+**GLaDOS today:** `conversations` table stores last 50 messages per team+channel, 7-day cleanup. Only the last 10 messages are loaded as agent context. When messages are trimmed or cleaned up, that context is gone forever.
 
-**For browser-based ordering, pursue this path:**
+**What to build:**
 
-1. **Short term** — Add `vendorOrderNumber` and `trackingNumber` fields to orders schema. Complete the `tryLinkToOrder` stub. This unlocks email→order linking with zero browser work.
-2. **Medium term** — Add Playwright MCP server to GLaDOS for browser automation. Start with read-only tasks: price checks, availability lookups, vendor catalog browsing.
-3. **Longer term** — Build a mentor-assisted ordering flow: GLaDOS fills the cart via browser automation, sends a Discord message with a screenshot for mentor review, mentor clicks through checkout manually or approves the agent to proceed.
-4. **Evaluate** Cloudflare Browser Rendering as the headless browser backend (avoids managing browser infrastructure).
+#### a. Team Memory Table
+
+New `teamMemory` table for durable facts that survive conversation trimming:
+
+```
+teamMemory {
+  teamId: Id<"teams">
+  category: "preference" | "decision" | "lesson" | "context"
+  content: string           // The fact itself
+  source: string            // What conversation/event created it
+  createdAt: number
+  createdBy: string         // userId or "agent"
+  supersededBy?: Id<"teamMemory">  // For updated facts
+}
+  .index("by_team", ["teamId"])
+  .index("by_team_category", ["teamId", "category"])
+```
+
+Examples:
+- `preference`: "Team prefers goBILDA over REV for structural channels"
+- `decision`: "Using 5:1 gear ratio on arm after testing showed 3:1 was too fast"
+- `lesson`: "McMaster orders take 3 days to arrive, not 1"
+- `context`: "Robot name is 'Scorch'. Competition is Feb 15."
+
+#### b. Agent Memory Tool
+
+New tool `memory_save` that the agent calls when it recognizes a durable fact:
+
+```typescript
+// convex/agent/tools/memory.ts
+memory_save: {
+  description: "Save an important fact about the team for long-term reference",
+  parameters: {
+    category: "preference | decision | lesson | context",
+    content: "string - the fact to remember",
+  }
+}
+memory_search: {
+  description: "Search team memory for relevant past context",
+  parameters: {
+    query: "string - what to search for",
+  }
+}
+```
+
+#### c. Pre-Compaction Flush
+
+Before trimming conversations (in `conversation.ts:append`), when messages would be dropped, call a Haiku summarization pass to extract durable facts into `teamMemory`. This mirrors OpenClaw's "flush before compaction" pattern.
+
+**Implementation approach:**
+1. When `append()` trims messages, check if any are being dropped
+2. If yes, schedule an internal action that sends dropped messages to Haiku
+3. Haiku extracts any facts worth preserving → insert into `teamMemory`
+4. Agent's system prompt includes relevant team memories (loaded in `context.ts`)
+
+#### d. Context Loader Integration
+
+Update `convex/agent/context.ts:loadTeamContext` to include recent team memories in the context object. The system prompt in `prompts/systemPrompt.ts` would include a "Team Memory" section with the most relevant facts.
+
+---
+
+### 2. Workflow Pipelines with Approval Gates
+
+**OpenClaw pattern:** Lobster typed pipelines — deterministic multi-step workflows with explicit approval gates. Steps are data (YAML/JSON), not code. Halted workflows return a resume token. Side effects wait for approval.
+
+**GLaDOS today:** Order status transitions are manual mutations (`submit()`, `approve()`, `markOrdered()`, `markReceived()`). No automated multi-step workflows. No way for the agent to orchestrate a sequence with pauses for human approval.
+
+**What to build:**
+
+#### a. Workflow Table
+
+```
+workflows {
+  teamId: Id<"teams">
+  type: "order_fulfillment" | "inventory_restock" | "competition_prep"
+  status: "running" | "awaiting_approval" | "completed" | "failed"
+  currentStep: number
+  steps: [{
+    name: string
+    status: "pending" | "in_progress" | "awaiting_approval" | "completed" | "skipped"
+    toolCall?: { name: string, args: object }
+    result?: string
+    approvedBy?: string        // userId who approved
+    approvedAt?: number
+  }]
+  context: object              // Workflow-scoped data (order ID, etc.)
+  createdAt: number
+  updatedAt: number
+}
+  .index("by_team_status", ["teamId", "status"])
+```
+
+#### b. Example: Order Fulfillment Workflow
+
+When a mentor approves an order, GLaDOS could create a workflow:
+
+```
+Step 1: Verify order details are complete          [auto]
+Step 2: Check part availability in inventory       [auto]
+Step 3: Calculate total cost                       [auto]
+Step 4: Notify mentor with summary for final OK    [approval gate]
+Step 5: Mark order as "ordered"                    [auto after approval]
+Step 6: Watch for confirmation email               [auto, async]
+Step 7: Link email to order, update status         [auto]
+Step 8: Notify team in Discord                     [auto]
+```
+
+The agent would check for `awaiting_approval` workflows on each invocation and prompt mentors. Approval could come via Discord reaction or slash command.
+
+#### c. Agent Workflow Tools
+
+```typescript
+// convex/agent/tools/workflows.ts
+workflow_create: {
+  description: "Create a multi-step workflow with approval gates",
+  parameters: { type: string, context: object }
+}
+workflow_status: {
+  description: "Check status of active workflows",
+  parameters: { teamId: Id<"teams"> }
+}
+workflow_advance: {
+  description: "Execute the next step of a workflow",
+  parameters: { workflowId: Id<"workflows"> }
+}
+```
+
+---
+
+### 3. Proactive Agent Messaging
+
+**OpenClaw pattern:** Agent can reach out to users proactively — morning briefings, deadline reminders, status alerts. Not just reactive to commands.
+
+**GLaDOS today:** Purely reactive. Only responds when `/glados` or `/ask` is used in Discord. Has `discord_send_message` tool but no mechanism to trigger it proactively.
+
+**What to build:**
+
+#### a. Scheduled Check-Ins
+
+Use Convex `crons` to trigger GLaDOS proactively:
+
+```typescript
+// convex/crons.ts
+crons.interval("daily-team-briefing", { hours: 24 }, internal.agent.proactive.dailyBriefing);
+crons.interval("order-status-check", { hours: 4 }, internal.agent.proactive.checkOrderStatus);
+crons.interval("competition-countdown", { hours: 24 }, internal.agent.proactive.competitionReminder);
+```
+
+#### b. Proactive Action Handler
+
+```typescript
+// convex/agent/proactive.ts
+export const dailyBriefing = internalAction(async (ctx) => {
+  // For each active team:
+  //   1. Load team context
+  //   2. Check: pending orders, low stock, upcoming events, stale workflows
+  //   3. If anything noteworthy, compose a brief message
+  //   4. Send to team's #glados or #general channel
+  //   5. Only send if there's real information (no empty "good morning!" messages)
+});
+```
+
+#### c. Event-Triggered Messages
+
+Beyond crons, trigger proactive messages on specific events:
+- Order status changes → notify team channel
+- Email parsed with tracking info → "Your McMaster order shipped!"
+- Inventory drops below BOM requirement → "Heads up: we're short 3 servo motors"
+- Competition within 7 days → daily countdown with checklist
+
+---
+
+### 4. Discord Interaction Improvements
+
+**OpenClaw pattern:** DM pairing codes for unknown users. Guild channel isolation (conversations in #build-log stay separate from #orders). Bot-to-bot safeguards. Mention-only activation with per-channel overrides.
+
+**GLaDOS today:** Slash commands only (`/glados`, `/ask`). Discord link tokens exist for account connection. Conversations scoped by team+channel already. No DM support. No @mention activation.
+
+**What to build:**
+
+#### a. @Mention Activation
+
+Add message handler (not just slash commands) so GLaDOS responds when @mentioned in any channel. This is more natural than slash commands for quick questions.
+
+In `convex/discord/handler.ts`, handle `MESSAGE_CREATE` events alongside `INTERACTION_CREATE`:
+
+```
+- Check if GLaDOS is @mentioned in message
+- If yes, extract the message content (minus the mention)
+- Route through the same agent handler
+- Respond in-thread (or inline) rather than as a slash command follow-up
+```
+
+#### b. DM Support with Pairing
+
+When someone DMs the bot:
+1. Check if their Discord ID is linked (`discordLinks` table)
+2. If linked → route to their team's agent context
+3. If not linked → send pairing instructions (existing `discordLinkTokens` flow)
+4. DM conversations stay private (separate channel scope)
+
+#### c. Thread-Aware Conversations
+
+Conversations in Discord threads should share context with the parent channel but be separately addressable. Update the `channelId` scoping to include thread IDs.
+
+---
+
+## Implementation Priority
+
+| Pattern | Effort | Impact | Priority |
+|---|---|---|---|
+| Team memory table + agent tool | Medium | High — stops losing institutional knowledge | **1** |
+| Pre-compaction memory flush | Medium | High — automatic fact preservation | **2** |
+| Proactive messaging (crons) | Low | High — agent becomes useful without being asked | **3** |
+| @Mention activation | Low | Medium — more natural Discord interaction | **4** |
+| Workflow pipelines | High | Medium — orders already have manual flow | **5** |
+| DM support | Medium | Low — most interaction is in team channels | **6** |
 
 ## References
 
 - [OpenClaw Documentation](https://docs.openclaw.ai/)
+- [OpenClaw Memory System](https://docs.openclaw.ai/memory)
 - [OpenClaw Browser Tool](https://docs.openclaw.ai/tools/browser)
 - [OpenClaw Discord Integration](https://docs.openclaw.ai/channels/discord)
 - [OpenClaw Exec Approvals](https://docs.openclaw.ai/tools/exec-approvals)
+- [Lobster Workflow Shell](https://github.com/openclaw/lobster)
 - [Cloudflare Moltworker](https://github.com/cloudflare/moltworker)
 - [Cloudflare Blog: Moltworker](https://blog.cloudflare.com/moltworker-self-hosted-ai-agent/)
-- [Lobster Workflow Shell](https://github.com/openclaw/lobster)
 - [Microsoft Playwright MCP Server](https://github.com/microsoft/playwright-mcp)
-- [Browser-Use Library](https://github.com/browser-use/browser-use)
 - [Cisco: "Personal AI Agents like OpenClaw Are a Security Nightmare"](https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare)
 - [VentureBeat: "OpenClaw proves agentic AI works."](https://venturebeat.com/security/openclaw-agentic-ai-security-risk-ciso-guide)
-- [Fast Company: "OpenClaw is cool, but it gets pricey fast"](https://www.fastcompany.com/91484506/what-is-clawdbot-moltbot-openclaw)
-- [IBM Think: "The viral space lobster agent"](https://www.ibm.com/think/news/clawdbot-ai-agent-testing-limits-vertical-integration)
