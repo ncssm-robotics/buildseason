@@ -1,8 +1,8 @@
-# Migration Plan: Beads → Claude Code Native Tasks
+# Migration Plan: Beads → Claude Code Native Tasks + GitHub Issues
 
 **Date:** 2026-02-01
 **Status:** Plan
-**Scope:** Replace `bd` (beads) issue tracker with Claude Code native Tasks + GitHub Issues for persistence
+**Scope:** Replace `bd` (beads) with Claude Code native Tasks + GitHub Issues
 
 ## Background
 
@@ -26,56 +26,109 @@ Deeply integrated via:
 
 ### What Claude Code Tasks Provide
 
-Native Tasks (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) introduced in v2.1.16:
+Native Tasks (`TaskCreate`/`TaskUpdate`/`TaskList`/`TaskGet`) introduced in v2.1.16, announced by Thariq Shaukat (Anthropic) on Jan 22, 2026. Explicitly inspired by Beads.
 
-- **Individual task CRUD** (not full-list replacement like TodoWrite)
-- **Dependency tracking** between tasks
-- **Multi-agent visibility** — shared across sub-agents in a session
-- **Task claiming** via ownership
+**Storage:** `~/.claude/tasks/{task-list-id}/N.json` — individual JSON files per task on the filesystem.
+
+**Task schema:**
+```json
+{
+  "id": "1",
+  "subject": "Fix authentication bug",
+  "description": "Detailed requirements and acceptance criteria",
+  "status": "pending",
+  "owner": "agent-name",
+  "activeForm": "Fixing authentication bug",
+  "blockedBy": ["2"],
+  "blocks": ["3"],
+  "createdAt": 1706000000000,
+  "updatedAt": 1706000001000
+}
+```
+
+**Key capabilities:**
+- **Filesystem-persistent** — stored at `~/.claude/tasks/`, survives session restarts
+- **Cross-session sharing** — `CLAUDE_CODE_TASK_LIST_ID=buildseason claude` makes multiple sessions collaborate on the same task list
+- **Broadcasting** — when one session updates a task, all sessions on the same list see it
+- **Native dependency tracking** — `blockedBy`/`blocks` arrays with automatic unblocking when blocking tasks complete
+- **Sub-agent coordination** — tasks visible to all agents in a session, claimable via `owner` field
 - **Staleness protection** — must `TaskGet` before `TaskUpdate`
+- Works with `claude -p` (headless) and Agent SDK
 
-**Critical limitation:** Tasks are **session-scoped** — they vanish when the session ends.
+**Tool API:**
+
+| Tool | Key Parameters |
+|---|---|
+| `TaskCreate` | `subject`, `description`, `activeForm` |
+| `TaskUpdate` | `taskId`, `status`, `owner`, `addBlockedBy`, `removeBlockedBy`, `addBlocks`, `removeBlocks`, `delete` |
+| `TaskList` | (none — returns all tasks) |
+| `TaskGet` | `taskId` |
+
+**What Tasks lack vs Beads:**
+- No label/tagging system
+- No priority field
+- No type classification (epic/feature/task/bug)
+- No wave/milestone grouping
+- No cross-machine sync (local filesystem only, `--sync-dir` is a feature request)
+- No historical archive of completed work
+- No `bd ready` equivalent (must check blockedBy manually)
 
 ### Why Migrate
 
-1. **Friction with Opus 4.5** — Claude Code defaults to native Tasks instead of `bd`, causing confusion (beads issue #429)
+1. **Friction with Opus 4.5** — Claude Code defaults to native Tasks instead of `bd`, creating two sources of truth (beads issue #429)
 2. **External dependency** — vendored binary, version mismatches, `bd doctor` failures
-3. **Duplication** — native Tasks and bd both track work, creating two sources of truth
+3. **Native alignment** — Tasks are where Anthropic is investing; fighting the platform is a losing battle
 4. **Maintenance burden** — session hooks, binary updates, JSONL sync, git merge complexity
 
-## Architecture: Two-Layer Replacement
+## Architecture: Two-Layer System
 
-Since native Tasks are session-scoped, we need a persistence layer. The natural choice is **GitHub Issues** — already integrated with Claude Code's GitHub Actions workflow.
+Native Tasks handle in-session orchestration well, but lack labels, priorities, cross-machine sync, and historical tracking. **GitHub Issues** fills those gaps.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    PERSISTENCE LAYER                             │
+│                    GitHub Issues                                 │
 │                                                                  │
-│  GitHub Issues + Labels + Milestones                             │
-│  • Survives across sessions                                      │
-│  • Dependencies via "blocked by #N" in body                      │
-│  • Labels for AO, skills, waves, priorities                      │
+│  • Cross-machine, cross-session persistence                      │
+│  • Labels for AO, skills, waves, priorities, model routing       │
 │  • Milestones for waves/checkpoints                              │
-│  • Queryable via `gh issue list`                                 │
-│  • Native to Claude Code GitHub integration                      │
+│  • Queryable: `gh issue list --label wave:1`                     │
+│  • Team visibility: non-agents see issues in GitHub UI           │
+│  • Historical: closed issues preserved for retros                │
+│  • CI: GitHub Actions reacts to issue events                     │
 │                                                                  │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ hydrate on session start
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    SESSION LAYER                                 │
+│                    Claude Code Native Tasks                      │
 │                                                                  │
-│  Claude Code Native Tasks                                        │
-│  • In-session orchestration                                      │
-│  • Sub-agent coordination                                        │
-│  • Dependency tracking within session                            │
-│  • Task claiming for parallel work                               │
-│  • Real-time progress visibility                                 │
+│  • Real-time dependency tracking (blockedBy/blocks)              │
+│  • Sub-agent coordination (owner, claiming)                      │
+│  • Cross-session broadcast via CLAUDE_CODE_TASK_LIST_ID          │
+│  • UI: Ctrl+T task view, /tasks command                          │
+│  • Automatic unblocking when dependencies complete               │
+│  • Progress visibility in terminal                               │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**The hydration pattern:** At session start, query GitHub Issues to understand current work state. Create native Tasks from the relevant issues. At session end, sync task results back to GitHub Issues.
+### How the Layers Interact
+
+1. **Session start:** Query GitHub Issues for open work → create native Tasks with `blockedBy` relationships
+2. **During session:** Work tracked via native Tasks (dependencies, progress, sub-agent coordination)
+3. **Task completion:** Close the GitHub Issue with evidence, mark native Task completed
+4. **Army deploy:** Create named task list (`CLAUDE_CODE_TASK_LIST_ID=wave-2`), spawn sub-agents sharing it, each claims tasks via `owner`
+5. **Session end:** Any new discoveries → create GitHub Issues; native Tasks auto-persist in `~/.claude/tasks/`
+
+### Why Not Tasks Alone?
+
+Native Tasks lack labels, priorities, wave grouping, cross-machine sync, and historical archives. For a single developer on one machine doing short tasks, native Tasks alone would work. For BuildSeason's army orchestration across waves with skill routing and model labels, we need the metadata layer that GitHub Issues provides.
+
+### Why Not GitHub Issues Alone?
+
+GitHub Issues lack real-time dependency resolution, sub-agent coordination, terminal UI integration, and the broadcasting that makes parallel agents work. Native Tasks are purpose-built for exactly this.
 
 ## Migration Inventory
 
@@ -83,53 +136,47 @@ Since native Tasks are session-scoped, we need a persistence layer. The natural 
 
 | File/Dir | Purpose | Replacement |
 |---|---|---|
-| `.beads/` (entire directory) | Beads database, binary, config | GitHub Issues |
-| `.claude/hooks/session-start.sh` | bd setup + ready display | New hook: `gh issue list` |
+| `.beads/` (entire directory) | Beads database, binary, config | GitHub Issues + native Tasks |
 | `.claude/hooks/update-bd-binary.sh` | Binary updates | N/A (no binary) |
 | `.claude/skills/bead-workflow/` | bd workflow skill | `task-workflow/` |
-| `.claude/skills/breakdown-process/` | Spec → beads | `breakdown-process/` (rewritten for GH Issues) |
-| `.claude/skills/work-status/` | Status from bd | `work-status/` (rewritten for GH Issues) |
-| `.claude/commands/bead.md` | `/bead` command | `/task` command |
 
 ### Files to Rewrite
 
 | File | Changes |
 |---|---|
-| `.claude/skills/army-process/SKILL.md` | Replace `bd` commands with `gh issue` |
-| `.claude/skills/army-process/plan.md` | Wave planning via GH milestones + labels |
-| `.claude/skills/army-process/deploy.md` | Agent prompts reference GH issues, not beads |
-| `.claude/skills/army-process/review.md` | Defect issues with `discovered-from` labels |
-| `.claude/skills/army-process/retro.md` | Process improvement via GH issues |
+| `.claude/hooks/session-start.sh` | Replace bd setup with GH Issues query + task hydration |
+| `.claude/skills/army-process/SKILL.md` | Replace `bd` with `gh issue` + native Tasks |
+| `.claude/skills/army-process/plan.md` | Waves → GH milestones; tasks → GH Issues + native Tasks |
+| `.claude/skills/army-process/deploy.md` | `CLAUDE_CODE_TASK_LIST_ID=wave-N`; agents claim via TaskUpdate |
+| `.claude/skills/army-process/review.md` | Defect GH issues with `from:#N` labels |
+| `.claude/skills/army-process/retro.md` | Query closed GH issues for metrics |
 | `.claude/skills/army-process/merge.md` | Merge order from milestone metadata |
-| `.claude/skills/army-process/coordination.md` | Coordination issues |
-| `.claude/skills/parallel-execution/SKILL.md` | Workers use native Tasks + GH Issues |
-| `.claude/skills/session-completion/SKILL.md` | Remove `bd sync`, add GH sync |
-| `.claude/commands/army.md` | Replace bd queries with gh queries |
+| `.claude/skills/army-process/coordination.md` | Coordination GH issues |
+| `.claude/skills/parallel-execution/SKILL.md` | Workers use native Tasks for claiming + GH Issues for persistence |
+| `.claude/skills/session-completion/SKILL.md` | Remove `bd sync`; add GH issue close + task cleanup |
+| `.claude/skills/breakdown-process/` | Spec → GH Issues (not beads) |
+| `.claude/skills/work-status/` | Status from GH Issues + TaskList |
+| `.claude/commands/bead.md` | Rewrite as `/task` using `gh` + native Tasks |
+| `.claude/commands/army.md` | Replace bd queries with gh + TaskList queries |
 | `.claude/settings.json` | Remove `Bash(bd:*)`, `beads@beads-marketplace` |
 | `CLAUDE.md` | Replace all bd references |
-
-### Files to Create
-
-| File | Purpose |
-|---|---|
-| `.claude/skills/task-workflow/SKILL.md` | Native Tasks + GH Issues workflow |
-| `.claude/commands/task.md` | `/task` command (replaces `/bead`) |
-| `.claude/hooks/session-start.sh` | New: hydrate from GH Issues |
 
 ### Scripts to Rewrite
 
 | Script | Current | New |
 |---|---|---|
-| `sync-matrix.sh` | Reads bd labels | Reads GH issue labels |
-| `skill-audit.sh` | Reads bd label `skill:*` | Reads GH issue labels |
+| `sync-matrix.sh` | Reads bd labels | Reads GH issue labels via `gh` |
+| `skill-audit.sh` | Reads bd `skill:*` labels | Reads GH issue labels via `gh` |
 | `merge-worktrees.sh` | No bd dependency | Keep as-is |
 | `copy-worktreeinclude.sh` | No bd dependency | Keep as-is |
 
-## Command Mapping: bd → gh
+## Command Mapping
+
+### bd → gh (persistence layer)
 
 | Beads Command | GitHub CLI Equivalent |
 |---|---|
-| `bd ready` | `gh issue list --label ready --state open` (or custom query) |
+| `bd ready` | `gh issue list --state open` + filter unblocked (see session hook) |
 | `bd show <id>` | `gh issue view <number>` |
 | `bd create "Title" -t task` | `gh issue create --title "Title" --label type:task` |
 | `bd update <id> --status in_progress` | `gh issue edit <number> --add-label status:in-progress` |
@@ -139,41 +186,18 @@ Since native Tasks are session-scoped, we need a persistence layer. The natural 
 | `bd blocked` | `gh issue list --label status:blocked` |
 | `bd dep add <a> <b>` | Add "Blocked by #N" to issue body |
 | `bd label <id> <label>` | `gh issue edit <number> --add-label <label>` |
-| `bd stats` | `gh issue list --state all --json state \| jq 'group_by(.state)'` |
 | `bd sync` | N/A (GitHub is already remote) |
 
-### Dependency Tracking
+### bd → native Tasks (session layer)
 
-Beads has first-class dependency graphs. GitHub Issues does not. Options:
-
-**Option A: Body Convention (Recommended)**
-```markdown
-## Dependencies
-- Blocked by #42
-- Blocked by #55
-```
-Parse with grep when needed. Simple, visible, works with Claude's text understanding.
-
-**Option B: GitHub Sub-Issues (Beta)**
-GitHub's sub-issues feature (if available) provides parent-child natively.
-
-**Option C: Label-Based**
-`blocks:#42` label — queryable but noisy.
-
-**Recommendation:** Option A. Claude can read issue bodies and understand dependency relationships without special tooling. The `ready` concept becomes: "open issues with no unresolved `Blocked by` references."
-
-### Auto-Ready Detection
-
-Beads' `bd ready` automatically computes which issues are unblocked. With GitHub Issues, we need a lightweight equivalent:
-
-```bash
-# Session start hook: compute ready issues
-# 1. Get all open issues
-# 2. For each, check if "Blocked by #N" references are all closed
-# 3. Display unblocked issues
-```
-
-This can be a small script or handled by the agent at session start.
+| Beads Concept | Native Tasks Equivalent |
+|---|---|
+| Pick up a bead | `TaskCreate` + `TaskUpdate(status: "in_progress", owner: "me")` |
+| Mark blocked | `TaskUpdate(addBlockedBy: ["3"])` |
+| Check what's ready | `TaskList` → filter where `blockedBy` is empty + status is `pending` |
+| Close a bead | `TaskUpdate(status: "completed")` |
+| Parallel agents claim work | Each agent calls `TaskUpdate(owner: "worker-N")` on unclaimed tasks |
+| Wave task list | `CLAUDE_CODE_TASK_LIST_ID=wave-2 claude` |
 
 ## Label Schema
 
@@ -181,24 +205,23 @@ Map beads labels to GitHub Issue labels:
 
 | Beads Label | GitHub Label | Color |
 |---|---|---|
-| `wave:0`, `wave:1`, etc. | `wave:0`, `wave:1` | Blue |
-| `ao:<pattern>` | `ao:<pattern>` | Green |
-| `aoi:<pattern>` | `aoi:<pattern>` | Light green |
-| `skill:<name>` | `skill:<name>` | Purple |
-| `mission:<id>` | `mission:<id>` | Orange |
-| `checkpoint` | `checkpoint` | Red |
-| `coordination-required` | `coordination-required` | Yellow |
-| `main-effort` | `main-effort` | Orange |
-| `model:opus` | `model:opus` | Gray |
-| `model:sonnet` | `model:sonnet` | Gray |
-| `model:haiku` | `model:haiku` | Gray |
-| `human-verify` | `human-verify` | Red |
-| `discovered-from:doc:*` | `from:doc:<name>` | Teal |
-| `discovered-from:<id>` | `from:#<number>` | Teal |
-| (priority 0-4) | `P0`, `P1`, `P2`, `P3`, `P4` | Red→Green gradient |
-| (type) | `type:epic`, `type:feature`, `type:task`, `type:bug` | Various |
-| `status:in-progress` | `status:in-progress` | Yellow |
-| `status:blocked` | `status:blocked` | Red |
+| `wave:0`, `wave:1`, etc. | `wave:0`, `wave:1` | `1D4ED8` Blue |
+| `ao:<pattern>` | `ao:<pattern>` | `16A34A` Green |
+| `aoi:<pattern>` | `aoi:<pattern>` | `86EFAC` Light green |
+| `skill:<name>` | `skill:<name>` | `7C3AED` Purple |
+| `mission:<id>` | `mission:<id>` | `EA580C` Orange |
+| `checkpoint` | `checkpoint` | `DC2626` Red |
+| `coordination-required` | `coordination-required` | `EAB308` Yellow |
+| `main-effort` | `main-effort` | `F97316` Orange |
+| `model:opus` | `model:opus` | `6B7280` Gray |
+| `model:sonnet` | `model:sonnet` | `6B7280` Gray |
+| `model:haiku` | `model:haiku` | `6B7280` Gray |
+| `human-verify` | `human-verify` | `DC2626` Red |
+| `discovered-from:<id>` | `from:#<number>` | `0D9488` Teal |
+| priority 0-4 | `P0`–`P4` | Red→Green gradient |
+| type | `type:epic`, `type:feature`, `type:task`, `type:bug` | Various |
+| `status:in-progress` | `status:in-progress` | `FBBF24` Yellow |
+| `status:blocked` | `status:blocked` | `EF4444` Red |
 
 ### Milestones for Waves
 
@@ -206,204 +229,249 @@ Each wave becomes a GitHub Milestone:
 - `Wave 0`, `Wave 1`, `Wave 2`, etc.
 - Milestone description contains merge order and sync matrix
 - Milestone % complete tracks wave progress natively
+- Checkpoint issues get the `checkpoint` label and are linked to their milestone
 
-### Checkpoints
+## Dependency Tracking
 
-Checkpoint issues get the `checkpoint` label and are linked to their milestone. Closing a checkpoint milestone-gates the next wave.
+**Beads:** First-class dependency graph with `bd dep add`, `bd ready`, `bd blocked`.
 
-## Migration Steps
+**New system: two complementary mechanisms:**
 
-### Phase 1: Create GitHub Labels + Milestones
+1. **GitHub Issues (persistence):** Convention in issue body:
+   ```markdown
+   ## Dependencies
+   - Blocked by #42
+   - Blocked by #55
+   ```
+   Claude reads issue bodies and understands the relationships.
 
+2. **Native Tasks (session):** First-class `blockedBy`/`blocks` arrays with automatic unblocking:
+   ```
+   TaskCreate({ subject: "...", description: "..." })
+   TaskUpdate({ taskId: "2", addBlockedBy: ["1"] })
+   // When task 1 completes, task 2 automatically unblocks
+   ```
+
+The session hook hydrates native Task dependencies from GitHub Issue bodies at session start.
+
+## Army Integration
+
+### Wave Planning (`/army plan`)
+
+**Before (beads):**
 ```bash
-# Create label taxonomy
-gh label create "type:epic" --color 8B5CF6
-gh label create "type:feature" --color 6366F1
-gh label create "type:task" --color 3B82F6
-gh label create "type:bug" --color EF4444
-gh label create "P0" --color DC2626
-gh label create "P1" --color F97316
-gh label create "P2" --color EAB308
-gh label create "P3" --color 22C55E
-gh label create "P4" --color 6B7280
-gh label create "status:in-progress" --color FBBF24
-gh label create "status:blocked" --color EF4444
-gh label create "checkpoint" --color DC2626
-gh label create "human-verify" --color DC2626
-gh label create "coordination-required" --color EAB308
-gh label create "main-effort" --color F97316
-gh label create "model:opus" --color 6B7280
-gh label create "model:sonnet" --color 6B7280
-gh label create "model:haiku" --color 6B7280
-# Wave, skill, ao, aoi labels created as needed
+bd create "Task title" -t task --label "wave:1" --label "ao:convex/orders.ts"
+bd dep add <checkpoint-id> <task-id>
 ```
 
-### Phase 2: Migrate Open Issues
-
-Export open beads to GitHub Issues:
-
+**After:**
 ```bash
-# For each open bead in issues.jsonl:
-# 1. Create GH issue with title, description, labels
-# 2. Map bead dependencies to "Blocked by #N" in body
-# 3. Assign to appropriate milestone (wave)
+gh issue create --title "Task title" --label "type:task,wave:1,ao:convex/orders.ts" --milestone "Wave 1"
+# Dependencies in issue body: "Blocked by #<checkpoint-issue>"
 ```
 
-This is a one-time migration script. Closed beads do NOT need migration — they're historical.
+Then hydrate into native Tasks for the session.
 
-### Phase 3: Rewrite Skills + Commands
+### Wave Deployment (`/army deploy`)
 
-Update all skills and commands per the inventory above. Key changes:
+**Before (beads):**
+```bash
+bd list --status open --label "wave:1"
+# Launch sub-agents, each closes their bead
+```
 
-1. **`task-workflow/SKILL.md`** (replaces `bead-workflow`):
-   - `gh issue list --label status:ready` instead of `bd ready`
-   - `gh issue edit --add-label status:in-progress` instead of `bd update --status in_progress`
-   - `gh issue close --comment "evidence"` instead of `bd close`
-   - Native `TaskCreate` for in-session tracking
+**After:**
+```bash
+# 1. Query wave issues
+gh issue list --state open --milestone "Wave 1" --json number,title,labels
 
-2. **`army-process/*`**:
-   - Wave planning uses milestones
-   - Sync matrix reads from GH issue labels
-   - Deploy prompts reference `#issue-number` not `buildseason-xyz`
-   - Agents close GH issues instead of beads
+# 2. Create shared task list for the wave
+export CLAUDE_CODE_TASK_LIST_ID=wave-1
 
-3. **`parallel-execution/SKILL.md`**:
-   - Workers use native Tasks for coordination
-   - GH Issues for persistent state
+# 3. Hydrate native Tasks from GH issues
+# (session hook or explicit hydration step)
 
-4. **`session-completion/SKILL.md`**:
-   - Remove `bd sync`
-   - Add "close GH issues for completed work"
+# 4. Launch sub-agents — they share the task list
+# Each agent claims tasks via TaskUpdate(owner: "worker-N")
+# Each agent closes GH issue + marks native Task completed when done
+```
 
-### Phase 4: Update Infrastructure
+The `CLAUDE_CODE_TASK_LIST_ID` is the key integration point — all agents in a wave share one task list, enabling real-time coordination without bd.
 
-1. **Delete `.beads/` directory** (entire thing — binary, config, JSONL, etc.)
-2. **Rewrite `session-start.sh`** — query GH Issues, show ready work
-3. **Update `.claude/settings.json`**:
-   - Remove `Bash(bd:*)` permission
-   - Remove `beads@beads-marketplace` plugin
-   - Add `Bash(gh:*)` permission (likely already covered)
-4. **Update `CLAUDE.md`** — replace all bd references with gh equivalents
-5. **Update `.github/workflows/claude.yml`** — if it references bd
+### Agent Prompt Template (Updated)
 
-### Phase 5: Verify + Clean Up
+```markdown
+You are an agent in the BuildSeason army.
 
-1. Run through full workflow: create issue → claim → work → verify → close
-2. Run `/army plan` with new skill docs
-3. Verify session start hook works
-4. Remove any remaining bd references via grep
-5. Commit migration as single atomic commit
+MISSION: ${MISSION_NAME}
+GITHUB ISSUE: #${ISSUE_NUMBER}
+TASK: ${TASK_TITLE}
+WORKTREE: ${WORKTREE_PATH}
+
+## Area of Operations (you may modify)
+${AO_LIST}
+
+## Area of Interest (focus your context here)
+${AOI_LIST}
+
+## Skills to Use
+${SKILL_LIST}
+
+## Boundary Rules
+✓ Full authority to modify ANY file in your AO
+✓ May read any file (AoI helps focus, doesn't restrict)
+✗ Do NOT modify files outside your AO
+
+If you need to modify a file outside your AO:
+1. STOP current work
+2. Create coordination issue:
+   gh issue create --title "Coordination: need <file>" \
+     --label "coordination-required,mission:${MISSION_ID}"
+3. Continue with other aspects of your task
+
+## Task Tracking
+- Claim your task: TaskUpdate(taskId: "${TASK_ID}", status: "in_progress", owner: "${AGENT_NAME}")
+- When done: TaskUpdate(taskId: "${TASK_ID}", status: "completed")
+- Close GitHub Issue: gh issue close ${ISSUE_NUMBER} --comment "Skills used: ... [Brief summary]"
+
+## Success Criteria
+${SUCCESS_CRITERIA}
+
+## Error Handling (CRITICAL)
+- If typecheck or verification fails, READ THE ERROR OUTPUT carefully
+- DO NOT retry the same command more than 2 times without making changes
+- Fix specific issues identified in error messages
+- If stuck after 3 attempts, STOP and leave a comment on the GH issue
+```
 
 ## New Session Hook
 
 ```bash
 #!/bin/bash
 # .claude/hooks/session-start.sh
-# Shows current work state from GitHub Issues
+# Hydrates project status from GitHub Issues
 
 set -e
 
 echo "📋 Loading project status..."
 
+# Check gh is available
+if ! command -v gh &> /dev/null; then
+    echo "⚠️  gh CLI not available. Install: https://cli.github.com/"
+    exit 0
+fi
+
+# Check auth
+if ! gh auth status &> /dev/null 2>&1; then
+    echo "⚠️  gh not authenticated. Run: gh auth login"
+    exit 0
+fi
+
 # Show ready work (open, not blocked, not in-progress)
 echo ""
 echo "Ready work:"
-gh issue list --state open --label "type:task" --json number,title,labels \
-  --jq '.[] | select(.labels | map(.name) | index("status:blocked") | not) | select(.labels | map(.name) | index("status:in-progress") | not) | "#\(.number): \(.title)"' \
-  2>/dev/null | head -5 || echo "  (unable to list ready work)"
+gh issue list --state open --json number,title,labels \
+  --jq '.[] | select(.labels | map(.name) | (index("status:blocked") | not) and (index("status:in-progress") | not)) | "  #\(.number): \(.title)"' \
+  2>/dev/null | head -8 || echo "  (unable to query)"
 
 # Show in-progress
 echo ""
 echo "In progress:"
-gh issue list --state open --label "status:in-progress" --json number,title \
-  --jq '.[] | "#\(.number): \(.title)"' \
+gh issue list --state open --label "status:in-progress" --json number,title,assignees \
+  --jq '.[] | "  #\(.number): \(.title)"' \
   2>/dev/null | head -5 || echo "  (none)"
 
+# Show blocked
+BLOCKED=$(gh issue list --state open --label "status:blocked" --json number 2>/dev/null | jq 'length' 2>/dev/null || echo "0")
+if [ "$BLOCKED" != "0" ]; then
+    echo ""
+    echo "Blocked: $BLOCKED issue(s) — run 'gh issue list --label status:blocked' for details"
+fi
+
 echo ""
-echo "✓ Use 'gh issue list' to see all issues."
-```
-
-## New Task Workflow Skill
-
-```markdown
-# Task Workflow
-
-All work goes through GitHub Issues (persistence) + native Tasks (session orchestration).
-
-## Core Workflow
-
-1. **Find work:** `gh issue list --state open` or check session start output
-2. **Claim it:** `gh issue edit <number> --add-label status:in-progress`
-3. **Track in-session:** TaskCreate for the work unit
-4. **Do the work:** Write code, following existing patterns
-5. **Verify:** `bun run typecheck && bun run lint && bun run test:run`
-6. **Complete:** `gh issue close <number> --comment "Evidence: ..."`
-7. **Checkpoint:** Commit immediately after closing
+echo "✓ Ready. Use '/task ready' to see available work."
 ```
 
 ## New /task Command
 
 ```markdown
-# Task Command (replaces /bead)
+# Task Command
+
+Work on tasks tracked in GitHub Issues + Claude Code native Tasks.
+
+## Subcommands
 
 | Subcommand | Usage | Description |
 |---|---|---|
-| `work` | `/task work <number>` | Pick up issue, load context, start working |
-| `show` | `/task show <number>` | Show issue details |
-| `close` | `/task close <number>` | Mark complete with evidence |
-| `ready` | `/task ready` | List unblocked issues |
+| `work` | `/task work <number>` | Pick up GH issue, hydrate as native Task, start working |
+| `show` | `/task show <number>` | Show GH issue details |
+| `close` | `/task close <number>` | Close GH issue + complete native Task |
+| `ready` | `/task ready` | List unblocked GH issues |
+| `create` | `/task create <title>` | Create new GH issue |
+
+## SUBCOMMAND: work
+
+1. Fetch issue: `gh issue view <number>`
+2. Add in-progress label: `gh issue edit <number> --add-label status:in-progress`
+3. Create native Task: TaskCreate with issue title + description
+4. Load context from AO/AoI/skill labels (same as old /bead work)
+5. Display work summary with READY TO WORK banner
 ```
 
 ## Risk Assessment
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| **Lost dependency graph** | High | Body convention + agent parsing |
-| **No `bd ready` equivalent** | Medium | Session hook computes ready set |
-| **GH API rate limits** | Low | 5000/hr authenticated, ample for this use |
-| **Label explosion** | Medium | Prune unused labels periodically |
-| **Historical data loss** | Low | Keep `.beads/issues.jsonl` in git history |
+| **No label system in native Tasks** | Medium | GitHub Issues carry all labels; Tasks are for session orchestration |
+| **Cross-machine limitation** | Medium | GitHub Issues provide cross-machine persistence; Tasks are local |
+| **Known bugs in task list sharing** | Medium | `--fork-session` bug #20664; subagent inheritance #22228; monitor fixes |
+| **GH API rate limits** | Low | 5000/hr authenticated; ample for this use |
+| **Historical data loss** | Low | Keep `.beads/issues.jsonl` in git history; closed GH issues preserved |
 | **Army scripts break** | Medium | Rewrite scripts to use `gh` CLI |
-| **Session hydration overhead** | Low | Only hydrate relevant issues |
+| **Hydration overhead** | Low | Only hydrate issues for active wave/session |
 
 ## What We Gain
 
 1. **Single source of truth** — no more bd vs native Tasks confusion
-2. **No external binary** — `gh` ships with GitHub CLI (already used)
-3. **Native GitHub integration** — issues visible in repo, PRs can reference them
-4. **Claude Code alignment** — native Tasks for in-session, GH Issues for persistence
-5. **Simpler session setup** — no version checks, doctor, binary vendoring
-6. **Team visibility** — non-agent team members can see/create issues in GitHub UI
-7. **CI integration** — GitHub Actions can react to issue events natively
+2. **No external binary** — `gh` CLI already installed; native Tasks built into Claude Code
+3. **Native dependency resolution** — `blockedBy`/`blocks` with automatic unblocking
+4. **Cross-session broadcast** — `CLAUDE_CODE_TASK_LIST_ID` enables live collaboration
+5. **Platform alignment** — Tasks are where Anthropic is investing, inspired by Beads
+6. **Team visibility** — GitHub Issues visible to non-agents in browser
+7. **CI integration** — GitHub Actions reacts to issue events natively
+8. **Terminal UI** — Ctrl+T task view, progress spinners
 
 ## What We Lose
 
-1. **Automatic dependency resolution** — `bd ready` just worked; we need to compute it
-2. **Hash-based IDs** — beads IDs were merge-safe; GH issue numbers are sequential
-3. **Offline operation** — beads worked offline; GH Issues requires network
-4. **JSONL portability** — beads data was in-repo; GH Issues are in GitHub's API
-5. **bd-specific features** — swarm mode, repair, compaction
+1. **Offline persistent tracking** — beads was in-repo; GH Issues needs network
+2. **Hash-based IDs** — beads IDs were merge-safe; GH numbers are sequential
+3. **Unified CLI** — one `bd` command vs `gh` + native Tasks
+4. **bd-specific features** — `bd doctor`, compaction, swarm mode, repair
 
 ## Implementation Priority
 
 | Step | Effort | Description |
 |---|---|---|
-| 1. Create labels + milestones | Low | One-time setup script |
+| 1. Create GH labels + milestones | Low | One-time setup script |
 | 2. Migrate open beads → GH Issues | Medium | One-time migration script |
-| 3. Rewrite `task-workflow` skill | Medium | Core workflow skill |
-| 4. Rewrite `/task` command | Low | Direct port of `/bead` |
-| 5. Rewrite session hook | Low | Simple `gh` queries |
-| 6. Rewrite army skills | High | 6 sub-process files |
-| 7. Rewrite army scripts | Medium | 2 scripts need changes |
-| 8. Update CLAUDE.md + settings | Low | Search-and-replace |
-| 9. Delete `.beads/` | Low | `rm -rf .beads` |
-| 10. Verify full workflow | Medium | End-to-end test |
+| 3. Write `task-workflow` skill | Medium | Core workflow documentation |
+| 4. Write `/task` command | Medium | Port of `/bead` to gh + native Tasks |
+| 5. Rewrite session hook | Low | Replace bd setup with gh queries |
+| 6. Rewrite army skills | High | 7 sub-process files using gh + TASK_LIST_ID |
+| 7. Rewrite army scripts | Medium | `sync-matrix.sh`, `skill-audit.sh` |
+| 8. Update CLAUDE.md + settings | Low | Remove bd references, add gh + Tasks |
+| 9. Delete `.beads/` | Low | Remove vendored binary + JSONL |
+| 10. End-to-end verification | Medium | Full workflow test |
 
 ## References
 
-- [Claude Code v2.1.16 Release (Tasks)](https://github.com/anthropics/claude-code/releases/tag/v2.1.16)
-- [Claude Code Tasks Overview (Medium)](https://medium.com/@joe.njenga/claude-code-tasks-are-here-new-update-turns-claude-code-todos-to-tasks-a0be00e70847)
-- [Claude Code Sub-agents Documentation](https://code.claude.com/docs/en/sub-agents)
+- [Thariq Shaukat: Tasks announcement (X, Jan 22 2026)](https://x.com/) — "Tasks are our new abstraction for coordinating many pieces of work"
+- [Claude Code v2.1.16 Release](https://github.com/anthropics/claude-code/releases/tag/v2.1.16)
+- [Claude Code Interactive Mode Docs](https://code.claude.com/docs/en/interactive-mode) — CLAUDE_CODE_TASK_LIST_ID
+- [Claude Code Sub-agents Docs](https://code.claude.com/docs/en/sub-agents)
 - [Beads + Opus 4.5 Friction (Issue #429)](https://github.com/steveyegge/beads/issues/429)
+- [Task list sync-dir proposal (#20487)](https://github.com/anthropics/claude-code/issues/20487)
+- [Fork-session task inheritance bug (#20664)](https://github.com/anthropics/claude-code/issues/20664)
+- [Subagent Task tool inheritance (#22228)](https://github.com/anthropics/claude-code/issues/22228)
+- [Swarm Orchestration Gist](https://gist.github.com/kieranklaassen/4f2aba89594a4aea4ad64d753984b2ea)
 - [GitHub CLI Documentation](https://cli.github.com/manual/)
-- [Claude Code Swarm Orchestration Gist](https://gist.github.com/kieranklaassen/4f2aba89594a4aea4ad64d753984b2ea)
