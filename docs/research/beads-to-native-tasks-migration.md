@@ -448,6 +448,250 @@ Work on tasks tracked in GitHub Issues + Claude Code native Tasks.
 3. **Unified CLI** — one `bd` command vs `gh` + native Tasks
 4. **bd-specific features** — `bd doctor`, compaction, swarm mode, repair
 
+## Beads Data Migration
+
+### Inventory
+
+| Metric | Count |
+|---|---|
+| Total issues | 361 |
+| Open | 49 |
+| Closed | 312 |
+| Open with dependencies | 38 |
+| Unique labels | 31 |
+| Dependency links | 482 (41 parent, 182 parent-child, 249 blocks, 10 discovered-from) |
+
+### What Gets Migrated
+
+**Open issues (49):** Migrated to GitHub Issues with full metadata — title, description, labels, priority, type, dependencies.
+
+**Closed issues (312):** NOT migrated. They remain in git history at `.beads/issues.jsonl`. Closed beads are historical artifacts — useful for auditing but not needed in the active tracking system.
+
+### Migration Script
+
+The migration requires a two-pass approach because GitHub Issue numbers are sequential and assigned at creation time. Dependencies reference bead hash IDs (`buildseason-xyz`) which must be remapped to GH issue numbers (`#N`).
+
+```bash
+#!/bin/bash
+# scripts/migrate-beads-to-github.sh
+# One-time migration of open beads to GitHub Issues
+#
+# Pass 1: Create all issues (no dependencies yet)
+# Pass 2: Update issue bodies with remapped dependency references
+
+set -e
+
+JSONL=".beads/issues.jsonl"
+MAP_FILE="/tmp/bead-to-gh-map.json"
+
+echo "{}" > "$MAP_FILE"
+
+# ── Pass 1: Create GitHub Issues ──────────────────────────────
+echo "Pass 1: Creating GitHub Issues..."
+
+# Extract open issues, sorted by priority (P0 first)
+python3 -c "
+import json, sys
+issues = []
+with open('$JSONL') as f:
+    for line in f:
+        issue = json.loads(line)
+        if issue['status'] == 'open':
+            issues.append(issue)
+issues.sort(key=lambda x: x.get('priority', 2))
+json.dump(issues, sys.stdout)
+" | jq -c '.[]' | while read -r issue; do
+
+    BEAD_ID=$(echo "$issue" | jq -r '.id')
+    TITLE=$(echo "$issue" | jq -r '.title')
+    DESCRIPTION=$(echo "$issue" | jq -r '.description')
+    PRIORITY=$(echo "$issue" | jq -r '.priority')
+    TYPE=$(echo "$issue" | jq -r '.issue_type')
+    LABELS_JSON=$(echo "$issue" | jq -r '.labels // [] | join(",")')
+
+    # Build label string
+    LABELS="type:${TYPE},P${PRIORITY}"
+    if [ -n "$LABELS_JSON" ]; then
+        LABELS="${LABELS},${LABELS_JSON}"
+    fi
+
+    # Add bead ID reference to body for traceability
+    BODY="$(cat <<EOF
+${DESCRIPTION}
+
+---
+_Migrated from bead \`${BEAD_ID}\`_
+EOF
+)"
+
+    # Create issue
+    GH_NUMBER=$(gh issue create \
+        --title "$TITLE" \
+        --body "$BODY" \
+        --label "$LABELS" \
+        --json number --jq '.number')
+
+    echo "  Created #${GH_NUMBER} from ${BEAD_ID}: ${TITLE}"
+
+    # Record mapping
+    python3 -c "
+import json
+with open('$MAP_FILE') as f:
+    m = json.load(f)
+m['$BEAD_ID'] = $GH_NUMBER
+with open('$MAP_FILE', 'w') as f:
+    json.dump(m, f)
+"
+done
+
+echo ""
+echo "Pass 1 complete. Mapping:"
+cat "$MAP_FILE" | python3 -m json.tool
+
+# ── Pass 2: Add Dependencies ────────────────────────────────
+echo ""
+echo "Pass 2: Adding dependencies..."
+
+python3 -c "
+import json, sys
+
+with open('$MAP_FILE') as f:
+    bead_to_gh = json.load(f)
+
+issues = []
+with open('$JSONL') as f:
+    for line in f:
+        issue = json.loads(line)
+        if issue['status'] == 'open' and issue.get('dependencies'):
+            issues.append(issue)
+
+for issue in issues:
+    bead_id = issue['id']
+    gh_number = bead_to_gh.get(bead_id)
+    if not gh_number:
+        continue
+
+    deps = []
+    parent = None
+    for dep in issue['dependencies']:
+        dep_id = dep['depends_on_id']
+        dep_gh = bead_to_gh.get(dep_id)
+        dep_type = dep['type']
+
+        if dep_type in ('parent', 'parent-child'):
+            if dep_gh:
+                parent = f'#{dep_gh}'
+            else:
+                parent = f'\`{dep_id}\` (closed)'
+        elif dep_type == 'blocks':
+            if dep_gh:
+                deps.append(f'- Blocked by #{dep_gh}')
+            else:
+                deps.append(f'- Blocked by \`{dep_id}\` (closed)')
+        elif dep_type == 'discovered-from':
+            deps.append(f'- Discovered from \`{dep_id}\`')
+
+    if deps or parent:
+        section = '## Dependencies\n'
+        if parent:
+            section += f'Parent: {parent}\n'
+        section += '\n'.join(deps)
+        print(json.dumps({'gh_number': gh_number, 'section': section}))
+" | while read -r update; do
+    GH_NUMBER=$(echo "$update" | jq -r '.gh_number')
+    DEP_SECTION=$(echo "$update" | jq -r '.section')
+
+    # Append dependencies to issue body
+    CURRENT_BODY=$(gh issue view "$GH_NUMBER" --json body --jq '.body')
+    NEW_BODY="${CURRENT_BODY}
+
+${DEP_SECTION}"
+
+    gh issue edit "$GH_NUMBER" --body "$NEW_BODY"
+    echo "  Updated #${GH_NUMBER} with dependencies"
+done
+
+echo ""
+echo "Migration complete!"
+echo "Mapping saved to: $MAP_FILE"
+echo ""
+echo "Next steps:"
+echo "  1. Verify issues: gh issue list --state open"
+echo "  2. Create milestones if using waves"
+echo "  3. Update CLAUDE.md and skills"
+echo "  4. Delete .beads/ directory"
+```
+
+### Dependency Type Mapping
+
+| Beads Dependency Type | GitHub Issues Representation |
+|---|---|
+| `parent-child` (182) | "Parent: #N" in Dependencies section |
+| `blocks` (249) | "Blocked by #N" in Dependencies section |
+| `parent` (41) | "Parent: #N" in Dependencies section |
+| `discovered-from` (10) | "Discovered from `bead-id`" + `from:doc:*` label |
+
+### Open Issues by Category
+
+The 49 open issues break down as:
+
+| Category | Count | Examples |
+|---|---|---|
+| Production deployment | 10 | `7fof.*` — Convex prod, OAuth, Vercel, CI/CD |
+| GLaDOS agent | 5 | `il2.*` — Agent SDK, tools, order workflow, monitoring |
+| OnShape CAD | 6 | `kue.*` — OAuth, BOM extraction, webhooks, sync |
+| Vendor catalog | 4 | `84j.*` — Schema.org extractor, URL matching, APIs |
+| YPP/safety | 3 | `7iun.*` — Birthday, email alerting, Resend |
+| Epics (tracking) | 10 | `7e7`, `9oty`, `vs7i`, `yv8x`, etc. |
+| Misc tasks/bugs | 11 | Rate limiting, secrets audit, code review, tests |
+
+### Parent-Child Hierarchy
+
+Several open beads use dotted IDs for hierarchy (`7fof.1`, `7fof.2`, etc.). In GitHub Issues, this becomes:
+
+- Parent epic: `#N` with label `type:epic`
+- Child tasks: Each gets "Parent: #N" in Dependencies section
+- GitHub's task list syntax in the epic body provides visual tracking:
+  ```markdown
+  ## Tasks
+  - [ ] #12 Set up Convex production deployment
+  - [ ] #13 Create production Discord application
+  - [ ] #14 Configure GitHub OAuth for production
+  ```
+
+### Label Migration
+
+The 31 unique beads labels map directly to GH labels. Labels that reference bead IDs (`discovered-from:buildseason-2zlp`) get remapped to GH issue references (`from:#N`) using the mapping file.
+
+### ID Traceability
+
+Every migrated GH issue body ends with:
+```
+---
+_Migrated from bead `buildseason-xyz`_
+```
+
+This allows tracing back to the original bead if needed. The mapping file (`bead-to-gh-map.json`) is also preserved.
+
+### Post-Migration Verification
+
+```bash
+# Verify counts match
+OPEN_BEADS=$(python3 -c "
+import json
+count = sum(1 for line in open('.beads/issues.jsonl') if json.loads(line)['status'] == 'open')
+print(count)
+")
+OPEN_GH=$(gh issue list --state open --json number | jq 'length')
+echo "Beads open: $OPEN_BEADS, GH open: $OPEN_GH"
+
+# Verify dependencies were added
+gh issue list --state open --json number,body --jq '.[] | select(.body | contains("Blocked by")) | .number'
+
+# Verify labels applied
+gh issue list --state open --json number,labels --jq '.[] | "\(.number): \([.labels[].name] | join(", "))"'
+```
+
 ## Implementation Priority
 
 | Step | Effort | Description |
